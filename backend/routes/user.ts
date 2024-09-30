@@ -6,8 +6,8 @@ const router : Router = Router()
 
 router.post('/', async (req: Request, res: Response) => {
 	try {
-	  const { name, email, pwd, isAdmin} = req.body;
-	  const newUser = new UserModel({ name, email, pwd, isAdmin });
+	  const { name, email, pwd} = req.body;
+	  const newUser = new UserModel({ name, email, pwd, isAdmin : true }); // Implement admin account creation in the future
 	  const savedUser = await newUser.save();
 	  res.status(201).json(savedUser);
 	} catch (error) {
@@ -23,14 +23,15 @@ router.post('/', async (req: Request, res: Response) => {
 	  res.status(500).json({ message: 'Error fetching users', error });
 	}
   });
-  
-  router.get('/:id', async (req: Request, res: Response) => {
-	  const user = await UserModel.findById(req.params.id);
-	  if (!user) {
-		res.status(404).json({ message: 'User not found' });
-	  }
-	  else res.status(200).json()
-  });
+
+  router.post('/logout', async (req: Request, res: Response) => {
+	res.clearCookie('token', {
+	   httpOnly: true,
+	   sameSite: 'lax',
+	 });
+	 
+   res.status(200).json({ message: 'Logged out successfully' });
+})
 
   router.post('/login', async (req : Request, res : Response) => {
 	const {email, pwd} = req.body
