@@ -1,0 +1,35 @@
+services:
+  frontend:
+    build: frontend
+    ports:
+     - 5173:5173
+    networks:
+      - mern
+  
+  backend:
+    build: backend
+    ports:
+     - 3000:3000
+    networks:
+     - mern
+    depends_on:
+      - mongo
+  
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
+    networks:
+      - mern
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/mydatabase
+    volumes:
+      - mongo-data:/data/db
+  
+networks:
+  mern:
+      driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
