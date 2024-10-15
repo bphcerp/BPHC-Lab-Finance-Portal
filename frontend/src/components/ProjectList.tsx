@@ -32,7 +32,7 @@ const ProjectList: FunctionComponent<ProjectListProps> = (props : ProjectListPro
 
     return props.projectData && (
         <div className='flex flex-col w-full h-full bg-gray-200 rounded-sm shadow-md overflow-y-auto'>
-            <div className={`grid grid-flow-col grid-cols-${uniqueHeads.length+5} h-10 text-center font-bold bg-gray-300`}>
+            <div className={`flex h-fit text-center font-bold bg-gray-300`}>
                 <div className="flex justify-center items-center"><Checkbox color="blue"/></div>
                 <span className="w-32">Project Name</span>
                 <span className="w-32">Granted Amount</span>
@@ -43,7 +43,7 @@ const ProjectList: FunctionComponent<ProjectListProps> = (props : ProjectListPro
                 )))}
             </div>
             {props.projectData.map((project,key) => (
-                <div key={key} className={`grid grid-flow-col text-center h-20 grid-cols-${uniqueHeads.length+5} mt-2`}>
+                <div key={key} className={`flex text-center h-20 mt-2`}>
                     <div className="flex justify-center items-center h-fit mt-1"><Checkbox color="blue"/></div>
                     <span className="w-32">{project.project_name}</span>
                     <span className="w-32">{project.total_amount.toLocaleString('en-IN',{
