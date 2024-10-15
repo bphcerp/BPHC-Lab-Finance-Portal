@@ -2,78 +2,86 @@ import { FunctionComponent, useEffect, useState } from "react";
 import ProjectList, { Project } from "../components/ProjectList";
 import { Button } from "flowbite-react";
 import { AddProjectModal } from "../components/AddProjectModal";
- 
-const DashBoard: FunctionComponent = () => {
 
-    const [grandTotal, setGrandTotal] = useState(0)
-    const [projectData, setProjectData] = useState<null | Array<Project>>(null)
-    const [openModal, setOpenModal] = useState(false)
+const DashBoard: FunctionComponent = () => {
+    const [grandTotal, setGrandTotal] = useState(0);
+    const [projectData, setProjectData] = useState<null | Array<Project>>(null);
+    const [openModal, setOpenModal] = useState(false);
 
     const fetchProjectData = () => {
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/grandtotal/`,{
-            credentials : "include"
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/grandtotal/`, {
+            credentials: "include",
         })
-        .then((res) => (res.json()).then((data) => {
-            setGrandTotal(data.total_amount_sum)
-        }))
-        .catch((e) =>{
-            alert("Something went wrong")
-            console.error(e)
-        })
+            .then((res) =>
+                res.json().then((data) => {
+                    setGrandTotal(data.total_amount_sum);
+                })
+            )
+            .catch((e) => {
+                alert("Something went wrong");
+                console.error(e);
+            });
 
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`,{
-            credentials : "include"
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
+            credentials: "include",
         })
-        .then((res) => (res.json()).then((data) => {
-            data = data.map((project : Project) => ({
-                ...project,
-                start_date: project.start_date?new Date(project.start_date):null, 
-                end_date: project.end_date?new Date(project.end_date):null
-              }))
-            setProjectData(data)
-        }))
-        .catch((e) =>{
-            alert("Something went wrong")
-            console.error(e)
-        })
-    }
+            .then((res) =>
+                res.json().then((data) => {
+                    data = data.map((project: Project) => ({
+                        ...project,
+                        start_date: project.start_date
+                            ? new Date(project.start_date)
+                            : null,
+                        end_date: project.end_date
+                            ? new Date(project.end_date)
+                            : null,
+                    }));
+                    setProjectData(data);
+                })
+            )
+            .catch((e) => {
+                alert("Something went wrong");
+                console.error(e);
+            });
+    };
 
-    useEffect(()=>{
-        fetchProjectData()
-    },[openModal])
+    useEffect(() => {
+        fetchProjectData();
+    }, [openModal]);
 
     return (
-        <div className="flex flex-col w-full h-full">
-            <AddProjectModal openModal={openModal} setOpenModal={setOpenModal}/> 
-            <div className="grid grid-cols-2 w-full h-36">
-                <div className="flex justify-center items-center">
-                    <div className="w-64 h-28 bg-sky-300 rounded-lg flex flex-col items-center p-2">
-                       <span className="font-bold mb-2">Total Amount:</span>
-                       <span className="text-3xl">{grandTotal.toLocaleString('en-IN',{
-                            style : "currency",
-                            currency : "INR"
-                        })}</span>
-                    </div>
+        <div className="flex flex-col p-4 space-y-4 w-full mx-auto overflow-hidden h-full">
+            <AddProjectModal openModal={openModal} setOpenModal={setOpenModal} />
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-100 p-4 rounded-lg shadow-md text-center">
+                    <p className="text-md font-semibold">Total Amount</p>
+                    <p className="text-2xl font-bold mt-2 text-blue-800">
+                        {grandTotal.toLocaleString("en-IN", {
+                            style: "currency",
+                            currency: "INR",
+                        })}
+                    </p>
                 </div>
-                <div className="flex justify-center items-center">
-                    <div className="w-64 h-28 bg-sky-300 rounded-lg flex flex-col items-center p-2">
-                        <span className="font-bold mb-2">Total Due:</span>
-                        <span className="text-3xl">-</span>
-                    </div>
-                </div>
-            </div>
-            <div className="flex justify-end w-full h-12 px-3">
-                <Button onClick={() => {
-                    setOpenModal((prev) => (!prev))
-                }} color="blue" outline={false}>Add Project</Button>
-            </div>
-            <div className="flex grow w-full p-3">
-                <div className="w-full h-full">
-                    <ProjectList projectData={projectData} />
+                <div className="bg-red-100 p-4 rounded-lg shadow-md text-center">
+                    <p className="text-md font-semibold">Total Due</p>
+                    <p className="text-2xl font-bold mt-2 text-red-800">-</p>
                 </div>
             </div>
+
+            <div className="flex justify-end w-full">
+                <Button
+                    onClick={() => setOpenModal((prev) => !prev)}
+                    color="blue"
+                    className="rounded-lg px-3 py-2 shadow-lg"
+                >
+                    Add Project
+                </Button>
+            </div>
+
+            <ProjectList projectData={projectData} />
         </div>
     );
-}
- 
+};
+
 export default DashBoard;
