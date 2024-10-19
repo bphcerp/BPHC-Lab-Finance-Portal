@@ -2,7 +2,7 @@ import { Checkbox } from "flowbite-react";
 import { FunctionComponent } from "react";
 
 export interface Project {
-    _id: string;
+    _id?: string;
     project_name: string;
     start_date: Date | null;
     end_date: Date | null;
