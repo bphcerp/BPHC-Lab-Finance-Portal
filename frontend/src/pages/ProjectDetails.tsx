@@ -43,7 +43,7 @@ const ProjectDetails = () => {
                                 <span className="font-medium text-gray-700">Start:</span>
                                 <p className="text-lg">
                                     {projectData.start_date
-                                        ? new Date(projectData.start_date).toLocaleDateString()
+                                        ? new Date(projectData.start_date).toLocaleDateString('en-IN')
                                         : "N/A"}
                                 </p>
                             </div>
@@ -51,7 +51,7 @@ const ProjectDetails = () => {
                                 <span className="font-medium text-gray-700">End:</span>
                                 <p className="text-lg">
                                     {projectData.end_date
-                                        ? new Date(projectData.end_date).toLocaleDateString()
+                                        ? new Date(projectData.end_date).toLocaleDateString('en-IN')
                                         : "N/A"}
                                 </p>
                             </div>
@@ -60,30 +60,40 @@ const ProjectDetails = () => {
                 </div>
 
                 <div className="space-y-4">
-                    <h2 className="text-2xl font-semibold text-gray-700">
-                        Project Heads
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {Object.entries(projectData.project_heads).map(([head, allocations], index) => (
-                            <div key={index} className="bg-white p-6 rounded-lg shadow-md">
-                                <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                                    {head}
-                                </h3>
-                                <ul className="space-y-2">
-                                    {allocations.map((amount, i) => (
-                                        <li key={i} className="flex justify-between text-gray-600">
-                                            <span className="font-medium">Year {i + 1}:</span>
-                                            <span className="text-right">
+                    <h2 className="text-2xl font-semibold text-gray-700">Project Heads</h2>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full bg-white shadow-md rounded-lg">
+                            <thead className="bg-gray-200">
+                                <tr>
+                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Head</th>
+                                    {Array.from({ length: Math.max(...Object.values(projectData.project_heads).map(arr => arr.length)) }).map((_, i) => (
+                                        <th key={i} className="py-3 px-6 text-center text-gray-800 font-semibold">
+                                            Year {i + 1}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Object.entries(projectData.project_heads).map(([head, allocations], index) => (
+                                    <tr key={index} className="border-t">
+                                        <td className="py-3 px-6 text-gray-800 text-center font-medium">{head}</td>
+                                        {allocations.map((amount, i) => (
+                                            <td key={i} className="py-3 px-6 text-center text-gray-600">
                                                 {amount.toLocaleString("en-IN", {
                                                     style: "currency",
                                                     currency: "INR",
                                                 })}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
+                                            </td>
+                                        ))}
+                                        {allocations.length < Math.max(...Object.values(projectData.project_heads).map(arr => arr.length)) &&
+                                            Array.from({ length: Math.max(...Object.values(projectData.project_heads).map(arr => arr.length)) - allocations.length }).map((_, i) => (
+                                                <td key={i} className="py-3 px-6 text-center text-gray-600">N/A</td>
+                                            ))
+                                        }
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

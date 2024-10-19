@@ -1,250 +1,319 @@
 import { Button, Label, Modal, TextInput } from "flowbite-react";
-import { Dispatch, FormEvent, FormEventHandler, FunctionComponent, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, FormEvent, FunctionComponent, SetStateAction, useEffect, useState } from "react";
 import { Project } from "./ProjectList";
 
 interface AddProjectProps {
-  openModal: boolean;
-  setOpenModal: Dispatch<SetStateAction<boolean>>;
+    openModal: boolean;
+    setOpenModal: Dispatch<SetStateAction<boolean>>;
 }
 
 export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal, setOpenModal }) => {
-  const [projectName, setProjectName] = useState<string>("")
-  const [startDate, setStartDate] = useState<string>("")
-  const [endDate, setEndDate] = useState<string>("")
-  const [projectHeads, setProjectHeads] = useState<{ [key: string]: number[] }>({})
-  const [headTotals, setHeadTotals] = useState<{ [key: string]: number }>({})
-  const [numberOfYears, setNumberOfYears] = useState<number>(0)
-  const [newHeadName, setNewHeadName] = useState<string>("")
-  const [totalAmount, setTotalAmount] = useState<number | null>(null)
-  const [loading, setLoading] = useState<boolean>(false)
+    const [projectName, setProjectName] = useState<string>("");
+    const [startDate, setStartDate] = useState<string>("");
+    const [endDate, setEndDate] = useState<string>("");
+    const [projectHeads, setProjectHeads] = useState<{ [key: string]: number[] }>({});
+    const [headTotals, setHeadTotals] = useState<{ [key: string]: number }>({});
+    const [numberOfYears, setNumberOfYears] = useState<number>(0);
+    const [newHeadName, setNewHeadName] = useState<string>("");
+    const [totalAmount, setTotalAmount] = useState<number | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [existingHeads, setExistingHeads] = useState<string[]>([]);
+    const [filteredHeads, setFilteredHeads] = useState<string[]>([]);
 
-  const calculateNumberOfYears = () => {
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const yearsDiff = end.getFullYear() - start.getFullYear() + 1;
-      setNumberOfYears(yearsDiff > 0 ? yearsDiff : 0);
-    }
-  };
-
-  const addProjectHead = () => {
-    if (!newHeadName || numberOfYears <= 0) return;
-    setProjectHeads((prevHeads) => ({
-      ...prevHeads,
-      [newHeadName]: Array(numberOfYears).fill(0),
-    }));
-    setNewHeadName("");
-  };
-
-  const handleProjectHeadYearChange = (headName: string, yearIndex: number, value: number) => {
-    setProjectHeads((prevHeads) => ({
-      ...prevHeads,
-      [headName]: prevHeads[headName].map((val, idx) => (idx === yearIndex ? value : val)),
-    }));
-  };
-
-  const saveProjectHead = (headName: string) => {
-    const headTotal = projectHeads[headName].reduce((acc, val) => acc + val, 0);
-    setHeadTotals((prevTotals) => ({ ...prevTotals, [headName]: headTotal }));
-  };
-
-  const calculateGrandTotal = () => {
-    return Object.values(headTotals).reduce((acc, val) => acc + val, 0);
-  };
-
-  const editProjectHead = (headName: string) => {
-    const updatedHeadTotals = { ...headTotals };
-    delete updatedHeadTotals[headName];
-    setHeadTotals(updatedHeadTotals);
-  };
-
-  const deleteProjectHead = (headName: string) => {
-    const updatedHeads = { ...projectHeads };
-    const updatedHeadTotals = { ...headTotals };
-    delete updatedHeads[headName];
-    delete updatedHeadTotals[headName];
-    setProjectHeads(updatedHeads);
-    setHeadTotals(updatedHeadTotals);
-  };
-
-  const handleAddProject : FormEventHandler<HTMLFormElement> = (e :  FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    const newProject: Project = {
-        project_name: projectName,
-        start_date: startDate ? new Date(startDate) : null,
-        end_date: endDate ? new Date(endDate) : null,
-        project_heads: projectHeads,
-        total_amount: totalAmount!,
-    }
-
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`,{
-        method : "POST",
-        headers :{
-            "content-type" : "application/json"
-        },
-        body : JSON.stringify(newProject),
-        credentials : "include"
-    })
-    .then((res) => {
-        if (res.ok){
-            alert("Project added")
-            setOpenModal(false)
+    const calculateNumberOfYears = () => {
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const yearsDiff = end.getFullYear() - start.getFullYear() + 1;
+            setNumberOfYears(yearsDiff > 0 ? yearsDiff : 0);
         }
-        else alert("Error adding project")
-    })
-    .catch((e) =>{
-        alert("Error")
-        console.error(e)
-    })
-    .finally(() => {
-        setLoading(false)
-    })
+    };
 
-  }
+    const fetchExistingHeads = async () => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/heads`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const heads = data.map((head: { head_name: string }) => head.head_name);
+            setExistingHeads(heads);
+        } catch (error) {
+            console.error("Error fetching project heads:", (error as Error).message);
+        }
+    };
 
-  useEffect(() => {
-    if (!openModal) {
-      setProjectName("");
-      setStartDate("");
-      setEndDate("");
-      setProjectHeads({});
-      setHeadTotals({});
-      setNumberOfYears(0);
-      setTotalAmount(null)
-    }
-  }, [openModal]);
+    const filterHeads = (input: string) => {
+        if (input) {
+            const filtered = existingHeads.filter(head => head.toLowerCase().includes(input.toLowerCase()));
+            setFilteredHeads(filtered);
+        } else {
+            setFilteredHeads([]);
+        }
+    };
 
-  return (
-    <div>
-      <Modal show={openModal} size="lg" popup onClose={() => setOpenModal(false)}>
-        <Modal.Header className="p-5">
-            <h3 className="text-xl font-medium text-gray-900 dark:text-white">Add New Project</h3>
-        </Modal.Header>
-        <Modal.Body>
-          <form onSubmit={handleAddProject} className="space-y-4">
-            <div>
-              <Label htmlFor="project_name" value="Project Name" />
-              <TextInput
-                id="project_name"
-                placeholder="Enter project name"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                required
-              />
-            </div>
+    const addProjectHead = () => {
+        if (!newHeadName || numberOfYears <= 0) return;
+        setProjectHeads((prevHeads) => ({
+            ...prevHeads,
+            [newHeadName]: Array(numberOfYears).fill(0),
+        }));
+        setNewHeadName("");
+        setFilteredHeads([]); // Clear filtered heads
+    };
 
-            <div className="flex space-x-3">
-              <div className="w-1/2">
-                <Label htmlFor="start_date" value="Start Date" />
-                <TextInput
-                    id="start_date"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => {
-                    setStartDate(e.target.value);
-                    calculateNumberOfYears();
-                    }}
-                    required
-                />
-              </div>
+    const handleProjectHeadYearChange = (headName: string, yearIndex: number, value: number) => {
+        setProjectHeads((prevHeads) => ({
+            ...prevHeads,
+            [headName]: prevHeads[headName].map((val, idx) => (idx === yearIndex ? value : val)),
+        }));
+    };
 
-              <div className="w-1/2">
-                <Label htmlFor="end_date" value="End Date" />
-                <TextInput
-                    id="end_date"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => {
-                    setEndDate(e.target.value);
-                    calculateNumberOfYears();
-                    }}
-                />
-              </div>
-            </div>
+    const saveProjectHead = (headName: string) => {
+        const headTotal = projectHeads[headName].reduce((acc, val) => acc + val, 0);
+        setHeadTotals((prevTotals) => ({ ...prevTotals, [headName]: headTotal }));
+    };
 
-            <div>
-              <Label htmlFor="years" value="Number of Years" />
-              <TextInput
-                id="years"
-                type="number"
-                value={numberOfYears}
-                readOnly
-              />
-            </div>
+    const calculateGrandTotal = () => {
+        return Object.values(headTotals).reduce((acc, val) => acc + val, 0);
+    };
 
-            <div>
-              <Label htmlFor="new_head" value="New Project Head" />
-              <div className="flex space-x-2">
-                <TextInput
-                  id="new_head"
-                  placeholder="Enter project head name"
-                  value={newHeadName}
-                  onChange={(e) => setNewHeadName(e.target.value)}
-                />
-                <Button color="blue" size="sm" onClick={addProjectHead}>Add Head</Button>
-              </div>
+    const editProjectHead = (headName: string) => {
+        const updatedHeadTotals = { ...headTotals };
+        delete updatedHeadTotals[headName];
+        setHeadTotals(updatedHeadTotals);
+    };
 
-              {Object.keys(projectHeads).map((headName) => (
-                <div key={headName} className="mt-4">
-                  <h4 className="font-medium">{headName}</h4>
-                  {!headTotals[headName] ? (
-                    <div className="space-y-2">
-                      {projectHeads[headName].map((value, yearIndex) => (
-                        <div key={yearIndex} className="flex items-center space-x-2">
-                          <Label htmlFor={`${headName}_year_${yearIndex}`} value={`Year ${yearIndex + 1}`} />
-                          <TextInput
-                            id={`${headName}_year_${yearIndex}`}
-                            type="number"
-                            value={value}
-                            onChange={(e) => handleProjectHeadYearChange(headName, yearIndex, Number(e.target.value))}
-                          />
+    const deleteProjectHead = (headName: string) => {
+        const updatedHeads = { ...projectHeads };
+        const updatedHeadTotals = { ...headTotals };
+        delete updatedHeads[headName];
+        delete updatedHeadTotals[headName];
+        setProjectHeads(updatedHeads);
+        setHeadTotals(updatedHeadTotals);
+    };
+
+    const handleAddProject = async (e: FormEvent) => {
+      e.preventDefault();
+      setLoading(true);
+  
+      // Identify new heads that are not in existing heads
+      const newHeadsToAdd = Object.keys(projectHeads).filter(headName => 
+          !existingHeads.includes(headName)
+      );
+  
+      const newProject: Project = {
+          project_name: projectName,
+          start_date: startDate ? new Date(startDate) : null,
+          end_date: endDate ? new Date(endDate) : null,
+          project_heads: projectHeads,
+          total_amount: totalAmount!,
+      };
+  
+      try {
+          // Add the project first
+          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project`, {
+              method: "POST",
+              headers: {
+                  "content-type": "application/json",
+              },
+              body: JSON.stringify(newProject),
+              credentials: "include",
+          });
+  
+          if (res.ok) {
+              // If the project was added successfully, then add new heads
+              for (const head of newHeadsToAdd) {
+                  const headRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/heads`, {
+                      method: "POST",
+                      headers: {
+                          "content-type": "application/json",
+                      },
+                      body: JSON.stringify({ head_name: head }),
+                      credentials: "include",
+                  });
+  
+                  if (headRes.ok) {
+                      // Update existing heads state directly after adding a new head
+                      setExistingHeads(prevHeads => [...prevHeads, head]);
+                  }
+              }
+              alert("Project added");
+              setOpenModal(false);
+          } else {
+              alert("Error adding project");
+          }
+      } catch (error) {
+          alert("Error");
+          console.error(error);
+      } finally {
+          setLoading(false);
+      }
+  };
+  
+  
+  
+
+    useEffect(() => {
+        if (!openModal) {
+            setProjectName("");
+            setStartDate("");
+            setEndDate("");
+            setProjectHeads({});
+            setHeadTotals({});
+            setNumberOfYears(0);
+            setTotalAmount(null);
+        }
+    }, [openModal]);
+
+    useEffect(() => {
+        fetchExistingHeads();
+    }, []);
+
+    return (
+        <div>
+            <Modal show={openModal} size="lg" popup onClose={() => setOpenModal(false)}>
+                <Modal.Header className="p-5">
+                    <h3 className="text-xl font-medium text-gray-900 dark:text-white">Add New Project</h3>
+                </Modal.Header>
+                <Modal.Body>
+                    <form onSubmit={handleAddProject} className="space-y-4">
+                        <div>
+                            <Label htmlFor="project_name" value="Project Name" />
+                            <TextInput
+                                id="project_name"
+                                placeholder="Enter project name"
+                                value={projectName}
+                                onChange={(e) => setProjectName(e.target.value)}
+                                required
+                            />
                         </div>
-                      ))}
-                      <Button size="xs"  color="blue" onClick={() => saveProjectHead(headName)}>Save Head</Button>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex space-x-4">
-                        {projectHeads[headName].map((value, yearIndex) => (
-                          <div key={yearIndex}>
-                            <span>Year {yearIndex + 1}: {value}</span>
-                          </div>
+
+                        <div className="flex space-x-3">
+                            <div className="w-1/2">
+                                <Label htmlFor="start_date" value="Start Date" />
+                                <TextInput
+                                    id="start_date"
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => {
+                                        setStartDate(e.target.value);
+                                        calculateNumberOfYears();
+                                    }}
+                                    required
+                                />
+                            </div>
+
+                            <div className="w-1/2">
+                                <Label htmlFor="end_date" value="End Date" />
+                                <TextInput
+                                    id="end_date"
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => {
+                                        setEndDate(e.target.value);
+                                        calculateNumberOfYears();
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label htmlFor="years" value="Number of Years" />
+                            <TextInput id="years" type="number" value={numberOfYears} readOnly />
+                        </div>
+
+                        <div>
+                            <Label htmlFor="new_head" value="New Project Head" />
+                            <div className="flex space-x-2">
+                                <TextInput
+                                    id="new_head"
+                                    placeholder="Enter project head name"
+                                    value={newHeadName}
+                                    onChange={(e) => {
+                                        setNewHeadName(e.target.value);
+                                        filterHeads(e.target.value);
+                                    }}
+                                />
+                                <Button color="blue" size="sm" onClick={addProjectHead}>Add Head</Button>
+                            </div>
+                            {filteredHeads.length > 0 && (
+                                <ul className="mt-2 border rounded bg-white shadow-lg max-h-40 overflow-y-auto">
+                                    {filteredHeads.map((head) => (
+                                        <li
+                                            key={head}
+                                            className="px-2 py-1 hover:bg-blue-100 cursor-pointer"
+                                            onClick={() => {
+                                                setNewHeadName(head);
+                                                setFilteredHeads([]); // Clear the suggestions after selection
+                                            }}
+                                        >
+                                            {head}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        {Object.keys(projectHeads).map((headName) => (
+                            <div key={headName} className="mt-4">
+                                <h4 className="font-medium">{headName}</h4>
+                                {!headTotals[headName] ? (
+                                    <div className="space-y-2">
+                                        {projectHeads[headName].map((value, yearIndex) => (
+                                            <div key={yearIndex} className="flex items-center space-x-2">
+                                                <Label htmlFor={`${headName}_year_${yearIndex}`} value={`Year ${yearIndex + 1}`} />
+                                                <TextInput
+                                                    id={`${headName}_year_${yearIndex}`}
+                                                    type="number"
+                                                    value={value}
+                                                    onChange={(e) => handleProjectHeadYearChange(headName, yearIndex, Number(e.target.value))}
+                                                />
+                                            </div>
+                                        ))}
+                                        <Button size="xs" color="blue" onClick={() => saveProjectHead(headName)}>Save Head</Button>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <div className="flex space-x-4">
+                                            {projectHeads[headName].map((value, yearIndex) => (
+                                                <div key={yearIndex}>
+                                                    <span>Year {yearIndex + 1}: {value}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="font-medium">Total: {headTotals[headName]}</div>
+                                        <div className="flex space-x-2">
+                                            <Button size="xs" color="blue" onClick={() => editProjectHead(headName)}>Edit Head</Button>
+                                            <Button size="xs" color="failure" onClick={() => deleteProjectHead(headName)}>Delete Head</Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         ))}
-                      </div>
-                      <div className="font-medium">Total: {headTotals[headName]}</div>
-                      <div className="flex space-x-2">
-                        <Button size="xs"  color="blue" onClick={() => editProjectHead(headName)}>Edit Head</Button>
-                        <Button size="xs"  color="failure" onClick={() => deleteProjectHead(headName)}>Delete Head</Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
 
-            <div className="mt-4 font-medium">
-              Project Head Total: {calculateGrandTotal()}
-            </div>
+                        <div className="mt-4 font-medium">
+                            Project Head Total: {calculateGrandTotal()}
+                        </div>
 
-            <div>
-              <Label htmlFor="total_amount" value="Total Amount" />
-              <TextInput
-                id="total_amount"
-                type="number"
-                placeholder="Enter total amount"
-                value={totalAmount!}
-                onChange={(e) => setTotalAmount(Number(e.target.value))}
-                required
-              />
-            </div>
+                        <div>
+                            <Label htmlFor="total_amount" value="Total Amount" />
+                            <TextInput
+                                id="total_amount"
+                                type="number"
+                                placeholder="Enter total amount"
+                                value={totalAmount!}
+                                onChange={(e) => setTotalAmount(Number(e.target.value))}
+                                required
+                            />
+                        </div>
 
-            <div className="w-full">
-              <Button isProcessing={loading} color="blue" type="submit">Save Project</Button>
-            </div>
-          </form>
-        </Modal.Body>
-      </Modal>
-    </div>
-  );
+                        <div className="w-full">
+                            <Button isProcessing={loading} color="blue" type="submit">Save Project</Button>
+                        </div>
+                    </form>
+                </Modal.Body>
+            </Modal>
+        </div>
+    );
 };

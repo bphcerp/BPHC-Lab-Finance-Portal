@@ -1,12 +1,13 @@
-import express, { Request, Response } from 'express';
-import dotenv from 'dotenv';
-import mongoose from 'mongoose';
-import cors from 'cors';
+import express, { Request, Response } from 'express'
+import dotenv from 'dotenv'
+import mongoose from 'mongoose'
+import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken'
 
-import userRoutes from './routes/user';
-import projectRoutes from './routes/project';
+import userRoutes from './routes/user'
+import projectRoutes from './routes/project'
+import projectHeadRoutes from './routes/heads'
 
 dotenv.config();
 
@@ -25,7 +26,8 @@ app.use(cors({
 }))
 
 app.use('/api/user', userRoutes);
-app.use('/api/project', projectRoutes);
+app.use('/api/project', projectRoutes)
+app.use('/api/heads', projectHeadRoutes)
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello, World!')
