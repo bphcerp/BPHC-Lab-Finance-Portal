@@ -31,7 +31,7 @@ const ProjectList: FunctionComponent<ProjectListProps> = (props: ProjectListProp
     const uniqueHeads = getUniqueProjectHeads(props.projectData);
 
     return props.projectData ? (
-        <div className="flex flex-col w-full h-full bg-gray-50 rounded-lg shadow-md overflow-y-auto p-4">
+        <div className="flex flex-col items-center w-full h-full bg-gray-50 rounded-lg shadow-md overflow-y-auto p-4">
             <div className="flex sticky w-max top-0 bg-gray-200 text-gray-700 font-semibold border-b border-gray-300">
                 <div className="flex justify-center items-center w-12 p-3">
                     <Checkbox color="blue" />
