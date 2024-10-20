@@ -1,30 +1,23 @@
 import {Router, Request, Response } from "express";
 import { UserModel } from "../models/user";
+import { OAuth2Client } from "google-auth-library";
+import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 
-const router : Router = Router()
+dotenv.config();
 
-router.post('/', async (req: Request, res: Response) => {
-	try {
-	  const { name, email, pwd} = req.body;
-	  const newUser = new UserModel({ name, email, pwd, isAdmin : true }); // Implement admin account creation in the future
-	  const savedUser = await newUser.save();
-	  res.status(201).json(savedUser);
-	} catch (error) {
-	  res.status(500).json({ message: 'Error creating user', error });
-	}
-  });
+const router : Router = Router()
   
-  router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
 	try {
 	  const users = await UserModel.find();
 	  res.json(users);
 	} catch (error) {
 	  res.status(500).json({ message: 'Error fetching users', error });
 	}
-  });
+});
 
-  router.post('/logout', async (req: Request, res: Response) => {
+router.post('/logout', async (req: Request, res: Response) => {
 	res.clearCookie('token', {
 	   httpOnly: true,
 	   sameSite: 'lax',
@@ -34,6 +27,24 @@ router.post('/', async (req: Request, res: Response) => {
 })
 
   router.post('/login', async (req : Request, res : Response) => {
+	const credentialResponse = req.body
+	const client = new OAuth2Client()
+
+	client.verifyIdToken({
+		idToken : credentialResponse.credential,
+		audience : process.env.OAUTH_CID
+	})
+	.then(() => {
+		res.cookie("token",credentialResponse.credential)
+		res.send("Login Successful")
+	})
+	.catch(() => {
+		res.status(403).send("Invalid Credentials")
+	})
+
+})
+
+router.post('/passlogin', async (req : Request, res : Response) => {
 	const {email, pwd} = req.body
 	const result = await UserModel.findOne({email}).lean()
 	if (!result) {
@@ -57,12 +68,12 @@ router.post('/', async (req: Request, res: Response) => {
 	else res.status(401).send(`Wrong Credentials`)
 })
   
-  router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
 	try {
-	  const { name, email, pwd, isAdmin } = req.body;
+	  const { name, email, isAdmin } = req.body;
 	  const updatedUser = await UserModel.findByIdAndUpdate(
 		req.params.id,
-		{ name, email, pwd, isAdmin },
+		{ name, email, isAdmin },
 		{ new: true }
 	  );
 	  if (!updatedUser) {
@@ -72,9 +83,9 @@ router.post('/', async (req: Request, res: Response) => {
 	} catch (error) {
 	  res.status(500).json({ message: 'Error updating user', error });
 	}
-  });
+});
   
-  router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
 	try {
 	  const deletedUser = await UserModel.findByIdAndDelete(req.params.id);
 	  if (!deletedUser) {
@@ -84,6 +95,6 @@ router.post('/', async (req: Request, res: Response) => {
 	} catch (error) {
 	  res.status(500).json({ message: 'Error deleting user', error })
 	}
-  });
+});
 
 export default router

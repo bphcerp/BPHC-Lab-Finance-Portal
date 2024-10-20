@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 import userRoutes from './routes/user';
 import projectRoutes from './routes/project';
 import expenseRoutes from './routes/expense';
+import { OAuth2Client } from 'google-auth-library';
 
 dotenv.config();
 
@@ -41,9 +42,22 @@ app.get('/api/check-auth', (req: Request, res: Response) => {
     return
   }
 
-  jwt.verify(token, process.env.JWT_SECRET_KEY!, (err: any, decoded: any) => {
+  jwt.verify(token, process.env.JWT_SECRET_KEY!, async (err: any, decoded: any) => {
     if (err || !decoded) {
-      res.status(401).json({ authenticated: false, message: 'Invalid or expired token' });
+
+      const client = new OAuth2Client()
+
+      client.verifyIdToken({
+        idToken : token,
+        audience : process.env.OAUTH_CID
+      })
+      .then(() =>{
+        res.send("Auth successful")
+      })
+      .catch(() => {
+        res.status(401).json({ authenticated: false, message: 'Invalid or expired token' })
+      });
+
     }
     else res.status(200).json({ authenticated: true, message: 'Valid token'});
   });
