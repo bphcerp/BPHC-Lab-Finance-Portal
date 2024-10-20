@@ -1,6 +1,7 @@
-import { Button, Label, TextInput } from "flowbite-react";
+import { GoogleLogin } from "@react-oauth/google";
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toastError, toastSuccess, toastWarn } from "../toasts";
 
 const SignInUpPane = () => {
     const [isSignUp, setIsSignUp] = useState(false);
@@ -28,11 +29,10 @@ const SignInUpPane = () => {
             const confirmPwd = await hash(formData.get("confirmPwd") as string);
 
             if (pwd !== confirmPwd) {
-                alert("Passwords do not match!");
+                toastWarn("Passwords do not match!");
                 return;
             }
 
-            // Sign up request
             fetch(`${import.meta.env.VITE_BACKEND_URL}/user/`, {
                 method: "POST",
                 headers: {
@@ -42,20 +42,19 @@ const SignInUpPane = () => {
             })
                 .then((res) => {
                     if (res.status === 201) {
-                        alert("Registration successful!");
+                        toastSuccess("Registration successful!");
                         navigate("/dashboard");
                     } else if (res.status === 409) {
-                        alert("User already exists!");
+                        toastWarn("User already exists!");
                     } else {
-                        alert("Something went wrong");
+                        toastError("Something went wrong");
                     }
                 })
                 .catch((e) => {
-                    alert("Something went wrong");
+                    toastError("Something went wrong");
                     console.log(e);
                 });
         } else {
-            // Sign in request
             fetch(`${import.meta.env.VITE_BACKEND_URL}/user/login/`, {
                 method: "POST",
                 credentials: "include",
@@ -66,18 +65,18 @@ const SignInUpPane = () => {
             })
                 .then((res) => {
                     if (res.status === 401) {
-                        alert("Wrong Credentials");
+                        toastWarn("Wrong Credentials");
                         (e.target as HTMLFormElement).reset();
                     } else if (res.status === 200) {
                         navigate("/dashboard");
                     } else if (res.status === 404) {
-                        alert("User not found");
+                        toastError("User not found");
                     } else {
-                        alert("Something went wrong");
+                        toastError("Something went wrong");
                     }
                 })
                 .catch((e) => {
-                    alert("Something went wrong");
+                    toastError("Something went wrong");
                     console.log(e);
                 });
         }
@@ -88,29 +87,17 @@ const SignInUpPane = () => {
             <span className="text-3xl mb-3">{isSignUp ? "Sign Up" : "Sign In"}</span>
             <div className="inputArea w-full grow p-5">
                 <div className="flex flex-col w-full h-full">
-                    <form onSubmit={handleSubmit}>
-                        {isSignUp && (
-                            <>
-                                <Label className="text-base" htmlFor="name">Name</Label>
-                                <TextInput className="mt-2 mb-6" id="name" name="name"  required/>
-                            </>
-                        )}
-                        <Label className="text-base" htmlFor="email">Email</Label>
-                        <TextInput className="mt-2 mb-6" id="email" name="email" required/>
-                        <Label className="text-base" htmlFor="pwd">Password</Label>
-                        <TextInput type="password" className="mt-2 mb-4" id="pwd" name="pwd" required />
-                        {isSignUp && (
-                            <>
-                                <Label className="text-base" htmlFor="confirmPwd">Confirm Password</Label>
-                                <TextInput type="password" className="mt-2 mb-4" id="confirmPwd" name="confirmPwd" required />
-                            </>
-                        )}
-                        <div className="flex justify-center">
-                            <Button type="submit" className="w-28" color="blue">
-                                {isSignUp ? "Sign Up" : "Sign In"}
-                            </Button>
-                        </div>
-                    </form>
+                    <GoogleLogin
+                        text={isSignUp?"signup_with":"signin_with"}
+                        onSuccess={credentialResponse => {
+                            console.log(credentialResponse);
+                        }}
+                        onError={() => {
+                            toastError("Something went wrong!")
+                            toastError("Something went wrong")
+                            console.log('Login Failed');
+                        }}
+                    />
                     <div className="flex flex-col items-center mt-4">
                         {isSignUp ? (
                             <>

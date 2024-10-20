@@ -1,6 +1,7 @@
 import { Button, Label, Modal, TextInput } from "flowbite-react";
 import { Dispatch, FormEvent, FormEventHandler, FunctionComponent, SetStateAction, useEffect, useState } from "react";
 import { Project } from "./ProjectList";
+import { toastError, toastSuccess } from "../toasts";
 
 interface AddProjectProps {
   openModal: boolean;
@@ -88,13 +89,13 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     })
     .then((res) => {
         if (res.ok){
-            alert("Project added")
+            toastSuccess("Project added")
             setOpenModal(false)
         }
-        else alert("Error adding project")
+        else toastError("Error adding project")
     })
     .catch((e) =>{
-        alert("Error")
+        toastError("Error")
         console.error(e)
     })
     .finally(() => {

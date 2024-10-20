@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 
 import userRoutes from './routes/user';
 import projectRoutes from './routes/project';
+import expenseRoutes from './routes/expense';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use(cors({
 
 app.use('/api/user', userRoutes);
 app.use('/api/project', projectRoutes);
+app.use('/api/expense', expenseRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello, World!')

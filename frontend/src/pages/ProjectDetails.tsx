@@ -13,7 +13,7 @@ const ProjectDetails = () => {
             .then((res) => res.json())
             .then((data) => setProjectData(data))
             .catch((e) => {
-                alert("Something went wrong");
+                toastError("Something went wrong");
                 console.error(e);
             });
     }, [id]);

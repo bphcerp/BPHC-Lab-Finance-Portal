@@ -18,7 +18,7 @@ const DashBoard: FunctionComponent = () => {
                 })
             )
             .catch((e) => {
-                alert("Something went wrong");
+                toastError("Something went wrong");
                 console.error(e);
             });
 
@@ -40,7 +40,7 @@ const DashBoard: FunctionComponent = () => {
                 })
             )
             .catch((e) => {
-                alert("Something went wrong");
+                toastError("Something went wrong");
                 console.error(e);
             });
     };
