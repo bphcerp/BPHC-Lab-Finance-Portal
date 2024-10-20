@@ -2,9 +2,12 @@ import { FunctionComponent, useEffect, useState } from "react";
 import ProjectList, { Project } from "../components/ProjectList";
 import { Button } from "flowbite-react";
 import { AddProjectModal } from "../components/AddProjectModal";
+import { toastError } from "../toasts";
 
 const DashBoard: FunctionComponent = () => {
     const [grandTotal, setGrandTotal] = useState(0);
+    const [totalDue, setTotalDue] = useState(0);
+    const [totalUnsettled, setTotalUnsettled] = useState(0);
     const [projectData, setProjectData] = useState<null | Array<Project>>(null);
     const [openModal, setOpenModal] = useState(false);
 
@@ -15,6 +18,32 @@ const DashBoard: FunctionComponent = () => {
             .then((res) =>
                 res.json().then((data) => {
                     setGrandTotal(data.total_amount_sum);
+                })
+            )
+            .catch((e) => {
+                toastError("Something went wrong");
+                console.error(e);
+            });
+
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/totaldue/`, {
+            credentials: "include",
+        })
+            .then((res) =>
+                res.json().then((data) => {
+                    setTotalDue(data.total_due);
+                })
+            )
+            .catch((e) => {
+                toastError("Something went wrong");
+                console.error(e);
+            });
+
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/unsettled/`, {
+            credentials: "include",
+        })
+            .then((res) =>
+                res.json().then((data) => {
+                    setTotalUnsettled(data.total_unsettled);
                 })
             )
             .catch((e) => {
@@ -63,9 +92,25 @@ const DashBoard: FunctionComponent = () => {
                         })}
                     </p>
                 </div>
-                <div className="bg-red-100 p-4 rounded-lg shadow-md text-center">
-                    <p className="text-md font-semibold">Total Due</p>
-                    <p className="text-2xl font-bold mt-2 text-red-800">-</p>
+                <div className="grid grid-cols-2 space-x-2">
+                    <div className="bg-red-100 p-4 rounded-lg shadow-md text-center">
+                        <p className="text-md font-semibold">Total Due</p>
+                        <p className="text-2xl font-bold mt-2 text-red-800">
+                            {totalDue.toLocaleString("en-IN", {
+                                style: "currency",
+                                currency: "INR",
+                            })}
+                        </p>
+                    </div>
+                    <div className="bg-red-100 p-4 rounded-lg shadow-md text-center">
+                        <p className="text-md font-semibold">Total Unsettled Amount</p>
+                        <p className="text-2xl font-bold mt-2 text-red-800">
+                            {totalUnsettled.toLocaleString("en-IN", {
+                                style: "currency",
+                                currency: "INR",
+                            })}
+                        </p>
+                    </div>
                 </div>
             </div>
 

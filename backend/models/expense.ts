@@ -2,10 +2,11 @@ import mongoose, { Schema } from 'mongoose';
 
 const expenseSchema = new Schema({
   expenseReason: { type: String, required: true },
-  category: { type: String, required: true },
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'categories', required: true },
   amount: { type: Number, required: true },
-  reimbursedStatus: { type: Boolean, default: false },
-  paidBy : {type : String, required : true},
+  reimbursedID: { type: String, default: null },
+  paidBy: { type: String, required: true },
+  settled: { type: String, enum: ['Current', 'Savings', null], default: null },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

@@ -19,13 +19,10 @@ const SidebarComponent: React.FC<SidebarProps> = ({ isOpen }) => {
 
   return (
     <div
-      className={`fixed top-0 left-0 h-full w-64 bg-gray-100 text-gray-900 flex flex-col shadow-md transform transition-transform duration-300 ease-in-out ${
+      className={`fixed z-10 top-16 left-0 w-64 h-[calc(100vh-4rem)] bg-gray-100 text-gray-900 flex flex-col shadow-md transform transition-transform duration-300 ease-in-out ${
         isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
-      <div className="flex items-center justify-center h-16 border-b border-gray-300">
-        <h1 className="text-xl font-bold">Dashboard</h1>
-      </div>
       <nav className="flex flex-col flex-grow mt-4">
         <a
           href="/dashboard"

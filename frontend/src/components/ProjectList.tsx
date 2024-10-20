@@ -37,7 +37,7 @@ const ProjectList: FunctionComponent<ProjectListProps> = (props: ProjectListProp
                     <thead className="bg-gray-200">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <Checkbox color="blue" />
+                                <Checkbox className="focus:ring-0" color="blue" />
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Project Name
@@ -60,9 +60,9 @@ const ProjectList: FunctionComponent<ProjectListProps> = (props: ProjectListProp
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {props.projectData.map((project, key) => (
-                            <tr key={key} className={key % 2 ? "bg-gray-100" : "bg-white"}>
+                            <tr key={project._id} className={key % 2 ? "bg-gray-100" : "bg-white"}>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <Checkbox color="blue" />
+                                    <Checkbox className="focus:ring-0" color="blue" />
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <a className="hover:underline text-blue-600" href={`/project/${project._id}`}>

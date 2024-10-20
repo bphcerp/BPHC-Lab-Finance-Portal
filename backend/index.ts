@@ -8,6 +8,8 @@ import jwt from 'jsonwebtoken';
 import userRoutes from './routes/user';
 import projectRoutes from './routes/project';
 import expenseRoutes from './routes/expense';
+import categoryRoutes from './routes/category';
+import reimburseRoutes from './routes/reimburse';
 import { OAuth2Client } from 'google-auth-library';
 
 dotenv.config();
@@ -29,9 +31,11 @@ app.use(cors({
 app.use('/api/user', userRoutes);
 app.use('/api/project', projectRoutes);
 app.use('/api/expense', expenseRoutes);
+app.use('/api/category', categoryRoutes);
+app.use('/api/reimburse', reimburseRoutes);
 
 app.get('/', (req: Request, res: Response) => {
-  res.send('Hello, World!')
+  res.send('Welcome to LAMBDA LAB ERP API')
 });
 
 app.get('/api/check-auth', (req: Request, res: Response) => {
