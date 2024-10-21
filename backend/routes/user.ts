@@ -26,23 +26,36 @@ router.post('/logout', async (req: Request, res: Response) => {
    res.status(200).json({ message: 'Logged out successfully' });
 })
 
-  router.post('/login', async (req : Request, res : Response) => {
-	const credentialResponse = req.body
+router.post('/login', async (req: Request, res: Response) => {
+	const credentialResponse = req.body;
 	const client = new OAuth2Client()
 
-	client.verifyIdToken({
-		idToken : credentialResponse.credential,
-		audience : process.env.OAUTH_CID
-	})
-	.then(() => {
-		res.cookie("token",credentialResponse.credential)
-		res.send("Login Successful")
-	})
-	.catch(() => {
-		res.status(403).send("Invalid Credentials")
-	})
+	try {
+		const ticket = await client.verifyIdToken({
+			idToken: credentialResponse.credential,
+			audience: process.env.OAUTH_CID
+		});
+		
+		const { name, email } = ticket.getPayload() as any;
 
-})
+		let user = await UserModel.findOne({ email });
+		
+		if (!user) {
+			user = new UserModel({
+				name,
+				email,
+				isAdmin: false,
+			});
+			await user.save();
+		}
+
+		res.cookie("token", credentialResponse.credential);
+		res.send("Login Successful");
+	} catch (error) {
+		console.error(error);
+		res.status(403).send("Invalid Credentials");
+	}
+});
 
 router.post('/passlogin', async (req : Request, res : Response) => {
 	const {email, pwd} = req.body

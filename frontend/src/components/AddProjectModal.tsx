@@ -19,14 +19,17 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
   const [totalAmount, setTotalAmount] = useState<number | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
 
-  const calculateNumberOfYears = () => {
+  const calculateNumberOfYears = () => {    
     if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const yearsDiff = end.getFullYear() - start.getFullYear() + 1;
-      setNumberOfYears(yearsDiff > 0 ? yearsDiff : 0);
+      
+      const start = new Date(startDate).getTime();
+      const end = new Date(endDate).getTime();
+      const yearsDiff = (end - start)/(1000*60*60*24*365);
+      setNumberOfYears(yearsDiff >= 1 ? Math.floor(yearsDiff) : 0);
     }
   };
+
+  useEffect(calculateNumberOfYears,[startDate,endDate])
 
   const addProjectHead = () => {
     if (!newHeadName || numberOfYears <= 0) return;
@@ -144,7 +147,6 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                     value={startDate}
                     onChange={(e) => {
                     setStartDate(e.target.value);
-                    calculateNumberOfYears();
                     }}
                     required
                 />
@@ -158,7 +160,6 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                     value={endDate}
                     onChange={(e) => {
                     setEndDate(e.target.value);
-                    calculateNumberOfYears();
                     }}
                 />
               </div>
