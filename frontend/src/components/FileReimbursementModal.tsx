@@ -152,7 +152,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                 </div>
             </Modal.Body>
             <Modal.Footer>
-                <Button onClick={onClose} disabled={loading}>
+                <Button onClick={onClose} disabled={loading} color="failure">
                     Cancel
                 </Button>
                 <Button color="blue" onClick={handleSubmit} disabled={loading || !selectedProjectId || !selectedProjectHead || !reimbursementTitle || (selectedProjectHead != null && projects.find(p => p._id === selectedProjectId)!.project_heads[selectedProjectHead].reduce((acc, amount) => acc + amount, 0) < totalExpenseAmount)}>

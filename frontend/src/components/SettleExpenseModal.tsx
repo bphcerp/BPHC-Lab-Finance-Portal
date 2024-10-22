@@ -85,10 +85,10 @@ const SettleExpenseModal: React.FC<SettleExpenseModalProps> = ({
                 </div>
             </Modal.Body>
             <Modal.Footer>
-                <Button color="gray" onClick={onClose}>
+                <Button color="failure" onClick={onClose}>
                     Cancel
                 </Button>
-                <Button color="blue" onClick={handleSettle}>
+                <Button color="blue" disabled={settledStatus == null} onClick={handleSettle}>
                     Settle Expense
                 </Button>
             </Modal.Footer>
