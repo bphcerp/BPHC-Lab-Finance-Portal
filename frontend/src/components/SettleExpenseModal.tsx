@@ -57,7 +57,10 @@ const SettleExpenseModal: React.FC<SettleExpenseModalProps> = ({
                     <ul>
                         {selectedExpenses.map(expense => (
                             <li key={expense._id} className="mb-2">
-                                {expense.expenseReason} - {expense.amount.toFixed(2)} - {expense.paidBy}
+                                {expense.expenseReason} - {expense.amount.toLocaleString("en-IN", {
+                                            style: "currency",
+                                            currency: "INR",
+                                        })} - {expense.paidBy}
                             </li>
                         ))}
                     </ul>

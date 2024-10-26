@@ -144,7 +144,11 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                         {selectedExpenses.map(expense => (
                             !expense.reimbursedID && (
                                 <div key={expense._id} className="flex justify-between">
-                                    <span>{expense.expenseReason} - ${expense.amount.toFixed(2)}</span>
+                                    <span>{expense.expenseReason} - {expense.amount.toLocaleString("en-IN", {
+                                            style: "currency",
+                                            currency: "INR",
+                                        })}
+                                    </span>
                                 </div>
                             )
                         ))}

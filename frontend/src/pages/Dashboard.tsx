@@ -94,7 +94,7 @@ const DashBoard: FunctionComponent = () => {
                 </div>
                 <div className="grid grid-cols-2 space-x-2">
                     <div className="bg-red-100 p-4 rounded-lg shadow-md text-center">
-                        <p className="text-md font-semibold">Total Due</p>
+                        <p className="text-md font-semibold">Total Reimbursement Due</p>
                         <p className="text-2xl font-bold mt-2 text-red-800">
                             {totalDue.toLocaleString("en-IN", {
                                 style: "currency",

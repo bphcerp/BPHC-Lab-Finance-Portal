@@ -1,9 +1,11 @@
 import { Button, Checkbox } from 'flowbite-react';
 import React, { useEffect, useState } from 'react';
-import { toastError } from '../toasts';
+import { toastError, toastSuccess } from '../toasts';
 import AddExpenseModal, { Category } from '../components/AddExpenseModal';
 import SettleExpenseModal from '../components/SettleExpenseModal';
 import FileReimbursementModal from '../components/FileReimbursementModal';
+import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
     export interface Expense {
         _id: string;
@@ -23,6 +25,9 @@ import FileReimbursementModal from '../components/FileReimbursementModal';
         const [isModalOpen, setIsModalOpen] = useState(false)
         const [isSettleModalOpen, setIsSettleModalOpen] = useState(false)
         const [isFileReimbursementModalOpen, setIsFileReimbursementModalOpen] = useState(false)
+        const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+        const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+
 
         const handleFileReimbursement = async (expenseIds: string[], projectId: string, projectHead: string, totalAmount : number, title : string) => {
             try {
@@ -102,7 +107,7 @@ import FileReimbursementModal from '../components/FileReimbursementModal';
 
         useEffect(() => {
             fetchExpenses();
-        }, []);
+        }, [expenses]);
 
         const handleSelectAll = () => {
             if (selectedExpenses.size === expenses.length) {
@@ -121,7 +126,34 @@ import FileReimbursementModal from '../components/FileReimbursementModal';
                 newSelectedExpenses.add(id);
             }
             setSelectedExpenses(newSelectedExpenses);
-        };        
+        };
+        
+        const handleDeleteExpense = async () => {
+            if (!expenseToDelete) return;
+            try {
+                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/${expenseToDelete._id}`, {
+                    method: 'DELETE',
+                });
+        
+                if (!response.ok) {
+                    throw new Error('Failed to delete expense');
+                }
+        
+                setExpenses(expenses.filter(exp => exp._id !== expenseToDelete._id));
+                toastSuccess('Expense deleted successfully');
+            } catch (error) {
+                toastError('Error deleting expense');
+                console.error('Error deleting expense:', error);
+            } finally {
+                setIsDeleteModalOpen(false);
+            }
+        };
+        
+        const openDeleteModal = (expense: Expense) => {
+            setExpenseToDelete(expense);
+            setIsDeleteModalOpen(true);
+        };
+        
 
         return (
             <div className="container mx-auto p-4">
@@ -141,6 +173,12 @@ import FileReimbursementModal from '../components/FileReimbursementModal';
                     onClose={() => setIsFileReimbursementModalOpen(false)}
                     selectedExpenses={expenses.filter(expense => selectedExpenses.has(expense._id))}
                     onFileReimbursement={handleFileReimbursement}
+                />
+                <DeleteConfirmationModal
+                    isOpen={isDeleteModalOpen}
+                    onClose={() => setIsDeleteModalOpen(false)}
+                    onDelete={handleDeleteExpense}
+                    expenseReason={expenseToDelete?.expenseReason || ""}
                 />
                 <h1 className="text-2xl font-bold mb-4">Expenses</h1>
                 <div className='flex justify-between items-center mb-2'>
@@ -168,8 +206,9 @@ import FileReimbursementModal from '../components/FileReimbursementModal';
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid By</th> 
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Settled</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reimbursed</th>
+                                <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Settled</th>
+                                <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reimbursed</th>
+                                <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -185,10 +224,24 @@ import FileReimbursementModal from '../components/FileReimbursementModal';
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">{expense.expenseReason}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{expense.category.name}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{expense.amount.toFixed(2)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap">{expense.amount.toLocaleString("en-IN", {
+                                            style: "currency",
+                                            currency: "INR",
+                                        })}
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap">{expense.paidBy}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{expense.settled ?? "No"}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{expense.reimbursedID ? "Yes" : 'No'}</td>
+                                    <td className="px-2 py-2 w-20 text-center whitespace-nowrap">
+                                        {expense.reimbursedID ? "NA" : 
+                                            <div className='flex justify-center divide-x-2'>
+                                                <button className='w-10 flex justify-center hover:cursor-pointer'><RiEdit2Line color='blue'/></button>
+                                                {expense.settled ? <></> : 
+                                                    <button className='w-10 flex justify-center hover:cursor-pointer' onClick={() => openDeleteModal(expense)}><RiDeleteBin6Line color='red'/></button>
+                                                }
+                                            </div>
+                                        }
+                                    </td>
                                 </tr>
                             ))}
                             {expenses.length === 0 && (

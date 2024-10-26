@@ -32,7 +32,7 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const expenses = await ExpenseModel.find()
       .populate('category')
-      .sort({ reimbursedID: 1, createdAt: 1 });
+      .sort({ settled:1,reimbursedID: 1, createdAt: 1 });
       
     res.status(200).json(expenses);
   } catch (error) {
