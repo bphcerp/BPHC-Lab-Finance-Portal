@@ -49,7 +49,11 @@ router.post('/login', async (req: Request, res: Response) => {
 			await user.save();
 		}
 
-		res.cookie("token", credentialResponse.credential);
+		res.cookie("token", credentialResponse.credential, {
+			secure : process.env.DEPLOYED_STATUS === "true",
+			httpOnly : true,
+			sameSite : "none"
+		});
 		res.send("Login Successful");
 	} catch (error) {
 		console.error(error);
@@ -74,6 +78,7 @@ router.post('/passlogin', async (req : Request, res : Response) => {
 			expires : new Date(Date.now() + 3600*1000),
 			path : "/",
 			httpOnly : true,
+			secure : process.env.DEPLOYED_STATUS === "true",
 			sameSite : "lax"
 		})
 		res.send("Login Successful")
