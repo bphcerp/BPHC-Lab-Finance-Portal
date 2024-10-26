@@ -1,10 +1,9 @@
-    import { Button, Checkbox } from 'flowbite-react';
-    import React, { useEffect, useState } from 'react';
-    import { toastError, toastSuccess } from '../toasts';
-    import AddExpenseModal, { Category } from '../components/AddExpenseModal';
+import { Button, Checkbox } from 'flowbite-react';
+import React, { useEffect, useState } from 'react';
+import { toastError } from '../toasts';
+import AddExpenseModal, { Category } from '../components/AddExpenseModal';
 import SettleExpenseModal from '../components/SettleExpenseModal';
 import FileReimbursementModal from '../components/FileReimbursementModal';
-import AddCategoryModal from '../components/AddCategoryModal';
 
     export interface Expense {
         _id: string;
@@ -24,7 +23,6 @@ import AddCategoryModal from '../components/AddCategoryModal';
         const [isModalOpen, setIsModalOpen] = useState(false)
         const [isSettleModalOpen, setIsSettleModalOpen] = useState(false)
         const [isFileReimbursementModalOpen, setIsFileReimbursementModalOpen] = useState(false)
-        const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
 
         const handleFileReimbursement = async (expenseIds: string[], projectId: string, projectHead: string, totalAmount : number, title : string) => {
             try {
@@ -123,27 +121,6 @@ import AddCategoryModal from '../components/AddCategoryModal';
                 newSelectedExpenses.add(id);
             }
             setSelectedExpenses(newSelectedExpenses);
-        };
-
-        const handleAddCategory = async (name: string, type: string): Promise<void> => {
-            try {
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ name, type }),
-                });
-        
-                if (!response.ok) {
-                    throw new Error((await response.json()).message);
-                }
-        
-                toastSuccess('Category added');
-            } catch (error) {
-                console.error('Error adding category:', error);
-                toastError((error as Error).message)
-            }
         };        
 
         return (
@@ -165,23 +142,15 @@ import AddCategoryModal from '../components/AddCategoryModal';
                     selectedExpenses={expenses.filter(expense => selectedExpenses.has(expense._id))}
                     onFileReimbursement={handleFileReimbursement}
                 />
-                <AddCategoryModal
-                    isOpen={isCategoryModalOpen}
-                    onClose={() => setIsCategoryModalOpen(false)}
-                    onAddCategory={handleAddCategory}
-                />
                 <h1 className="text-2xl font-bold mb-4">Expenses</h1>
                 <div className='flex justify-between items-center mb-2'>
                     <Button color="blue" size="md" className='rounded-md' onClick={() => {setIsModalOpen(true)}}>Add Expense</Button>
-                    <div className='flex space-x-2'>
-                        <Button color="blue" className='rounded-md' onClick={() => setIsCategoryModalOpen(true)}>Add Category</Button>
-                        {selectedExpenses.size>0?
+                    {selectedExpenses.size>0?
                             <div className='flex space-x-2'>
                             <Button color="blue" size="md" className='rounded-md' onClick={() => {setIsSettleModalOpen(true)}}>{"Settle Expense" + (selectedExpenses.size>1?"s":"")}</Button>
                             <Button color="blue" size="md" className='rounded-md' onClick={() => {setIsFileReimbursementModalOpen(true)}}>File for Reimbursement</Button>
                         </div>:<></>    
-                        }
-                    </div>
+                    }
                 </div>
                 <div className="bg-white shadow-md rounded-lg overflow-hidden"> 
                     <table className="min-w-full divide-y divide-gray-200">
