@@ -1,6 +1,5 @@
-import { Button, Label, Modal, TextInput } from "flowbite-react";
-import { Dispatch, FormEvent, FormEventHandler, FunctionComponent, SetStateAction, useEffect, useState } from "react";
-import { Project } from "./ProjectList";
+import { Button, Label, Modal, TextInput, FileInput } from "flowbite-react";
+import { Dispatch, FormEventHandler, FunctionComponent, SetStateAction, useEffect, useState } from "react";
 import { toastError, toastSuccess } from "../toasts";
 
 interface AddProjectProps {
@@ -9,27 +8,33 @@ interface AddProjectProps {
 }
 
 export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal, setOpenModal }) => {
-  const [projectName, setProjectName] = useState<string>("")
-  const [startDate, setStartDate] = useState<string>("")
-  const [endDate, setEndDate] = useState<string>("")
-  const [projectHeads, setProjectHeads] = useState<{ [key: string]: number[] }>({})
-  const [headTotals, setHeadTotals] = useState<{ [key: string]: number }>({})
-  const [numberOfYears, setNumberOfYears] = useState<number>(0)
-  const [newHeadName, setNewHeadName] = useState<string>("")
-  const [totalAmount, setTotalAmount] = useState<number | null>(null)
-  const [loading, setLoading] = useState<boolean>(false)
+  const [projectName, setProjectName] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [projectHeads, setProjectHeads] = useState<{ [key: string]: number[] }>({});
+  const [headTotals, setHeadTotals] = useState<{ [key: string]: number }>({});
+  const [numberOfYears, setNumberOfYears] = useState<number>(0);
+  const [newHeadName, setNewHeadName] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [sanctionLetter, setSanctionLetter] = useState<File | null>(null);
+  const [totalAmount, setTotalAmount] = useState<number | null>(null); // Allow user input for total amount
 
-  const calculateNumberOfYears = () => {    
+  // New states for PIs and Co-PIs
+  const [pis, setPIs] = useState<string[]>([]);
+  const [newPI, setNewPI] = useState<string>("");
+  const [coPIs, setCoPIs] = useState<string[]>([]);
+  const [newCoPI, setNewCoPI] = useState<string>("");
+
+  const calculateNumberOfYears = () => {
     if (startDate && endDate) {
-      
       const start = new Date(startDate).getTime();
       const end = new Date(endDate).getTime();
-      const yearsDiff = (end - start)/(1000*60*60*24*365);
+      const yearsDiff = (end - start) / (1000 * 60 * 60 * 24 * 365);
       setNumberOfYears(yearsDiff >= 1 ? Math.floor(yearsDiff) : 0);
     }
   };
 
-  useEffect(calculateNumberOfYears,[startDate,endDate])
+  useEffect(calculateNumberOfYears, [startDate, endDate]);
 
   const addProjectHead = () => {
     if (!newHeadName || numberOfYears <= 0) return;
@@ -52,10 +57,6 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     setHeadTotals((prevTotals) => ({ ...prevTotals, [headName]: headTotal }));
   };
 
-  const calculateGrandTotal = () => {
-    return Object.values(headTotals).reduce((acc, val) => acc + val, 0);
-  };
-
   const editProjectHead = (headName: string) => {
     const updatedHeadTotals = { ...headTotals };
     delete updatedHeadTotals[headName];
@@ -71,41 +72,68 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     setHeadTotals(updatedHeadTotals);
   };
 
-  const handleAddProject : FormEventHandler<HTMLFormElement> = (e :  FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    const newProject: Project = {
-        project_name: projectName,
-        start_date: startDate ? new Date(startDate) : null,
-        end_date: endDate ? new Date(endDate) : null,
-        project_heads: projectHeads,
-        total_amount: totalAmount!,
+  // Functions for managing PIs and Co-PIs
+  const addPI = () => {
+    if (newPI) {
+      setPIs((prevPIs) => [...prevPIs, newPI]);
+      setNewPI("");
+    }
+  };
+
+  const deletePI = (index: number) => {
+    setPIs((prevPIs) => prevPIs.filter((_, i) => i !== index));
+  };
+
+  const addCoPI = () => {
+    if (newCoPI) {
+      setCoPIs((prevCoPIs) => [...prevCoPIs, newCoPI]);
+      setNewCoPI("");
+    }
+  };
+
+  const deleteCoPI = (index: number) => {
+    setCoPIs((prevCoPIs) => prevCoPIs.filter((_, i) => i !== index));
+  };
+
+  const handleAddProject: FormEventHandler<HTMLFormElement> = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    // Create FormData to handle both the project data and the file
+    const formData = new FormData();
+    formData.append("project_name", projectName);
+    formData.append("start_date", startDate ? new Date(startDate).toISOString() : "");
+    formData.append("end_date", endDate ? new Date(endDate).toISOString() : "");
+    formData.append("total_amount", totalAmount!.toString());
+    formData.append("pis", JSON.stringify(pis));  // Convert arrays to JSON strings
+    formData.append("copis", JSON.stringify(coPIs));
+    formData.append("project_heads", JSON.stringify(projectHeads)); // Convert Map or object to JSON string
+
+    // Append sanction letter file if present
+    if (sanctionLetter) {
+        formData.append("sanction_letter", sanctionLetter);
     }
 
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`,{
-        method : "POST",
-        headers :{
-            "content-type" : "application/json"
-        },
-        body : JSON.stringify(newProject),
-        credentials : "include"
-    })
-    .then((res) => {
-        if (res.ok){
-            toastSuccess("Project added")
-            setOpenModal(false)
-        }
-        else toastError("Error adding project")
-    })
-    .catch((e) =>{
-        toastError("Error")
-        console.error(e)
-    })
-    .finally(() => {
-        setLoading(false)
-    })
+    try {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
+            method: "POST",
+            body: formData, // FormData is used here, so no need for 'Content-Type: application/json'
+            credentials: "include",
+        });
 
-  }
+        if (res.ok) {
+            toastSuccess("Project added");
+            setOpenModal(false);
+        } else {
+            toastError("Error adding project");
+        }
+    } catch (e) {
+        toastError("Error");
+        console.error(e);
+    } finally {
+        setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!openModal) {
@@ -115,7 +143,10 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
       setProjectHeads({});
       setHeadTotals({});
       setNumberOfYears(0);
-      setTotalAmount(null)
+      setTotalAmount(null); // Reset total amount when closing modal
+      setPIs([]);
+      setCoPIs([]);
+      setSanctionLetter(null);
     }
   }, [openModal]);
 
@@ -123,7 +154,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     <div>
       <Modal show={openModal} size="lg" popup onClose={() => setOpenModal(false)}>
         <Modal.Header className="p-5">
-            <h3 className="text-xl font-medium text-gray-900 dark:text-white">Add New Project</h3>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">Add New Project</h3>
         </Modal.Header>
         <Modal.Body>
           <form onSubmit={handleAddProject} className="space-y-4">
@@ -142,91 +173,118 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               <div className="w-1/2">
                 <Label htmlFor="start_date" value="Start Date" />
                 <TextInput
-                    id="start_date"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => {
-                    setStartDate(e.target.value);
-                    }}
-                    required
+                  id="start_date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  required
                 />
               </div>
 
               <div className="w-1/2">
                 <Label htmlFor="end_date" value="End Date" />
                 <TextInput
-                    id="end_date"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => {
-                    setEndDate(e.target.value);
-                    }}
+                  id="end_date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
             </div>
 
             <div>
               <Label htmlFor="years" value="Number of Years" />
-              <TextInput
-                id="years"
-                type="number"
-                value={numberOfYears}
-                readOnly
-              />
+              <TextInput id="years" type="number" value={numberOfYears} readOnly />
             </div>
 
+            {/* Project Heads Section */}
             <div>
-              <Label htmlFor="new_head" value="New Project Head" />
+              <Label htmlFor="project_head" value="Project Heads" />
               <div className="flex space-x-2">
                 <TextInput
-                  id="new_head"
-                  placeholder="Enter project head name"
+                  id="project_head"
+                  placeholder="Enter Project Head Name"
                   value={newHeadName}
                   onChange={(e) => setNewHeadName(e.target.value)}
                 />
-                <Button color="blue" size="sm" onClick={addProjectHead}>Add Head</Button>
+                <Button color="blue" size="sm" onClick={addProjectHead}>
+                  Add Project Head
+                </Button>
               </div>
-
-              {Object.keys(projectHeads).map((headName) => (
-                <div key={headName} className="mt-4">
-                  <h4 className="font-medium">{headName}</h4>
-                  {!headTotals[headName] ? (
-                    <div className="space-y-2">
-                      {projectHeads[headName].map((value, yearIndex) => (
-                        <div key={yearIndex} className="flex items-center space-x-2">
-                          <Label htmlFor={`${headName}_year_${yearIndex}`} value={`Year ${yearIndex + 1}`} />
-                          <TextInput
-                            id={`${headName}_year_${yearIndex}`}
-                            type="number"
-                            value={value}
-                            onChange={(e) => handleProjectHeadYearChange(headName, yearIndex, Number(e.target.value))}
-                          />
-                        </div>
-                      ))}
-                      <Button size="xs"  color="blue" onClick={() => saveProjectHead(headName)}>Save Head</Button>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex space-x-4">
-                        {projectHeads[headName].map((value, yearIndex) => (
-                          <div key={yearIndex}>
-                            <span>Year {yearIndex + 1}: {value}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="font-medium">Total: {headTotals[headName]}</div>
-                      <div className="flex space-x-2">
-                        <Button size="xs"  color="blue" onClick={() => editProjectHead(headName)}>Edit Head</Button>
-                        <Button size="xs"  color="failure" onClick={() => deleteProjectHead(headName)}>Delete Head</Button>
-                      </div>
-                    </div>
-                  )}
+              {Object.keys(projectHeads).map((headName, index) => (
+                <div key={index} className="mt-2">
+                  <span>{headName}</span>
+                  <div className="flex space-x-2">
+                    {projectHeads[headName].map((yearValue, yearIndex) => (
+                      <TextInput
+                        key={yearIndex}
+                        type="number"
+                        value={yearValue}
+                        onChange={(e) =>
+                          handleProjectHeadYearChange(headName, yearIndex, Number(e.target.value))
+                        }
+                      />
+                    ))}
+                    <Button color="green" size="xs" onClick={() => saveProjectHead(headName)}>
+                      Save
+                    </Button>
+                    <Button color="yellow" size="xs" onClick={() => editProjectHead(headName)}>
+                      Edit
+                    </Button>
+                    <Button color="red" size="xs" onClick={() => deleteProjectHead(headName)}>
+                      Remove
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-4 font-medium">
-              Project Head Total: {calculateGrandTotal()}
+            {/* PIs Section */}
+            <div>
+              <Label htmlFor="pi" value="PIs" />
+              <div className="flex space-x-2">
+                <TextInput
+                  id="pi"
+                  placeholder="Enter PI Name"
+                  value={newPI}
+                  onChange={(e) => setNewPI(e.target.value)}
+                />
+                <Button color="blue" size="sm" onClick={addPI}>
+                  Add PI
+                </Button>
+              </div>
+              {pis.map((pi, index) => (
+                <div key={index} className="mt-2 flex justify-between items-center">
+                  <span>{pi}</span>
+                  <Button color="red" size="xs" onClick={() => deletePI(index)}>
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            {/* Co-PIs Section */}
+            <div>
+              <Label htmlFor="co_pi" value="Co-PIs" />
+              <div className="flex space-x-2">
+                <TextInput
+                  id="co_pi"
+                  placeholder="Enter Co-PI Name"
+                  value={newCoPI}
+                  onChange={(e) => setNewCoPI(e.target.value)}
+                />
+                <Button color="blue" size="sm" onClick={addCoPI}>
+                  Add Co-PI
+                </Button>
+              </div>
+              {coPIs.map((coPI, index) => (
+                <div key={index} className="mt-2 flex justify-between items-center">
+                  <span>{coPI}</span>
+                  <Button color="red" size="xs" onClick={() => deleteCoPI(index)}>
+                    Remove
+                  </Button>
+                </div>
+              ))}
             </div>
 
             <div>
@@ -234,16 +292,23 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               <TextInput
                 id="total_amount"
                 type="number"
-                placeholder="Enter total amount"
-                value={totalAmount!}
+                value={totalAmount ?? ""} // Use nullish coalescing to avoid uncontrolled input warning
                 onChange={(e) => setTotalAmount(Number(e.target.value))}
                 required
               />
             </div>
 
-            <div className="w-full">
-              <Button isProcessing={loading} color="blue" type="submit">Save Project</Button>
+            <div>
+              <Label htmlFor="sanction_letter" value="Upload Sanction Letter" />
+              <FileInput
+                id="sanction_letter"
+                onChange={(e) => setSanctionLetter(e.target.files ? e.target.files[0] : null)}
+              />
             </div>
+
+            <Button type="submit" disabled={loading}>
+              {loading ? "Saving..." : "Save Project"}
+            </Button>
           </form>
         </Modal.Body>
       </Modal>

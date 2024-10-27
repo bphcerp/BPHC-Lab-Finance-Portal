@@ -10,10 +10,38 @@ export interface Project {
         [key: string]: number[];
     };
     total_amount: number;
+    pis: string[];
+    copis: string[];
+    sanction_letter?: File | null;
+    sanction_letter_file_id? : string
 }
 
 interface ProjectListProps {
     projectData: Array<Project> | null;
+}
+
+// Function to fetch and open the sanction letter
+const fetchSanctionLetter = async (projectId: string) => {
+    try {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectId}/sanction_letter`, {
+            method: 'GET',
+            credentials : "include",
+            headers: {
+                'Content-Type': 'application/pdf',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch the sanction letter');
+        }
+
+        const blob = await response.blob(); // Get the file as a Blob
+        const url = window.URL.createObjectURL(blob); // Create a URL for the Blob
+        window.open(url); // Open the URL in a new tab
+    } catch (error) {
+        console.error(error);
+        alert('Error fetching the sanction letter. Please try again later.');
+    }
 }
 
 const getUniqueProjectHeads = (projects: Project[] | null): string[] => {
@@ -56,6 +84,9 @@ const ProjectList: FunctionComponent<ProjectListProps> = (props: ProjectListProp
                                     {head}
                                 </th>
                             ))}
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Sanction Letter
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -91,6 +122,14 @@ const ProjectList: FunctionComponent<ProjectListProps> = (props: ProjectListProp
                                             : "-"}
                                     </td>
                                 ))}
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {project.sanction_letter_file_id?<button
+                                        onClick={() => fetchSanctionLetter(project._id!)} // Ensure project._id is defined
+                                        className="text-blue-600 hover:underline"
+                                    >
+                                        View
+                                    </button>:"-"}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
