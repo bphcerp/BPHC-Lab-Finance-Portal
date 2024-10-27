@@ -1,8 +1,11 @@
 import express, { Request, Response } from 'express';
 import { ReimbursementModel } from '../models/reimburse';
 import { ExpenseModel } from '../models/expense';
+import { authenticateToken } from '../middleware/authenticateToken';
 
 const router = express.Router();
+
+router.use(authenticateToken);
 
 router.get('/', async (req: Request, res: Response) => {
     try {

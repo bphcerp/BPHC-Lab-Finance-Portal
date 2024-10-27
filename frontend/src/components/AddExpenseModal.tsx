@@ -24,7 +24,9 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category/expense`);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category/expense`, {
+        credentials : "include"
+      });
       const data = await response.json();
       setCategories(data);
     } catch (error) {
@@ -40,6 +42,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
           headers: {
               'Content-Type': 'application/json',
           },
+          credentials : "include",
           body: JSON.stringify({ name, type }),
       });
 

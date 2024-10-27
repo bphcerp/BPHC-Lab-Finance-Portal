@@ -1,9 +1,8 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser'
-import jwt from 'jsonwebtoken';
 
 import userRoutes from './routes/user';
 import projectRoutes from './routes/project';
@@ -11,6 +10,7 @@ import expenseRoutes from './routes/expense';
 import categoryRoutes from './routes/category';
 import reimburseRoutes from './routes/reimburse';
 import { OAuth2Client } from 'google-auth-library';
+import { authenticateToken } from './middleware/authenticateToken';
 
 dotenv.config();
 
@@ -34,37 +34,14 @@ app.use('/api/expense', expenseRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/reimburse', reimburseRoutes);
 
+const client = new OAuth2Client(process.env.OAUTH_CID);
+
 app.get('/', (req: Request, res: Response) => {
   res.send('Welcome to LAMBDA LAB ERP API')
 });
 
-app.get('/api/check-auth', (req: Request, res: Response) => {
-  const token = req.cookies.token;
-
-  if (!token) {
-    res.status(401).json({ authenticated: false, message: 'No token found' });
-    return
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET_KEY!, async (err: any, decoded: any) => {
-    if (err || !decoded) {
-
-      const client = new OAuth2Client()
-
-      client.verifyIdToken({
-        idToken : token,
-        audience : process.env.OAUTH_CID
-      })
-      .then(() =>{
-        res.send("Auth successful")
-      })
-      .catch(() => {
-        res.status(401).json({ authenticated: false, message: 'Invalid or expired token' })
-      });
-
-    }
-    else res.status(200).json({ authenticated: true, message: 'Valid token'});
-  });
+app.get('/api/check-auth',authenticateToken, (req: Request, res: Response) => {
+  res.send('Welcome to LAMBDA LAB ERP API (Authenticated)')
 });
 
 app.listen(PORT, () => {

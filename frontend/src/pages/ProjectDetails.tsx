@@ -24,7 +24,7 @@ const ProjectDetails = () => {
 
     const fetchReimbursements = async (head: string) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse/${id}/${head}`);
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse/${id}/${head}`, {credentials : "include"});
             const data = await response.json();
             setReimbursements(data);
             setIsModalOpen(true);

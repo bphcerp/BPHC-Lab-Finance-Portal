@@ -33,6 +33,7 @@ import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
             try {
                 const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse`, {
                     method: 'POST',
+                    credentials : "include",
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -54,6 +55,7 @@ import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
             try {
                 const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/settle`, {
                     method: 'PATCH',
+                    credentials : "include",
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -75,6 +77,7 @@ import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
             try {
                 const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense`, {
                     method: 'POST',
+                    credentials : "include",
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -96,7 +99,7 @@ import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
         const fetchExpenses = async () => {
             try {
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense`);
+                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense`, {credentials : "include"});
                 const data = await response.json();
                 setExpenses(data);
             } catch (error) {
@@ -132,6 +135,7 @@ import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
             if (!expenseToDelete) return;
             try {
                 const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/${expenseToDelete._id}`, {
+                    credentials : "include",
                     method: 'DELETE',
                 });
         

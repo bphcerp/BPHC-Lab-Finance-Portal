@@ -1,8 +1,11 @@
 import express, { Request, Response } from 'express';
 import { ExpenseModel } from '../models/expense'; 
 import { CategoryModel } from '../models/category';
+import { authenticateToken } from '../middleware/authenticateToken';
 
 const router = express.Router();
+
+router.use(authenticateToken);
 
 router.post('/', async (req: Request, res: Response) => {
   try {

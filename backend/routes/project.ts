@@ -1,7 +1,10 @@
 import { Router, Response, Request } from "express";
 import { ProjectModel } from "../models/project";
+import { authenticateToken } from "../middleware/authenticateToken";
 
 const router : Router = Router()
+
+router.use(authenticateToken);
 
 router.get('/grandtotal', async (req: Request, res: Response) => {
 	try {

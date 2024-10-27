@@ -3,12 +3,13 @@ import { UserModel } from "../models/user";
 import { OAuth2Client } from "google-auth-library";
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
+import { authenticateToken } from "../middleware/authenticateToken";
 
 dotenv.config();
 
 const router : Router = Router()
   
-router.get('/', async (req: Request, res: Response) => {
+router.get('/',authenticateToken, async (req: Request, res: Response) => {
 	try {
 	  const users = await UserModel.find();
 	  res.json(users);
@@ -17,7 +18,7 @@ router.get('/', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/logout', async (req: Request, res: Response) => {
+router.post('/logout',authenticateToken, async (req: Request, res: Response) => {
 	res.clearCookie('token', {
 	   httpOnly: true,
 	   sameSite: 'lax',
@@ -52,7 +53,7 @@ router.post('/login', async (req: Request, res: Response) => {
 		res.cookie("token", credentialResponse.credential, {
 			secure : process.env.DEPLOYED_STATUS === "true",
 			httpOnly : true,
-			sameSite : "none"
+			sameSite : process.env.DEPLOYED_STATUS === "true"?"none":"lax"
 		});
 		res.send("Login Successful");
 	} catch (error) {
@@ -79,14 +80,14 @@ router.post('/passlogin', async (req : Request, res : Response) => {
 			path : "/",
 			httpOnly : true,
 			secure : process.env.DEPLOYED_STATUS === "true",
-			sameSite : "lax"
+			sameSite : process.env.DEPLOYED_STATUS === "true"?"none":"lax"
 		})
 		res.send("Login Successful")
 	}
 	else res.status(401).send(`Wrong Credentials`)
 })
   
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id',authenticateToken, async (req: Request, res: Response) => {
 	try {
 	  const { name, email, isAdmin } = req.body;
 	  const updatedUser = await UserModel.findByIdAndUpdate(
@@ -103,7 +104,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 	}
 });
   
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id',authenticateToken, async (req: Request, res: Response) => {
 	try {
 	  const deletedUser = await UserModel.findByIdAndDelete(req.params.id);
 	  if (!deletedUser) {
