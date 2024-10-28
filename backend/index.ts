@@ -34,7 +34,7 @@ app.use('/api/expense', expenseRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/reimburse', reimburseRoutes);
 
-const client = new OAuth2Client(process.env.OAUTH_CID);
+app.use(express.static("public"))
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Welcome to LAMBDA LAB ERP API')

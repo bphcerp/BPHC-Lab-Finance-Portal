@@ -4,7 +4,9 @@ import multer from "multer";
 import mongoose from "mongoose";
 import { Readable } from "stream";
 import { authenticateToken } from "../middleware/authenticateToken";
-import path from "path"; // Import path to handle file paths
+import path from "path";
+import { ReimbursementModel } from "../models/reimburse";
+import puppeteer from "puppeteer";
 
 const router: Router = Router();
 const conn = mongoose.connection;
@@ -140,8 +142,6 @@ router.get('/:id/sanction_letter', async (req: Request, res: Response) => {
             return;
         }
 
-		console.log("haha")
-
         const fileId = project.sanction_letter_file_id;
 
         // Create a download stream from GridFS
@@ -168,6 +168,126 @@ router.get('/:id/sanction_letter', async (req: Request, res: Response) => {
         console.error(`Error fetching sanction letter for project ID ${req.params.id}: ${(error as Error).message}`);
         res.status(500).json({ message: 'Error fetching sanction letter', error: (error as Error).message });
         return;
+    }
+});
+
+router.get('/:id/util_cert', async (req, res) => {
+    try {
+        const projectId = req.params.id;
+
+        // 1. Fetch the project by its ID
+        const project = await ProjectModel.findById(projectId);
+        if (!project) {
+            res.status(404).send('Project not found');
+            return;
+        }
+
+        // 2. Find all reimbursements related to this project
+        const reimbursements = await ReimbursementModel.find({ project: projectId });
+
+        // Initialize a map to track expenses per project head
+        const expenseSummary = new Map();
+
+        // 3. Calculate total expenses per project head
+        reimbursements.forEach((reimbursement) => {
+            const head = reimbursement.projectHead;
+            const totalAmount = reimbursement.totalAmount;
+
+            // Sum up the expenses per head
+            if (expenseSummary.has(head)) {
+                expenseSummary.set(head, expenseSummary.get(head) + totalAmount);
+            } else {
+                expenseSummary.set(head, totalAmount);
+            }
+        });
+
+        // 4. Generate HTML for the utilization certificate
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Utilization Certificate</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 10px 20px; }
+                .header { display: flex; justify-content: space-between; align-items: center; padding}
+                .company-info { text-align: center; margin: 20px 0; } /* Center text and add margin */
+                .header img { max-width: 100px; height: auto; }
+                h1 { text-align: center;}
+                h2 { text-decoration: underline; text-align: center; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { padding: 8px; text-align: left; border: 1px solid #ccc; }
+                th { background-color: #f2f2f2; }
+                tfoot { font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <img src="${req.protocol}://${req.get('host')}/logo.jpg" alt="LAMBDA Logo" /> <!-- Logo on the left -->
+                <div class="company-info">
+                    <h1>LAMBDA Lab</h1> <!-- Company Name -->
+                    <i>BITS Pilani, Hyderabad Campus</i> <!-- Place -->
+                </div>
+                <img src="${req.protocol}://${req.get('host')}/bitslogo.png" alt="BITS Pilani Logo" /> <!-- Logo on the right -->
+            </div>
+            <h2>Utilization Certificate</h2>
+            <h3>Project Details</h3>
+            <p><strong>Project Name:</strong> ${project.project_name}</p>
+            <p><strong>Start Date:</strong> ${project.start_date ? project.start_date.toDateString() : 'N/A'}</p>
+            <p><strong>End Date:</strong> ${project.end_date ? project.end_date.toDateString() : 'N/A'}</p>
+            <p><strong>Total Allocated Amount:</strong> Rs. ${project.total_amount}</p>
+
+            <h3>Project Head Details</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Head</th>
+                        <th>Allocated Amount</th>
+                        <th>Expenses</th>
+                        <th>Remaining</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${Array.from(project.project_heads).map(([head, amounts]) => {
+                        const totalAllocated = amounts.reduce((sum, amount) => sum + amount, 0);
+                        const expenses = expenseSummary.get(head) || 0;
+                        const remaining = totalAllocated - expenses;
+
+                        return `
+                        <tr>
+                            <td>${head}</td>
+                            <td>Rs. ${totalAllocated}</td>
+                            <td>Rs. ${expenses}</td>
+                            <td>Rs. ${remaining}</td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td>Total</td>
+                        <td>Rs. ${Array.from(project.project_heads).reduce((sum, [head, amounts]) => sum + amounts.reduce((a, b) => a + b, 0), 0)}</td>
+                        <td>Rs. ${Array.from(expenseSummary.values()).reduce((sum, val) => sum + val, 0)}</td>
+                        <td>Rs. ${Array.from(project.project_heads).reduce((sum, [head, amounts]) => sum + amounts.reduce((a, b) => a + b, 0), 0) - Array.from(expenseSummary.values()).reduce((sum, val) => sum + val, 0)}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            <p style="text-align: right;">Generated on: ${new Date().toLocaleDateString()}</p>
+        </body>
+        </html>`;
+
+        // 5. Launch Puppeteer to generate PDF
+        const browser = await puppeteer.launch({ headless: false })
+        const page = await browser.newPage()
+        await page.setContent(html, { waitUntil: 'networkidle0' })
+        const pdfBuffer = Buffer.from(await page.pdf({ format: 'A4', timeout: 0 }))
+        await browser.close()
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="Utilization_Certificate_${project.project_name}.pdf"`);
+        res.send(pdfBuffer);
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).send('An error occurred while generating the PDF');
     }
 });
 
