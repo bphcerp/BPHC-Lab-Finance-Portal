@@ -101,9 +101,27 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
 
 // Route to get all projects without sanction letter files
 router.get('/', async (req: Request, res: Response) => {
+
+    const page = parseInt(req.query.page as string) || 1; // Default to page 1
+    const limit = 4; // Limit of 6 expenses per page
+    const skip = (page - 1) * limit;
+
     try {
-        const projects = await ProjectModel.find();
-        res.json(projects);
+        const projects = await ProjectModel.find()
+            .skip(skip)
+            .limit(limit);
+
+        const totalProjects = await ProjectModel.countDocuments(); // Total count of expenses
+        const totalPages = Math.ceil(totalProjects / limit);
+
+        res.status(200).json({
+            projects,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalProjects,
+            },
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching projects', error });
     }
@@ -163,7 +181,7 @@ router.get('/:id/sanction_letter', async (req: Request, res: Response) => {
             console.log('File streamed successfully.');
         });
 
-        return; 
+        return;
     } catch (error) {
         console.error(`Error fetching sanction letter for project ID ${req.params.id}: ${(error as Error).message}`);
         res.status(500).json({ message: 'Error fetching sanction letter', error: (error as Error).message });
@@ -249,18 +267,18 @@ router.get('/:id/util_cert', async (req, res) => {
                 </thead>
                 <tbody>
                     ${Array.from(project.project_heads).map(([head, amounts]) => {
-                        const totalAllocated = amounts.reduce((sum, amount) => sum + amount, 0);
-                        const expenses = expenseSummary.get(head) || 0;
-                        const remaining = totalAllocated - expenses;
+            const totalAllocated = amounts.reduce((sum, amount) => sum + amount, 0);
+            const expenses = expenseSummary.get(head) || 0;
+            const remaining = totalAllocated - expenses;
 
-                        return `
+            return `
                         <tr>
                             <td>${head}</td>
                             <td>Rs. ${totalAllocated}</td>
                             <td>Rs. ${expenses}</td>
                             <td>Rs. ${remaining}</td>
                         </tr>`;
-                    }).join('')}
+        }).join('')}
                 </tbody>
                 <tfoot>
                     <tr>

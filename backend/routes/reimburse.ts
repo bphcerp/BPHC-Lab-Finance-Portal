@@ -66,6 +66,30 @@ router.get('/:projectId/:head', async (req, res) => {
         res.status(400).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
     }
 });
+router.post('/paid', async (req: Request, res: Response) => {
+    try {
+        const { reimbursementIds } = req.body;
+
+        if (!Array.isArray(reimbursementIds) || reimbursementIds.length === 0) {
+            res.status(400).json({ message: 'Invalid input. Please provide an array of reimbursement IDs.' });
+            return
+        }
+
+        const updatedReimbursements = await ReimbursementModel.updateMany(
+            { _id: { $in: reimbursementIds } },
+            { paidStatus: true }
+        );
+
+        if (updatedReimbursements.matchedCount === 0) {
+            res.status(404).json({ message: 'No reimbursements found with the provided IDs.' });
+            return
+        }
+
+        res.status(200).json({ message: 'Reimbursements updated successfully.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating reimbursements: ' + (error as Error).message });
+    }
+});
 
 router.post('/', async (req: Request, res: Response) => {
     try {

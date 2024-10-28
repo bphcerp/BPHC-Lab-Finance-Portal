@@ -33,11 +33,27 @@ router.post('/', async (req: Request, res: Response) => {
 
 router.get('/', async (req: Request, res: Response) => {
   try {
+    const page = parseInt(req.query.page as string) || 1; // Default to page 1
+    const limit = 5; // Limit of 6 expenses per page
+    const skip = (page - 1) * limit;
+
     const expenses = await ExpenseModel.find()
       .populate('category')
-      .sort({ settled:1,reimbursedID: 1, createdAt: 1 });
-      
-    res.status(200).json(expenses);
+      .sort({ reimbursedID: 1, settled: 1, createdAt: 1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalExpenses = await ExpenseModel.countDocuments(); // Total count of expenses
+    const totalPages = Math.ceil(totalExpenses / limit);
+
+    res.status(200).json({
+      expenses,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalExpenses,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching expenses: ' + (error as Error).message });
   }

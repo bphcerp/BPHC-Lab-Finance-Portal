@@ -12,22 +12,24 @@ import ExpensesPage from './pages/Expenses'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import ReimbursementPage from './pages/Reimbursement'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={import.meta.env.VITE_OAUTH_CID}>
     <ToastContainer />
     <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<ProtectedRoute homePage={true}/>} />
-        <Route element={<ProtectedRoute><Layout/></ProtectedRoute>}>
-        <Route path="/project/:id" element={<ProjectDetails />} />
-        <Route path='/dashboard' element={<DashBoard />} />
-        <Route path='/expenses' element={<ExpensesPage />} />
-        </Route>
-        <Route path='/login' element={<LoginPage />} />
-      </Routes>
-    </BrowserRouter>
-  </React.StrictMode>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<ProtectedRoute homePage={true} />} />
+          <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route path="/project/:id" element={<ProjectDetails />} />
+            <Route path='/dashboard' element={<DashBoard />} />
+            <Route path='/expenses' element={<ExpensesPage />} />
+            <Route path='/reimbursements' element={<ReimbursementPage />} />
+          </Route>
+          <Route path='/login' element={<LoginPage />} />
+        </Routes>
+      </BrowserRouter>
+    </React.StrictMode>
   </GoogleOAuthProvider>
 )

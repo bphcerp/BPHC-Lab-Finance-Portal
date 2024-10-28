@@ -1,5 +1,5 @@
 import { FunctionComponent, useEffect, useState } from "react";
-import ProjectList, { Project } from "../components/ProjectList";
+import ProjectList from "../components/ProjectList";
 import { Button } from "flowbite-react";
 import { AddProjectModal } from "../components/AddProjectModal";
 import { toastError } from "../toasts";
@@ -8,7 +8,6 @@ const DashBoard: FunctionComponent = () => {
     const [grandTotal, setGrandTotal] = useState(0);
     const [totalDue, setTotalDue] = useState(0);
     const [totalUnsettled, setTotalUnsettled] = useState(0);
-    const [projectData, setProjectData] = useState<null | Array<Project>>(null);
     const [openModal, setOpenModal] = useState(false);
 
     const fetchProjectData = () => {
@@ -44,28 +43,6 @@ const DashBoard: FunctionComponent = () => {
             .then((res) =>
                 res.json().then((data) => {
                     setTotalUnsettled(data.total_unsettled);
-                })
-            )
-            .catch((e) => {
-                toastError("Something went wrong");
-                console.error(e);
-            });
-
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
-            credentials: "include",
-        })
-            .then((res) =>
-                res.json().then((data) => {
-                    data = data.map((project: Project) => ({
-                        ...project,
-                        start_date: project.start_date
-                            ? new Date(project.start_date)
-                            : null,
-                        end_date: project.end_date
-                            ? new Date(project.end_date)
-                            : null,
-                    }));
-                    setProjectData(data);
                 })
             )
             .catch((e) => {
@@ -124,7 +101,7 @@ const DashBoard: FunctionComponent = () => {
                 </Button>
             </div>
 
-            <ProjectList projectData={projectData} />
+            <ProjectList />
         </div>
     );
 };

@@ -1,5 +1,8 @@
-import { Checkbox } from "flowbite-react";
-import { FunctionComponent } from "react";
+import { Checkbox, Label } from "flowbite-react";
+import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
+import { FormEvent, FunctionComponent, useEffect, useState } from "react";
+import { toastError, toastSuccess } from "../toasts";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
 
 export interface Project {
     _id?: string;
@@ -16,13 +19,77 @@ export interface Project {
     sanction_letter_file_id?: string;
 }
 
-interface ProjectListProps {
-    projectData: Array<Project> | null;
-}
+const ProjectList: FunctionComponent = () => {
 
-const ProjectList: FunctionComponent<ProjectListProps> = (props: ProjectListProps) => {
-    return props.projectData ? (
+    const fetchProjectData = (page: number = 1) => {
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/?page=${page}`, {
+            credentials: "include",
+        })
+            .then((res) =>
+                res.json().then((data) => {
+                    setPagination(data.pagination)
+                    data = data.projects.map((project: Project) => ({
+                        ...project,
+                        start_date: project.start_date
+                            ? new Date(project.start_date)
+                            : null,
+                        end_date: project.end_date
+                            ? new Date(project.end_date)
+                            : null,
+                    }));
+                    setProjectData(data);
+                })
+            )
+            .catch((e) => {
+                toastError("Something went wrong");
+                console.error(e);
+            });
+    }
+
+    useEffect(() => {
+        fetchProjectData()
+    }, [])
+
+    const [projectData, setProjectData] = useState<null | Array<Project>>(null);
+    const [pagination, setPagination] = useState<{ currentPage: number, totalPages: number, totalProjects: number }>()
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+
+    const openDeleteModal = (project: Project) => {
+        setProjectToDelete(project);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleDeleteProject = async () => {
+        if (!projectToDelete) return;
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectToDelete._id}`, {
+                credentials: "include",
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete project');
+            }
+
+            setProjectData(projectData!.filter(project => project._id !== projectToDelete._id));
+            toastSuccess('Project deleted successfully');
+        } catch (error) {
+            toastError('Error deleting project');
+            console.error('Error deleting project:', error);
+        } finally {
+            setIsDeleteModalOpen(false);
+        }
+    };
+
+    return projectData ? (
         <div className="container mx-auto p-4">
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onDelete={handleDeleteProject}
+                item={projectToDelete?.project_name || ""}
+            />
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-200">
@@ -48,10 +115,11 @@ const ProjectList: FunctionComponent<ProjectListProps> = (props: ProjectListProp
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Utilization Certificate
                             </th>
+                            <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {props.projectData.map((project, key) => (
+                        {projectData.map((project, key) => (
                             <tr key={project._id} className={key % 2 ? "bg-gray-100" : "bg-white"}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <Checkbox className="focus:ring-0" color="blue" />
@@ -97,10 +165,33 @@ const ProjectList: FunctionComponent<ProjectListProps> = (props: ProjectListProp
                                         View
                                     </a>
                                 </td>
+                                <td className="px-2 py-2 w-20 text-center whitespace-nowrap">
+                                    <div className='flex justify-center divide-x-2'>
+                                        <button className='w-10 flex justify-center hover:cursor-pointer'><RiEdit2Line color='blue' /></button>
+                                        <button className='w-10 flex justify-center hover:cursor-pointer' onClick={() => openDeleteModal(project)}><RiDeleteBin6Line color='red' /></button>
+                                    </div>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
+            </div>
+            <div className='flex flex-col items-center w-full mt-2'>
+                <div className='space-x-2'>
+                    {pagination?.currentPage! > 1 ? <button onClick={() => fetchProjectData(pagination?.currentPage! - 1)} className='underline'>Prev</button> : ""}
+                    <span>Page {pagination?.currentPage} of {pagination?.totalPages}</span>
+                    {pagination?.currentPage! < pagination?.totalPages! ? <button onClick={() => fetchProjectData(pagination?.currentPage! + 1)} className='underline'>Next</button> : ""}
+                </div>
+                <div className='mt-2'>
+                    <form className='flex justify-center items-center space-x-3' onSubmit={(e: FormEvent) => {
+                        e.preventDefault()
+                        fetchProjectData(parseInt([...(new FormData(e.target as HTMLFormElement)).entries()][0][1] as string))
+                    }}>
+                        <Label htmlFor='gotoPage' value='Go to' />
+                        <input id="gotoPage" name="page" className='w-14' type='number' min={1} max={pagination?.totalPages} required />
+                        <button type='submit' className='bg-blue-500 text-white p-1 rounded-sm'>Go</button>
+                    </form>
+                </div>
             </div>
         </div>
     ) : (
