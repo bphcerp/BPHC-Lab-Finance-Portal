@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Button } from 'flowbite-react';
 
-interface Reimbursement {
+export interface Reimbursement {
     _id: string;
     totalAmount: number;
     createdAt: Date;
@@ -28,8 +28,7 @@ const ReimbursementModal: React.FC<ReimbursementModalProps> = ({ isOpen, onClose
                         <table className="min-w-full bg-white rounded-lg">
                             <thead className="bg-gray-200">
                                 <tr>
-                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Reimbursement ID</th>
-                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Title</th> {/* New Title Column */}
+                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Title</th>
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Total Amount</th>
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Submitted At</th>
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Expenses</th>
@@ -38,7 +37,6 @@ const ReimbursementModal: React.FC<ReimbursementModalProps> = ({ isOpen, onClose
                             <tbody>
                                 {reimbursements.map((reimbursement) => (
                                     <tr key={reimbursement._id} className="border-t">
-                                        <td className="py-3 px-6 text-gray-800 text-center font-medium">{reimbursement._id}</td>
                                         <td className="py-3 px-6 text-gray-600 text-center">{reimbursement.title}</td>
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             {reimbursement.totalAmount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
@@ -56,7 +54,7 @@ const ReimbursementModal: React.FC<ReimbursementModalProps> = ({ isOpen, onClose
                                     </tr>
                                 ))}
                                 <tr className="border-t bg-gray-100">
-                                    <td colSpan={2} className="py-3 px-6 text-gray-800 text-center font-semibold">Total Amount Deducted</td>
+                                    <td className="py-3 px-6 text-gray-800 text-center font-semibold">Total Amount Deducted</td>
                                     <td className="py-3 px-6 text-center text-gray-600">
                                         {totalAmount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
                                     </td>
