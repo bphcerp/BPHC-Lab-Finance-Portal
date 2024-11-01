@@ -39,7 +39,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     const expenses = await ExpenseModel.find()
       .populate('category')
-      .sort({ reimbursedID: 1, settled: 1, createdAt: 1 })
+      .sort({ paidStatus :1 , reimbursedID : 1,  createdAt : 1 })
       .skip(skip)
       .limit(limit);
 

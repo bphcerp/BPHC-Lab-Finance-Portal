@@ -102,6 +102,20 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
 // Route to get all projects without sanction letter files
 router.get('/', async (req: Request, res: Response) => {
 
+    const all = (req.query.all as string) == "true"
+
+    if (all){
+        try {
+            const projects = await ProjectModel.find()
+            res.status(200).json(projects);
+        } catch (error) {
+            res.status(500).json({ message: 'Error fetching projects', error });
+        }
+        finally{
+            return
+        }
+    }
+
     const page = parseInt(req.query.page as string) || 1; // Default to page 1
     const limit = 4; // Limit of 6 expenses per page
     const skip = (page - 1) * limit;

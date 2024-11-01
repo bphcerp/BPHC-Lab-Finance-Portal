@@ -7,7 +7,7 @@ const expenseSchema = new Schema({
   reimbursedID: { type: String, default: null },
   paidBy: { type: String, required: true },
   settled: { type: String, enum: ['Current', 'Savings', null], default: null },
-  paidStatus: { type: Boolean, default: false }, // Added field
+  paidStatus: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
