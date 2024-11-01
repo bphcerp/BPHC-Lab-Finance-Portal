@@ -12,7 +12,7 @@ export interface Expense {
     expenseReason: string;
     category: Category;
     amount: number;
-    reimbursedID: string | null;
+    reimbursedID: {title : string} | null;
     paidBy: string;
     paidStatus : boolean
     settled: 'Current' | 'Savings' | null;
@@ -214,7 +214,7 @@ const ExpensesPage: React.FC = () => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid By</th>
                             <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Settled</th>
-                            <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reimbursed</th>
+                            <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reimbursement</th>
                             <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -260,7 +260,7 @@ const ExpensesPage: React.FC = () => {
                                                 : "bg-red-100 text-red-800"
                                         } shadow-sm`}
                                     >
-                                        {expense.reimbursedID ? (expense.paidStatus ? "Reimbursed" : "Pending") : "Not Filed"}
+                                        {!expense.reimbursedID ? "Not Filed" : expense.reimbursedID.title }
                                     </span>
                                 </td>
                                 <td className="px-2 py-2 w-20 text-center whitespace-nowrap">

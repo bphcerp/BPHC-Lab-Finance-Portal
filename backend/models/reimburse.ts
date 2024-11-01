@@ -7,7 +7,7 @@ const reimbursementSchema = new Schema({
     totalAmount: { type: Number, required: true },
     projectHead: { type: String, required: true },
     expenses: [{ type: Schema.Types.ObjectId, ref: 'Expense', required: true }],
-    paidStatus: { type: Boolean, default: false },  // Added paidStatus field
+    paidStatus: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
 });
 
@@ -19,7 +19,7 @@ reimbursementSchema.post('updateMany', async function (res) {
     const updatedReimbursementIds = await ReimbursementModel.find(filter).select('_id');
 
     // Extract the IDs into an array
-    const reimbursementIds = updatedReimbursementIds.map(doc => doc._id);
+    const reimbursementIds = updatedReimbursementIds.map(doc => new mongoose.Types.ObjectId(doc._id));
 
     // Update the related expenses' paidStatus to true
     await ExpenseModel.updateMany(
@@ -28,4 +28,4 @@ reimbursementSchema.post('updateMany', async function (res) {
     );
 });
 
-export const ReimbursementModel = mongoose.model('Reimbursement', reimbursementSchema);
+export const ReimbursementModel = mongoose.model('reimbursements', reimbursementSchema);

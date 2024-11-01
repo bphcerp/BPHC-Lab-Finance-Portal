@@ -62,12 +62,12 @@ const ProjectDetails = () => {
     return (
         <>
             {projectData && (
-                <div className="flex flex-col space-y-4 w-full max-w-7xl mx-10">
-                    <h1 className="text-4xl font-bold text-center mt-2 text-gray-800">
+                <div className="flex flex-col space-y-4 w-full mx-10">
+                    <h1 className="text-4xl font-bold text-center mt-5 text-gray-800">
                         {projectData.project_name}
                     </h1>
 
-                    <h2 className="text-2xl font-semibold text-gray-700">Project Data</h2>
+                    <h2 className="text-2xl font-semibold text-gray-70">Project Data</h2>
 
                     <div className="flex flex-col md:flex-row md:space-x-10">
                         <div className="flex-1 overflow-x-auto">
@@ -230,8 +230,8 @@ const ProjectDetails = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                <tr className="border-t bg-gray-100">
-                                    <td className="py-3 px-6 text-gray-800 text-center font-semibold">Total</td>
+                                <tr className="border-t bg-gray-100 font-semibold">
+                                    <td className="py-3 px-6 text-gray-800 text-center">Total</td>
                                     <td className="py-3 px-6 text-center text-gray-600">
                                         {Object.values(projectData.project_heads).map(arr => arr[currentYear] || 0).reduce((sum, value) => sum + value, 0)}
                                     </td>

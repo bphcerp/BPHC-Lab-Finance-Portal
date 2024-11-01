@@ -6,7 +6,7 @@ import { Expense } from '../pages/Expenses';
 interface Project {
     _id: string;
     project_name: string;
-    project_heads: { [key: string]: number[] }; 
+    project_heads: { [key: string]: number[] };
 }
 
 interface FileReimbursementModalProps {
@@ -32,7 +32,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
     useEffect(() => {
         const fetchProjects = async () => {
             try {
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project?all=true`, { credentials : "include"});
+                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project?all=true`, { credentials: "include" });
                 const data: Project[] = await response.json();
                 setProjects(data);
             } catch (error) {
@@ -124,7 +124,10 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                                 const totalHeadAmount = amounts.reduce((acc, amount) => acc + amount, 0);
                                 return (
                                     <option key={head} value={head}>
-                                        {head} - ${totalHeadAmount.toFixed(2)}
+                                        {head} - ${totalHeadAmount.toLocaleString("en-IN", {
+                                            style: "currency",
+                                            currency: "INR",
+                                        })}
                                     </option>
                                 );
                             })}
@@ -134,7 +137,10 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                         <div>
                             {projects.find(p => p._id === selectedProjectId)!.project_heads[selectedProjectHead].reduce((acc, amount) => acc + amount, 0) < totalExpenseAmount ? (
                                 <p className="text-red-500">
-                                    Selected head cannot cover the total expenses of ${totalExpenseAmount.toFixed(2)}.
+                                    Selected head cannot cover the total expenses of ${totalExpenseAmount.toLocaleString("en-IN", {
+                                        style: "currency",
+                                        currency: "INR",
+                                    })}.
                                 </p>
                             ) : null}
                         </div>
@@ -145,9 +151,9 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                             !expense.reimbursedID && (
                                 <div key={expense._id} className="flex justify-between">
                                     <span>{expense.expenseReason} - {expense.amount.toLocaleString("en-IN", {
-                                            style: "currency",
-                                            currency: "INR",
-                                        })}
+                                        style: "currency",
+                                        currency: "INR",
+                                    })}
                                     </span>
                                 </div>
                             )

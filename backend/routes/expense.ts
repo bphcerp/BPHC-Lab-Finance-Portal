@@ -38,8 +38,9 @@ router.get('/', async (req: Request, res: Response) => {
     const skip = (page - 1) * limit;
 
     const expenses = await ExpenseModel.find()
-      .populate('category')
       .sort({ paidStatus :1 , reimbursedID : 1,  createdAt : 1 })
+      .populate({path : "reimbursedID", select : "title"})
+      .populate({path : "category"})
       .skip(skip)
       .limit(limit);
 
