@@ -6,30 +6,74 @@ import SettleExpenseModal from '../components/SettleExpenseModal';
 import FileReimbursementModal from '../components/FileReimbursementModal';
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import EditExpenseModal from '../components/EditExpenseModal';
 
 export interface Expense {
     _id: string;
     expenseReason: string;
     category: Category;
     amount: number;
-    reimbursedID: {title : string} | null;
+    reimbursedID: {title: string, paidStatus: boolean} | null;
     paidBy: string;
-    paidStatus : boolean
     settled: 'Current' | 'Savings' | null;
     createdAt: Date;
     updatedAt: Date;
 }
 
+interface EditExpenseData {
+    expenseReason: string;
+    category: string;
+    amount: number;
+    paidBy: string;
+}
+
 const ExpensesPage: React.FC = () => {
-    const [expenses, setExpenses] = useState<Array<Expense>>([])
-    const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set())
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const [isSettleModalOpen, setIsSettleModalOpen] = useState(false)
-    const [isFileReimbursementModalOpen, setIsFileReimbursementModalOpen] = useState(false)
+    const [expenses, setExpenses] = useState<Array<Expense>>([]);
+    const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set());
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
+    const [isFileReimbursementModalOpen, setIsFileReimbursementModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
-    const [pagination, setPagination] = useState<{currentPage : number, totalPages : number , totalExpenses : number}>()
+    const [pagination, setPagination] = useState<{currentPage: number; totalPages: number; totalExpenses: number}>();
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
+    const handleEditExpense = async (expenseData: EditExpenseData) => {
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/expense/${selectedExpense?._id}`,
+                {
+                    method: 'PATCH',
+                    credentials: "include",
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(expenseData),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to update expense');
+            }
+
+            const updatedExpense = await response.json();
+            setExpenses(expenses.map(exp => 
+                exp._id === updatedExpense._id ? updatedExpense : exp
+            ));
+            setIsEditModalOpen(false);
+            setSelectedExpense(null);
+            toastSuccess('Expense updated successfully');
+        } catch (error) {
+            toastError('Error updating expense');
+            console.error('Error updating expense:', error);
+        }
+    };
+
+    const openEditModal = (expense: Expense) => {
+        setSelectedExpense(expense);
+        setIsEditModalOpen(true);
+    };
 
     const handleFileReimbursement = async (expenseIds: string[], projectId: string, projectHead: string, totalAmount: number, title: string) => {
         try {
@@ -47,6 +91,7 @@ const ExpensesPage: React.FC = () => {
             }
 
             fetchExpenses();
+            toastSuccess('Reimbursement filed successfully');
         } catch (error) {
             toastError('Error filing reimbursement');
             console.error('Error filing reimbursement:', error);
@@ -69,6 +114,7 @@ const ExpensesPage: React.FC = () => {
             }
 
             fetchExpenses();
+            toastSuccess('Expenses settled successfully');
         } catch (error) {
             toastError('Error settling expenses');
             console.error('Error settling expenses:', error);
@@ -92,21 +138,21 @@ const ExpensesPage: React.FC = () => {
 
             const addedExpense = await response.json();
             setExpenses([...expenses, addedExpense]);
+            toastSuccess('Expense added successfully');
         } catch (error) {
             toastError('Error adding expense');
             console.error('Error adding expense:', error);
         }
     };
 
-
-    const fetchExpenses = async (page : number = 1) => {
+    const fetchExpenses = async (page: number = 1) => {
         try {
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense?page=${page}`, { credentials: "include" });
             const data = await response.json();
             setExpenses(data.expenses);
-            setPagination(data.pagination)
+            setPagination(data.pagination);
         } catch (error) {
-            toastError("Error fetching expenses")
+            toastError("Error fetching expenses");
             console.error('Error fetching expenses:', error);
         }
     };
@@ -161,7 +207,6 @@ const ExpensesPage: React.FC = () => {
         setIsDeleteModalOpen(true);
     };
 
-
     return (
         <div className="container mx-auto p-4">
             <AddExpenseModal
@@ -186,6 +231,15 @@ const ExpensesPage: React.FC = () => {
                 onClose={() => setIsDeleteModalOpen(false)}
                 onDelete={handleDeleteExpense}
                 item={expenseToDelete?.expenseReason || ""}
+            />
+            <EditExpenseModal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setSelectedExpense(null);
+                }}
+                expense={selectedExpense}
+                onSubmit={handleEditExpense}
             />
             <h1 className="text-2xl font-bold mb-4">Expenses</h1>
             <div className='flex justify-between items-center mb-2'>
@@ -254,21 +308,31 @@ const ExpensesPage: React.FC = () => {
                                     <span
                                         className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
                                             expense.reimbursedID
-                                                ? expense.paidStatus
+                                                ? expense.reimbursedID.paidStatus
                                                     ? "bg-green-100 text-green-800"
                                                     : "bg-yellow-100 text-yellow-800"
                                                 : "bg-red-100 text-red-800"
                                         } shadow-sm`}
                                     >
-                                        {!expense.reimbursedID ? "Not Filed" : expense.reimbursedID.title }
+                                        {!expense.reimbursedID ? "Not Filed" : expense.reimbursedID.title}
                                     </span>
                                 </td>
                                 <td className="px-2 py-2 w-20 text-center whitespace-nowrap">
                                     {expense.reimbursedID ? "NA" :
                                         <div className='flex justify-center divide-x-2'>
-                                            <button className='w-10 flex justify-center hover:cursor-pointer'><RiEdit2Line color='blue' /></button>
+                                            <button 
+                                                className='w-10 flex justify-center hover:cursor-pointer'
+                                                onClick={() => openEditModal(expense)}
+                                            >
+                                                <RiEdit2Line color='blue' />
+                                            </button>
                                             {expense.settled ? <></> :
-                                                <button className='w-10 flex justify-center hover:cursor-pointer' onClick={() => openDeleteModal(expense)}><RiDeleteBin6Line color='red' /></button>
+                                                <button 
+                                                    className='w-10 flex justify-center hover:cursor-pointer' 
+                                                    onClick={() => openDeleteModal(expense)}
+                                                >
+                                                    <RiDeleteBin6Line color='red' />
+                                                </button>
                                             }
                                         </div>
                                     }
@@ -277,10 +341,10 @@ const ExpensesPage: React.FC = () => {
                         ))}
                         {expenses.length === 0 && (
                             <tr>
-                                <td colSpan={6} className="px-6 py-4 text-center">No expenses found.</td>
+                                <td colSpan={8} className="px-6 py-4 text-center">No expenses found.</td>
                             </tr>
                         )}
-                    </tbody>
+                </tbody>
                 </table>
             </div>
             <div className='flex flex-col items-center w-full mt-2'>

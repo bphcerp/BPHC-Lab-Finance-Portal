@@ -136,10 +136,10 @@ const ProjectList: FunctionComponent = () => {
                                     })}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    {project.start_date ? project.start_date.toLocaleDateString() : "-"}
+                                    {project.start_date ? project.start_date.toLocaleDateString("en-IN") : "-"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    {project.end_date ? project.end_date.toLocaleDateString() : "-"}
+                                    {project.end_date ? project.end_date.toLocaleDateString("en-IN") : "-"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     {project.sanction_letter_file_id ? (

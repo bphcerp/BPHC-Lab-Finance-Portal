@@ -154,7 +154,13 @@ const ReimbursementPage: React.FC = () => {
                                     />
                                 </Table.Cell>
                                 <Table.Cell>{reimbursement.title}</Table.Cell>
-                                <Table.Cell>{reimbursement.project.project_name}</Table.Cell>
+                                <Table.Cell><a className='hover:underline text-blue-600'
+                                               href={`/project/${reimbursement.project._id}`}
+                                               target="_blank" 
+                                               rel="noopener noreferrer">
+                                                {reimbursement.project.project_name}
+                                            </a>
+                                </Table.Cell>
                                 <Table.Cell>{reimbursement.projectHead}</Table.Cell>
                                 <Table.Cell>
                                     {reimbursement.totalAmount.toLocaleString("en-IN", {
@@ -163,7 +169,7 @@ const ReimbursementPage: React.FC = () => {
                                     })}
                                 </Table.Cell>
                                 <Table.Cell>
-                                    {new Date(reimbursement.createdAt).toLocaleDateString()}
+                                    {new Date(reimbursement.createdAt).toLocaleDateString("en-IN")}
                                 </Table.Cell>
                                 <Table.Cell className="whitespace-nowrap">
                                     <span

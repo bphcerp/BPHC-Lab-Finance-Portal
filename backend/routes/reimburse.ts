@@ -10,7 +10,7 @@ router.use(authenticateToken);
 
 router.get('/', async (req: Request, res: Response) => {
     try {
-        const reimbursements = await ReimbursementModel.find().populate('project expenses');
+        const reimbursements = await ReimbursementModel.find().sort({paidStatus : 1, createdAt : 1}).populate('project expenses');
         res.status(200).json(reimbursements);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });

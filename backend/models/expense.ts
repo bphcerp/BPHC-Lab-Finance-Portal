@@ -7,7 +7,6 @@ const expenseSchema = new Schema({
   reimbursedID: { type: mongoose.Schema.Types.ObjectId, ref: 'reimbursements', default: null },
   paidBy: { type: String, required: true },
   settled: { type: String, enum: ['Current', 'Savings', null], default: null },
-  paidStatus: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

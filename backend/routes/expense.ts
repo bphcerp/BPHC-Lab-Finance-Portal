@@ -1,136 +1,180 @@
-import express, { Request, Response } from 'express';
-import { ExpenseModel } from '../models/expense'; 
+import express, { Request, Response, NextFunction } from 'express';
+import { ExpenseModel } from '../models/expense';
 import { CategoryModel } from '../models/category';
 import { authenticateToken } from '../middleware/authenticateToken';
+import { Schema } from 'mongoose';
 
 const router = express.Router();
 
+// Types
+interface ExpenseRequest {
+  category: Schema.Types.ObjectId;
+  amount: number;
+  description: string;
+  paidStatus?: boolean;
+  reimbursedID?: Schema.Types.ObjectId;
+  settled?: 'Current' | 'Savings' | null;
+}
+
+// Error Handler
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
+
+// Middleware
 router.use(authenticateToken);
 
-router.post('/', async (req: Request, res: Response) => {
-  try {
-    const { category, ...expenseData } = req.body;
+// Constants
+const ITEMS_PER_PAGE = 5;
+const VALID_SETTLED_STATUS = ['Current', 'Savings'] as const;
 
-    const categoryExists = await CategoryModel.findById(category);
-    if (!categoryExists) {
-      res.status(400).json({ message: 'Invalid category ID' });
+// Validation
+const validateCategory = async (categoryId: Schema.Types.ObjectId): Promise<boolean> => {
+  const categoryExists = await CategoryModel.findById(categoryId);
+  return !!categoryExists;
+};
+
+// Routes
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
+  const { category, ...expenseData } = req.body as ExpenseRequest;
+
+  if (!await validateCategory(category)) {
+    return res.status(400).json({ message: 'Invalid category ID' });
+  }
+
+  const expense = new ExpenseModel({
+    ...expenseData,
+    category,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  await expense.save();
+  await expense.populate('category');
+  return res.status(201).json(expense);
+}));
+
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const skip = (page - 1) * ITEMS_PER_PAGE;
+
+  const [expenses, totalExpenses] = await Promise.all([
+    ExpenseModel.find()
+      .sort({ paidStatus: 1, reimbursedID: 1, createdAt: 1 })
+      .populate({ path: 'reimbursedID', select: 'title paidStatus' })
+      .populate({ path: 'category' })
+      .skip(skip)
+      .limit(ITEMS_PER_PAGE)
+      .lean(),
+    ExpenseModel.countDocuments()
+  ]);
+
+  const totalPages = Math.ceil(totalExpenses / ITEMS_PER_PAGE);
+
+  return res.status(200).json({
+    expenses,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalExpenses,
+      itemsPerPage: ITEMS_PER_PAGE
     }
+  });
+}));
 
-    const expense = new ExpenseModel({
+router.get('/totaldue', asyncHandler(async (req: Request, res: Response) => {
+  const [result] = await ExpenseModel.aggregate([
+    { $match: { reimbursedID: null } },
+    { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
+  ]);
+
+  return res.status(200).json({ 
+    total_due: result?.totalAmount || 0 
+  });
+}));
+
+router.get('/unsettled', asyncHandler(async (req: Request, res: Response) => {
+  const [result] = await ExpenseModel.aggregate([
+    { $match: { settled: null } },
+    { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
+  ]);
+
+  return res.status(200).json({ 
+    total_unsettled: result?.totalAmount || 0 
+  });
+}));
+
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const expense = await ExpenseModel.findById(req.params.id)
+    .populate('category')
+    .lean();
+
+  if (!expense) {
+    return res.status(404).json({ message: 'Expense not found' });
+  }
+
+  return res.status(200).json(expense);
+}));
+
+router.patch('/settle', asyncHandler(async (req: Request, res: Response) => {
+  const { ids, settledStatus } = req.body;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'Invalid or empty ids array' });
+  }
+
+  if (!VALID_SETTLED_STATUS.includes(settledStatus)) {
+    return res.status(400).json({ 
+      message: `Invalid settled status. Must be one of: ${VALID_SETTLED_STATUS.join(', ')}` 
+    });
+  }
+
+  const result = await ExpenseModel.updateMany(
+    { _id: { $in: ids } },
+    { settled: settledStatus }
+  );
+
+  return res.status(200).json({ 
+    message: 'Expenses settled successfully', 
+    updatedCount: result.modifiedCount 
+  });
+}));
+
+router.patch('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { category, ...expenseData } = req.body as ExpenseRequest;
+
+  if (!await validateCategory(category)) {
+    return res.status(400).json({ message: 'Invalid category ID' });
+  }
+
+  const updatedExpense = await ExpenseModel.findByIdAndUpdate(
+    id,
+    {
       ...expenseData,
       category,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+      updatedAt: new Date()
+    },
+    { new: true }
+  ).populate('category');
 
-    await expense.save()
-    await expense.populate('category')
-    res.status(201).json(expense);
-  } catch (error) {
-    res.status(400).json({ message: 'Error creating expense: ' + (error as Error).message });
+  if (!updatedExpense) {
+    return res.status(404).json({ message: 'Expense not found' });
   }
-});
 
-router.get('/', async (req: Request, res: Response) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1; // Default to page 1
-    const limit = 5; // Limit of 6 expenses per page
-    const skip = (page - 1) * limit;
+  return res.status(200).json(updatedExpense);
+}));
 
-    const expenses = await ExpenseModel.find()
-      .sort({ paidStatus :1 , reimbursedID : 1,  createdAt : 1 })
-      .populate({path : "reimbursedID", select : "title"})
-      .populate({path : "category"})
-      .skip(skip)
-      .limit(limit);
-
-    const totalExpenses = await ExpenseModel.countDocuments(); // Total count of expenses
-    const totalPages = Math.ceil(totalExpenses / limit);
-
-    res.status(200).json({
-      expenses,
-      pagination: {
-        currentPage: page,
-        totalPages,
-        totalExpenses,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching expenses: ' + (error as Error).message });
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const deletedExpense = await ExpenseModel.findByIdAndDelete(req.params.id);
+  
+  if (!deletedExpense) {
+    return res.status(404).json({ message: 'Expense not found' });
   }
-});
-
-router.get('/totaldue', async (req: Request, res: Response) => {
-  try {
-    const totalDue = await ExpenseModel.aggregate([
-      { $match: { reimbursedID: null } },
-      { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
-    ]);
-
-    const total = totalDue.length > 0 ? totalDue[0].totalAmount : 0;
-    res.status(200).json({ total_due: total });
-  } catch (error) {
-    res.status(500).json({ message: 'Error calculating total due: ' + (error as Error).message });
-  }
-})
-
-router.get('/unsettled', async (req: Request, res: Response) => {
-  try {
-    const totalUnsettled = await ExpenseModel.aggregate([
-      { $match: { settled: null } },
-      { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
-    ]);
-
-    const total = totalUnsettled.length > 0 ? totalUnsettled[0].totalAmount : 0;
-    res.status(200).json({ total_unsettled: total });
-  } catch (error) {
-    res.status(500).json({ message: 'Error calculating total unsettled expenses: ' + (error as Error).message });
-  }
-});
-
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const expense = await ExpenseModel.findById(req.params.id).populate('category');
-    if (!expense) {
-      res.status(404).json({ message: 'Expense not found' });
-    } else {
-      res.status(200).json(expense);
-    }
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching expense: ' + (error as Error).message });
-  }
-});
-
-router.patch('/settle', async (req: Request, res: Response) => {
-  try {
-      const { ids, settledStatus } = req.body;
-
-      if (!Array.isArray(ids) || !['Current', 'Savings'].includes(settledStatus)) {
-          res.status(400).json({ message: 'Invalid input' });
-      }
-
-      const updatedExpenses = await ExpenseModel.updateMany(
-          { _id: { $in: ids } },
-          { settled: settledStatus }
-      );
-
-      res.status(200).json({ message: 'Expenses settled successfully', updatedCount: updatedExpenses.modifiedCount });
-  } catch (error) {
-      res.status(500).json({ message: 'Error settling expenses: ' + (error as Error).message });
-  }
-});
-
-router.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    const deletedExpense = await ExpenseModel.findByIdAndDelete(req.params.id);
-    if (!deletedExpense) {
-      res.status(404).json({ message: 'Expense not found' });
-    } else {
-      res.status(204).json();
-    }
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting expense: ' + (error as Error).message });
-  }
-});
+  
+  return res.status(204).send();
+}));
 
 export default router;
