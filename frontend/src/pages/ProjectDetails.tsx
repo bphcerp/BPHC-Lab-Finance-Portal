@@ -57,7 +57,6 @@ const ProjectDetails = () => {
     };
 
     useEffect(() => {
-        console.log(projectData)
         if (projectData) calculateCurrentYear()
     },[projectData])
 
@@ -214,7 +213,6 @@ const ProjectDetails = () => {
                             </thead>
                             <tbody>
                                 {Object.entries(projectData.project_heads).map(([head, allocations], index) => {
-                                    console.log(allocations,currentYear)
                                     return <tr key={index} className="border-t">
                                         <td className="py-3 px-6 text-gray-800 text-center font-medium">
                                             {head}
