@@ -9,5 +9,11 @@ export default {
   theme: {
     extend: {},
   },
-  plugins: [flowbite.plugin()],
+  plugins: [flowbite.plugin(),
+    function({ addBase }) {
+      addBase({
+        html: { fontSize: '14px' },
+      });
+    }
+  ],
 }

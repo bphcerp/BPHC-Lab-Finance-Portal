@@ -1,5 +1,6 @@
 import { Modal } from "flowbite-react";
 import { FunctionComponent } from "react";
+import { Link } from "react-router-dom";
 
 interface DocumentModalProps {
     isOpen: boolean;
@@ -19,25 +20,25 @@ const DocumentModal: FunctionComponent<DocumentModalProps> = ({ isOpen, onClose,
                 <div className="flex flex-col space-y-4">
                     <div className="flex justify-between items-center">
                         <span>Sanction Letter</span>
-                        <a 
-                            href={fetchDocumentUrl(`/project/${projectId}/sanction_letter`)} 
+                        <Link
+                            to={fetchDocumentUrl(`/project/${projectId}/sanction_letter`)} 
                             target="_blank" 
                             rel="noopener noreferrer" 
                             className="text-blue-600 hover:underline"
                         >
                             View
-                        </a>
+                        </Link>
                     </div>
                     <div className="flex justify-between items-center">
                         <span>Utilization Certificate</span>
-                        <a 
-                            href={fetchDocumentUrl(`/project/${projectId}/util_cert`)} 
+                        <Link 
+                            to={fetchDocumentUrl(`/project/${projectId}/util_cert`)} 
                             target="_blank" 
                             rel="noopener noreferrer" 
                             className="text-blue-600 hover:underline"
                         >
                             View
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </Modal.Body>

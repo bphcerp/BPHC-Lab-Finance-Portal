@@ -3,6 +3,7 @@ import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import { FormEvent, FunctionComponent, useEffect, useState } from "react";
 import { toastError, toastSuccess } from "../toasts";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import { Link } from "react-router-dom";
 
 export interface Project {
     _id?: string;
@@ -125,9 +126,9 @@ const ProjectList: FunctionComponent = () => {
                                     <Checkbox className="focus:ring-0" color="blue" />
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <a className="hover:underline text-blue-600" href={`/project/${project._id}`}>
+                                    <Link className="hover:underline text-blue-600" to={`/project/${project._id}`}>
                                         {project.project_name}
-                                    </a>
+                                    </Link>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     {project.total_amount.toLocaleString("en-IN", {
@@ -143,27 +144,27 @@ const ProjectList: FunctionComponent = () => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     {project.sanction_letter_file_id ? (
-                                        <a
-                                            href={`${import.meta.env.VITE_BACKEND_URL}/project/${project._id}/sanction_letter`}
+                                        <Link
+                                            to={`${import.meta.env.VITE_BACKEND_URL}/project/${project._id}/sanction_letter`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-blue-600 hover:underline"
                                         >
                                             View
-                                        </a>
+                                        </Link>
                                     ) : (
                                         "-"
                                     )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <a
-                                        href={`${import.meta.env.VITE_BACKEND_URL}/project/${project._id}/util_cert`}
+                                    <Link
+                                        to={`${import.meta.env.VITE_BACKEND_URL}/project/${project._id}/util_cert`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 hover:underline"
                                     >
                                         View
-                                    </a>
+                                    </Link>
                                 </td>
                                 <td className="px-2 py-2 w-20 text-center whitespace-nowrap">
                                     <div className='flex justify-center divide-x-2'>

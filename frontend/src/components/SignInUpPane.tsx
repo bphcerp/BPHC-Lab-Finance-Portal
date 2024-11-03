@@ -98,13 +98,13 @@ const SignInUpPane = () => {
                     }
                     <div className="flex flex-col items-center mt-4 space-y-5">
                         {usePass ? (
-                            <a className="text-xs hover:underline hover:cursor-pointer" onClick={() => setUsePass(false)}>
+                            <button className="text-xs hover:underline hover:cursor-pointer" onClick={() => setUsePass(false)}>
                                 Sign in With Google
-                            </a>
+                            </button>
                         ) : (
-                            <a className="text-xs hover:underline hover:cursor-pointer" onClick={() => setUsePass(true)}>
+                            <button className="text-xs hover:underline hover:cursor-pointer" onClick={() => setUsePass(true)}>
                                 Click Here for Password Login
-                            </a>
+                            </button>
                         )}
                     </div>
                 </div>

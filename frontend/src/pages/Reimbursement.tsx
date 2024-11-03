@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess } from '../toasts'; // Assuming toastSuccess exists
 import { Table } from 'flowbite-react';
 import { Reimbursement } from '../components/ReimbursementModal';
+import { Link } from 'react-router-dom';
 
 const ReimbursementPage: React.FC = () => {
     const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
@@ -154,12 +155,12 @@ const ReimbursementPage: React.FC = () => {
                                     />
                                 </Table.Cell>
                                 <Table.Cell>{reimbursement.title}</Table.Cell>
-                                <Table.Cell><a className='hover:underline text-blue-600'
-                                               href={`/project/${reimbursement.project._id}`}
+                                <Table.Cell><Link className='hover:underline text-blue-600'
+                                               to={`/project/${reimbursement.project._id}`}
                                                target="_blank" 
                                                rel="noopener noreferrer">
                                                 {reimbursement.project.project_name}
-                                            </a>
+                                            </Link>
                                 </Table.Cell>
                                 <Table.Cell>{reimbursement.projectHead}</Table.Cell>
                                 <Table.Cell>

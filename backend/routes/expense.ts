@@ -34,7 +34,7 @@ const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => P
 router.use(authenticateToken);
 
 // Constants
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 const VALID_SETTLED_STATUS = ['Current', 'Savings'] as const;
 
 // Validation

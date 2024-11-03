@@ -3,6 +3,7 @@ import ProjectList from "../components/ProjectList";
 import { Button } from "flowbite-react";
 import { AddProjectModal } from "../components/AddProjectModal";
 import { toastError } from "../toasts";
+import { Link } from "react-router-dom";
 
 const DashBoard: FunctionComponent = () => {
     const [grandTotal, setGrandTotal] = useState(0);
@@ -71,22 +72,22 @@ const DashBoard: FunctionComponent = () => {
                 </div>
                 <div className="grid grid-cols-2 space-x-2">
                     <div className="bg-red-100 p-4 rounded-lg shadow-md text-center">
-                        <p className="text-md font-semibold">Total Reimbursement Due</p>
-                        <p className="text-2xl font-bold mt-2 text-red-800">
+                        <p className="text-md font-semibold mb-2">Total Reimbursement Due</p>
+                        <Link to="/reimbursements" className="text-2xl hover:underline font-bold text-red-800">
                             {totalDue.toLocaleString("en-IN", {
                                 style: "currency",
                                 currency: "INR",
                             })}
-                        </p>
+                        </Link>
                     </div>
                     <div className="bg-red-100 p-4 rounded-lg shadow-md text-center">
-                        <p className="text-md font-semibold">Total Unsettled Amount</p>
-                        <p className="text-2xl font-bold mt-2 text-red-800">
+                        <p className="text-md font-semibold mb-2">Total Unsettled Amount</p>
+                        <Link to="/expenses/member-wise" className="text-2xl hover:underline font-bold text-red-800">
                             {totalUnsettled.toLocaleString("en-IN", {
                                 style: "currency",
                                 currency: "INR",
                             })}
-                        </p>
+                        </Link>
                     </div>
                 </div>
             </div>

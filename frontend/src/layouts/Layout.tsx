@@ -1,5 +1,5 @@
 import { FunctionComponent, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { RxHamburgerMenu, RxCross2 } from "react-icons/rx";
 import SidebarComponent from "../components/Sidebar";
 
@@ -17,7 +17,7 @@ const Layout: FunctionComponent = () => {
 
   return (
     <div className="flex flex-col w-screen h-screen">
-      <SidebarComponent isOpen={isSideBarOpen} />
+      <SidebarComponent isOpen={isSideBarOpen} setIsOpen={setISSideBarOpen} />
       <div className="header relative flex w-full h-14 px-4 bg-gray-100 shadow-lg items-center justify-between">
         <div className="flex items-center space-x-3">
           {isSideBarOpen ? (
@@ -33,9 +33,9 @@ const Layout: FunctionComponent = () => {
               size="30px"
             />
           )}
-          <a href="/" className="flex items-center">
+          <Link to="/" className="flex items-center">
             <img className="w-32 h-auto" src="/logo.jpg" alt="Company Logo" />
-          </a>
+          </Link>
         </div>
         <div className="flex items-center">
           <button

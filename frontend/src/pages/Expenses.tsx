@@ -1,4 +1,4 @@
-import { Button, Checkbox, Label } from 'flowbite-react';
+import { Button, Checkbox, Label, Table } from 'flowbite-react';
 import React, { FormEvent, useEffect, useState } from 'react';
 import { toastError, toastSuccess } from '../toasts';
 import AddExpenseModal, { Category } from '../components/AddExpenseModal';
@@ -13,7 +13,7 @@ export interface Expense {
     expenseReason: string;
     category: Category;
     amount: number;
-    reimbursedID: {title: string, paidStatus: boolean} | null;
+    reimbursedID: { title: string, paidStatus: boolean } | null;
     paidBy: Category;
     settled: 'Current' | 'Savings' | null;
     createdAt: Date;
@@ -35,7 +35,7 @@ const ExpensesPage: React.FC = () => {
     const [isFileReimbursementModalOpen, setIsFileReimbursementModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
-    const [pagination, setPagination] = useState<{currentPage: number; totalPages: number; totalExpenses: number}>();
+    const [pagination, setPagination] = useState<{ currentPage: number; totalPages: number; totalExpenses: number }>();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
@@ -58,7 +58,7 @@ const ExpensesPage: React.FC = () => {
             }
 
             const updatedExpense = await response.json();
-            setExpenses(expenses.map(exp => 
+            setExpenses(expenses.map(exp =>
                 exp._id === updatedExpense._id ? updatedExpense : exp
             ));
             setIsEditModalOpen(false);
@@ -209,7 +209,7 @@ const ExpensesPage: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto p-4">
+        <div className="container mx-auto p-4 text-[1px]">
             <AddExpenseModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -242,129 +242,131 @@ const ExpensesPage: React.FC = () => {
                 expense={selectedExpense}
                 onSubmit={handleEditExpense}
             />
-            <h1 className="text-2xl font-bold mb-4">Expenses</h1>
             <div className='flex justify-between items-center mb-2'>
-                <Button color="blue" size="md" className='rounded-md' onClick={() => { setIsModalOpen(true) }}>Add Expense</Button>
-                {selectedExpenses.size > 0 ?
-                    <div className='flex space-x-2'>
-                        <Button color="blue" size="md" className='rounded-md' onClick={() => { setIsSettleModalOpen(true) }}>{"Settle Expense" + (selectedExpenses.size > 1 ? "s" : "")}</Button>
-                        <Button color="blue" size="md" className='rounded-md' onClick={() => { setIsFileReimbursementModalOpen(true) }}>File for Reimbursement</Button>
-                    </div> : <></>
-                }
+                <h1 className="text-2xl font-bold mb-4">Expenses</h1>
+                <div className='flex space-x-2'>
+                    <Button color="blue" className='rounded-md' onClick={() => { setIsModalOpen(true) }}>Add Expense</Button>
+                    {selectedExpenses.size > 0 ?
+                        <div className='flex space-x-2'>
+                            <Button color="gray" size="md" className='rounded-md' onClick={() => { setIsSettleModalOpen(true) }}>{"Settle Expense" + (selectedExpenses.size > 1 ? "s" : "")}</Button>
+                            <Button color="gray" size="md" className='rounded-md' onClick={() => { setIsFileReimbursementModalOpen(true) }}>File for Reimbursement</Button>
+                        </div> : <></>
+                    }
+                </div>
             </div>
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <Checkbox
-                                    color="blue"
-                                    checked={selectedExpenses.size === expenses.length}
-                                    onChange={handleSelectAll}
-                                    className="focus:ring-0"
-                                />
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expense Reason</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated At</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid By</th>
-                            <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Settled</th>
-                            <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reimbursement</th>
-                            <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                <Table className="shadow-md rounded-lg text-center overflow-hidden divide-y divide-gray-200">
+                    <Table.Head className="bg-gray-100">
+                        <Table.HeadCell>
+                            <Checkbox
+                                color="blue"
+                                checked={selectedExpenses.size === expenses.length}
+                                onChange={handleSelectAll}
+                                className="focus:ring-0"
+                            />
+                        </Table.HeadCell>
+                        <Table.HeadCell className="text-left px-0 py-2.5">Reason</Table.HeadCell>
+                        <Table.HeadCell className="px-0 py-2.5">Created At</Table.HeadCell>
+                        <Table.HeadCell className="px-0 py-2.5">Updated At</Table.HeadCell>
+                        <Table.HeadCell className="px-0 py-2.5">Category</Table.HeadCell>
+                        <Table.HeadCell className="px-0 py-2.5">Amount</Table.HeadCell>
+                        <Table.HeadCell className="px-0 py-2.5">Paid By</Table.HeadCell>
+                        <Table.HeadCell className="w-20 px-0 py-2.5">Settled</Table.HeadCell>
+                        <Table.HeadCell className="w-20 px-0 py-2.5">Reimbursement</Table.HeadCell>
+                        <Table.HeadCell className="w-20 px-0 py-2.5">Actions</Table.HeadCell>
+                    </Table.Head>
+                    <Table.Body className="min-h-[600px]">
                         {expenses.map(expense => (
-                            <tr key={expense._id}>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                            <Table.Row key={expense._id} className="text-center whitespace-nowrap">
+                                <Table.Cell className="px-0 py-2.5"> {/* Removed padding here */}
                                     <Checkbox
                                         color="blue"
                                         checked={selectedExpenses.has(expense._id)}
                                         onChange={() => handleSelectExpense(expense._id)}
                                         className="focus:ring-0"
                                     />
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">{expense.expenseReason}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">{new Date(expense.createdAt).toLocaleDateString("en-IN")}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">{new Date(expense.updatedAt).toLocaleDateString("en-IN")}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">{expense.category.name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">{expense.amount.toLocaleString("en-IN", {
-                                    style: "currency",
-                                    currency: "INR",
-                                })}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">{expense.paidBy.name}</td>
-                                <td className="px-6 py-4 text-center whitespace-nowrap">
+                                </Table.Cell>
+                                <Table.Cell className="text-left px-0 py-2.5">{expense.expenseReason}</Table.Cell>
+                                <Table.Cell className="px-0 py-2.5">{new Date(expense.createdAt).toLocaleDateString("en-IN")}</Table.Cell>
+                                <Table.Cell className="px-0 py-2.5">{new Date(expense.updatedAt).toLocaleDateString("en-IN")}</Table.Cell>
+                                <Table.Cell className="px-0 py-2.5">{expense.category.name}</Table.Cell>
+                                <Table.Cell className="px-0 py-2.5">
+                                    {expense.amount.toLocaleString("en-IN", {
+                                        style: "currency",
+                                        currency: "INR",
+                                    })}
+                                </Table.Cell>
+                                <Table.Cell className="px-0 py-2.5">{expense.paidBy.name}</Table.Cell>
+                                <Table.Cell className="px-0 py-2.5">
                                     <span
-                                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                                            expense.settled === "Current"
-                                                ? "bg-blue-100 text-blue-800"
-                                                : expense.settled === "Savings"
+                                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${expense.settled === "Current"
+                                            ? "bg-blue-100 text-blue-800"
+                                            : expense.settled === "Savings"
                                                 ? "bg-purple-100 text-purple-800"
                                                 : "bg-gray-100 text-gray-800"
-                                        } shadow-sm`}
+                                            } shadow-sm`}
                                     >
                                         {expense.settled ?? "Not Settled"}
                                     </span>
-                                </td>
-                                <td className="px-6 py-4 text-center whitespace-nowrap">
+                                </Table.Cell>
+                                <Table.Cell className="px-0 py-2.5">
                                     <span
-                                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                                            expense.reimbursedID
-                                                ? expense.reimbursedID.paidStatus
-                                                    ? "bg-green-100 text-green-800"
-                                                    : "bg-yellow-100 text-yellow-800"
-                                                : "bg-red-100 text-red-800"
-                                        } shadow-sm`}
+                                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${expense.reimbursedID
+                                            ? expense.reimbursedID.paidStatus
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-yellow-100 text-yellow-800"
+                                            : "bg-red-100 text-red-800"
+                                            } shadow-sm`}
                                     >
                                         {!expense.reimbursedID ? "Not Filed" : expense.reimbursedID.title}
                                     </span>
-                                </td>
-                                <td className="px-2 py-2 w-20 text-center whitespace-nowrap">
-                                    {expense.reimbursedID ? "NA" :
-                                        <div className='flex justify-center divide-x-2'>
-                                            <button 
-                                                className='w-10 flex justify-center hover:cursor-pointer'
+                                </Table.Cell>
+                                <Table.Cell className="px-0 py-2.5">
+                                    {expense.reimbursedID ? "NA" : (
+                                        <div className="flex justify-center divide-x-2">
+                                            <button
+                                                className="w-10 flex justify-center hover:cursor-pointer"
                                                 onClick={() => openEditModal(expense)}
                                             >
-                                                <RiEdit2Line color='blue' />
+                                                <RiEdit2Line color="blue" />
                                             </button>
-                                            {expense.settled ? <></> :
-                                                <button 
-                                                    className='w-10 flex justify-center hover:cursor-pointer' 
+                                            {expense.settled ? null : (
+                                                <button
+                                                    className="w-10 flex justify-center hover:cursor-pointer"
                                                     onClick={() => openDeleteModal(expense)}
                                                 >
-                                                    <RiDeleteBin6Line color='red' />
+                                                    <RiDeleteBin6Line color="red" />
                                                 </button>
-                                            }
+                                            )}
                                         </div>
-                                    }
-                                </td>
-                            </tr>
+                                    )}
+                                </Table.Cell>
+                            </Table.Row>
                         ))}
                         {expenses.length === 0 && (
-                            <tr>
-                                <td colSpan={8} className="px-6 py-4 text-center">No expenses found.</td>
-                            </tr>
+                            <Table.Row>
+                                <Table.Cell colSpan={10} className="text-center">
+                                    No expenses found.
+                                </Table.Cell>
+                            </Table.Row>
                         )}
-                </tbody>
-                </table>
+                    </Table.Body>
+                </Table>
+
             </div>
-            <div className='flex flex-col items-center w-full mt-2'>
+            <div className='flex space-x-2 divide-x text-base justify-center items-center w-full mt-4'>
                 <div className='space-x-2'>
                     {pagination?.currentPage! > 1 ? <button onClick={() => fetchExpenses(pagination?.currentPage! - 1)} className='underline'>Prev</button> : ""}
                     <span>Page {pagination?.currentPage} of {pagination?.totalPages}</span>
-                    {pagination?.currentPage! < pagination?.totalPages! ? <button onClick={() => fetchExpenses(pagination?.currentPage! +1)} className='underline'>Next</button> : "" }
+                    {pagination?.currentPage! < pagination?.totalPages! ? <button onClick={() => fetchExpenses(pagination?.currentPage! + 1)} className='underline'>Next</button> : ""}
                 </div>
-                <div className='mt-2'>
-                    <form className='flex justify-center items-center space-x-3' onSubmit={(e : FormEvent) => {
+                <div className='pl-2'>
+                    <form className='flex justify-center items-center space-x-3' onSubmit={(e: FormEvent) => {
                         e.preventDefault()
                         fetchExpenses(parseInt([...(new FormData(e.target as HTMLFormElement)).entries()][0][1] as string))
                     }}>
                         <Label htmlFor='gotoPage' value='Go to' />
-                        <input id="gotoPage" name="page" className='w-14' type='number' min={1} max={pagination?.totalPages} required/>
+                        <input id="gotoPage" name="page" className='w-14' type='number' min={1} max={pagination?.totalPages} required />
                         <button type='submit' className='bg-blue-500 text-white p-1 rounded-sm'>Go</button>
                     </form>
                 </div>
