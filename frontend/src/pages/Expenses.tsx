@@ -150,6 +150,7 @@ const ExpensesPage: React.FC = () => {
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense?page=${page}`, { credentials: "include" });
             const data = await response.json();
             setExpenses(data.expenses);
+            console.log(data.expenses)
             setPagination(data.pagination);
         } catch (error) {
             toastError("Error fetching expenses");
@@ -264,6 +265,8 @@ const ExpensesPage: React.FC = () => {
                                 />
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expense Reason</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated At</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid By</th>
@@ -284,6 +287,8 @@ const ExpensesPage: React.FC = () => {
                                     />
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">{expense.expenseReason}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">{new Date(expense.createdAt).toLocaleDateString("en-IN")}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">{new Date(expense.updatedAt).toLocaleDateString("en-IN")}</td>
                                 <td className="px-6 py-4 whitespace-nowrap">{expense.category.name}</td>
                                 <td className="px-6 py-4 whitespace-nowrap">{expense.amount.toLocaleString("en-IN", {
                                     style: "currency",
