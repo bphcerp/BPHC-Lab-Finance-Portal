@@ -14,7 +14,7 @@ export interface Expense {
     category: Category;
     amount: number;
     reimbursedID: {title: string, paidStatus: boolean} | null;
-    paidBy: string;
+    paidBy: Category;
     settled: 'Current' | 'Savings' | null;
     createdAt: Date;
     updatedAt: Date;
@@ -290,7 +290,7 @@ const ExpensesPage: React.FC = () => {
                                     currency: "INR",
                                 })}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">{expense.paidBy}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">{expense.paidBy.name}</td>
                                 <td className="px-6 py-4 text-center whitespace-nowrap">
                                     <span
                                         className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${

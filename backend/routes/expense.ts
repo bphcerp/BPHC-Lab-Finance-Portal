@@ -6,14 +6,21 @@ import { ObjectId, Schema } from 'mongoose';
 
 const router = express.Router();
 
-// Types
 interface ExpenseRequest {
-  category: Schema.Types.ObjectId;
+  category: ObjectId;
   amount: number;
   description: string;
-  paidStatus?: boolean;
-  reimbursedID?: Schema.Types.ObjectId;
+  paidBy : ObjectId
+  reimbursedID?: ObjectId;
   settled?: 'Current' | 'Savings' | null;
+}
+
+interface MemberExpenseSummary {
+  memberId : ObjectId
+  memberName: string;
+  totalPaid: number;
+  totalSettled: number;
+  totalDue: number;
 }
 
 // Error Handler
@@ -63,7 +70,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const [allExpenses, totalExpenses] = await Promise.all([
     ExpenseModel.find()
       .populate<{ reimbursedID: { _id: ObjectId; title: string; paidStatus: boolean } }>({ path: 'reimbursedID', select: 'title paidStatus' })
-      .populate({ path: 'category' })
+      .populate('category paidBy')
       .lean(),
     ExpenseModel.countDocuments()
   ]);
@@ -113,18 +120,6 @@ router.get('/unsettled', asyncHandler(async (req: Request, res: Response) => {
   });
 }));
 
-router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
-  const expense = await ExpenseModel.findById(req.params.id)
-    .populate('category')
-    .lean();
-
-  if (!expense) {
-    return res.status(404).json({ message: 'Expense not found' });
-  }
-
-  return res.status(200).json(expense);
-}));
-
 router.patch('/settle', asyncHandler(async (req: Request, res: Response) => {
   const { ids, settledStatus } = req.body;
 
@@ -148,6 +143,78 @@ router.patch('/settle', asyncHandler(async (req: Request, res: Response) => {
     updatedCount: result.modifiedCount 
   });
 }));
+
+// Settle expenses for a specific member identified by their name in categories
+router.post('/settle/:memberId', async (req, res) => {
+  const { memberId } = req.params;
+  const { settlementType } = req.body; // Get the settlement type from the request body
+
+  try {
+      // Validate the settlementType (optional)
+      if (!['Current', 'Savings'].includes(settlementType)) {
+          res.status(400).json({ message: 'Invalid settlement type' });
+          return
+      }
+
+      // Settle expenses for the found member ID
+      const result = await ExpenseModel.updateMany(
+          { paidBy: memberId, settled: null }, // Find expenses for this member that are not settled
+          { settled: settlementType } // Use the settlementType from the request
+      );
+
+      // Check if any expenses were updated
+      if (result.modifiedCount > 0) {
+          res.status(200).json({ message: `Settled expenses for member` });
+      } else {
+          res.status(404).json({ message: `No unsettled expenses found for member` });
+      }
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error settling expenses', error });
+  }
+});
+
+// Get member-wise expenses
+router.get('/member-expenses', async (req: Request, res: Response) => {
+  try {
+      // Fetch all expenses
+      const expenses = await ExpenseModel.find().populate<{paidBy : {_id : ObjectId , name : string}}>('paidBy').lean(); // Adjust populate as necessary
+
+      // Process expenses to categorize by member
+      const memberExpenses: Record<string, MemberExpenseSummary> = {};
+
+      expenses.forEach(expense => {
+          const memberName = expense.paidBy.name; // Assuming 'paidBy' is populated with member details
+
+          if (!memberExpenses[memberName]) {
+              memberExpenses[memberName] = {
+                  memberId : expense.paidBy._id,
+                  memberName,
+                  totalPaid: 0,
+                  totalSettled: 0,
+                  totalDue: 0,
+              };
+          }
+
+          // Check if the expense is settled based on the 'settled' field
+          memberExpenses[memberName].totalPaid += expense.amount; // Total paid is simply the sum of all expenses
+
+          if (expense.settled === 'Current' || expense.settled === 'Savings') {
+              memberExpenses[memberName].totalSettled += expense.amount;
+          } else {
+              memberExpenses[memberName].totalDue += expense.amount;
+          }
+      });
+
+      // Convert the memberExpenses object to an array for response
+      const result: MemberExpenseSummary[] = Object.values(memberExpenses);
+
+      res.json(result);
+  } catch (error) {
+      console.error('Error fetching member expenses:', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 router.patch('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;

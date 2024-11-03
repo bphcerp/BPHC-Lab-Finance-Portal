@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Label, TextInput, Select } from 'flowbite-react';
+import { Modal, Button, Label, TextInput } from 'flowbite-react';
 
 interface AddCategoryModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAddCategory: (name: string, type: string) => Promise<void>;
+    type: string; // Accept type as a prop
 }
 
-const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, onAddCategory }) => {
+const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, onAddCategory, type }) => {
     const [name, setName] = useState<string>('');
-    const [type, setType] = useState<string>('expense');
     const [loading, setLoading] = useState<boolean>(false);
 
     const handleSubmit = async () => {
-        if (!name.trim() || !type) return;
+        if (!name.trim()) return;
         setLoading(true);
         try {
-            await onAddCategory(name, type);
+            await onAddCategory(name, type); // Use the type prop
             onClose();
         } catch (error) {
             console.error(error);
@@ -26,9 +26,9 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, on
     };
 
     useEffect(() => {
-        setName('')
-        setLoading(false)
-    },[isOpen])
+        setName('');
+        setLoading(false);
+    }, [isOpen]);
 
     return (
         <Modal show={isOpen} onClose={onClose}>
@@ -48,14 +48,12 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, on
                     </div>
                     <div>
                         <Label htmlFor="type" value="Category Type" />
-                        <Select
+                        <TextInput
                             id="type"
-                            value={type}
-                            onChange={(e) => setType(e.target.value)}
-                            required
-                        >
-                            <option value="expense">Expense</option>
-                        </Select>
+                            type="text"
+                            value={type} // Display the type as read-only
+                            readOnly // Prevent user from changing it
+                        />
                     </div>
                 </div>
             </Modal.Body>
