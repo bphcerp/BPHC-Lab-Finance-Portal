@@ -124,7 +124,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                                 const totalHeadAmount = amounts.reduce((acc, amount) => acc + amount, 0);
                                 return (
                                     <option key={head} value={head}>
-                                        {head} - ${totalHeadAmount.toLocaleString("en-IN", {
+                                        {head} - {totalHeadAmount.toLocaleString("en-IN", {
                                             style: "currency",
                                             currency: "INR",
                                         })}
@@ -137,7 +137,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                         <div>
                             {projects.find(p => p._id === selectedProjectId)!.project_heads[selectedProjectHead].reduce((acc, amount) => acc + amount, 0) < totalExpenseAmount ? (
                                 <p className="text-red-500">
-                                    Selected head cannot cover the total expenses of ${totalExpenseAmount.toLocaleString("en-IN", {
+                                    Selected head cannot cover the total expenses of {totalExpenseAmount.toLocaleString("en-IN", {
                                         style: "currency",
                                         currency: "INR",
                                     })}.
