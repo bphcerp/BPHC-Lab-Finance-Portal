@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { ExpenseModel } from '../models/expense';
 import { CategoryModel } from '../models/category';
 import { authenticateToken } from '../middleware/authenticateToken';
-import { Schema } from 'mongoose';
+import { ObjectId, Schema } from 'mongoose';
 
 const router = express.Router();
 
@@ -60,16 +60,23 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const page = Math.max(1, parseInt(req.query.page as string) || 1);
   const skip = (page - 1) * ITEMS_PER_PAGE;
 
-  const [expenses, totalExpenses] = await Promise.all([
+  const [allExpenses, totalExpenses] = await Promise.all([
     ExpenseModel.find()
-      .sort({ paidStatus: 1, reimbursedID: 1, createdAt: 1 })
-      .populate({ path: 'reimbursedID', select: 'title paidStatus' })
+      .populate<{ reimbursedID: { _id: ObjectId; title: string; paidStatus: boolean } }>({ path: 'reimbursedID', select: 'title paidStatus' })
       .populate({ path: 'category' })
-      .skip(skip)
-      .limit(ITEMS_PER_PAGE)
       .lean(),
     ExpenseModel.countDocuments()
   ]);
+  
+  const sortedExpenses = allExpenses.sort((a, b) => {
+    const aPaidStatus = a.reimbursedID?.paidStatus ?? false;
+    const bPaidStatus = b.reimbursedID?.paidStatus ?? false;
+  
+    return (a.reimbursedID === null ? 0 : 1) - (b.reimbursedID === null ? 0 : 1) ||
+           (aPaidStatus ? 1 : 0) - (bPaidStatus ? 1 : 0);
+  });
+  
+  const expenses = sortedExpenses.slice(skip, skip + ITEMS_PER_PAGE)
 
   const totalPages = Math.ceil(totalExpenses / ITEMS_PER_PAGE);
 

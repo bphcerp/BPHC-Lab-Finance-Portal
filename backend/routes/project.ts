@@ -238,8 +238,8 @@ router.get('/:id/util_cert', async (req, res) => {
             <title>Utilization Certificate</title>
             <style>
                 body { font-family: Arial, sans-serif; margin: 10px 20px; }
-                .header { display: flex; justify-content: space-between; align-items: center; padding}
-                .company-info { text-align: center; margin: 20px 0; } /* Center text and add margin */
+                .header { display: flex; justify-content: space-between; align-items: center;}
+                .company-info { text-align: center;} /* Center text and add margin */
                 .header img { max-width: 100px; height: auto; }
                 h1 { text-align: center;}
                 h2 { text-decoration: underline; text-align: center; }
@@ -251,12 +251,11 @@ router.get('/:id/util_cert', async (req, res) => {
         </head>
         <body>
             <div class="header">
-                <img src="${req.protocol}://${req.get('host')}/logo.jpg" alt="LAMBDA Logo" /> <!-- Logo on the left -->
+                <img src="${req.protocol}://${req.get('host')}/bitslogo.png" alt="BITS Pilani Logo" /> <!-- Logo on the right -->
                 <div class="company-info">
                     <h1>LAMBDA Lab</h1> <!-- Company Name -->
                     <i>BITS Pilani, Hyderabad Campus</i> <!-- Place -->
                 </div>
-                <img src="${req.protocol}://${req.get('host')}/bitslogo.png" alt="BITS Pilani Logo" /> <!-- Logo on the right -->
             </div>
             <h2>Utilization Certificate</h2>
             <h3>Project Details</h3>
@@ -305,7 +304,12 @@ router.get('/:id/util_cert', async (req, res) => {
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename="Utilization_Certificate_${project.project_name}.pdf"`)
-        wkhtmltopdf(html).pipe(res)
+        wkhtmltopdf(html, {orientation: 'Landscape', pageSize : "A4",
+            marginBottom : "0",
+            marginTop : "0",
+            marginLeft : "0",
+            marginRight : "0"            
+        }).pipe(res)
 
     } catch (error) {
         console.error('Error generating PDF:', error);

@@ -52,10 +52,12 @@ const ProjectDetails = () => {
     const calculateCurrentYear = () => {
         const curr = new Date().getTime();
         const start = new Date(projectData!.start_date!).getTime();
-        setCurrentYear(Math.floor((curr - start) / (1000 * 60 * 60 * 24 * 365)))
+        const diff = Math.floor((curr - start) / (1000 * 60 * 60 * 24 * 365));
+        setCurrentYear(diff >= 0?diff:0)
     };
 
     useEffect(() => {
+        console.log(projectData)
         if (projectData) calculateCurrentYear()
     },[projectData])
 
@@ -211,8 +213,9 @@ const ProjectDetails = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {Object.entries(projectData.project_heads).map(([head, allocations], index) => (
-                                    <tr key={index} className="border-t">
+                                {Object.entries(projectData.project_heads).map(([head, allocations], index) => {
+                                    console.log(allocations,currentYear)
+                                    return <tr key={index} className="border-t">
                                         <td className="py-3 px-6 text-gray-800 text-center font-medium">
                                             {head}
                                         </td>
@@ -229,7 +232,7 @@ const ProjectDetails = () => {
                                             {expenseData ? allocations[currentYear] - (expenseData[head] ?? 0) : "Loading"}
                                         </td>
                                     </tr>
-                                ))}
+                                })}
                                 <tr className="border-t bg-gray-100 font-semibold">
                                     <td className="py-3 px-6 text-gray-800 text-center">Total</td>
                                     <td className="py-3 px-6 text-center text-gray-600">
