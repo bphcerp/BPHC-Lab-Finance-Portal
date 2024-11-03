@@ -6,7 +6,8 @@ import { Readable } from "stream";
 import { authenticateToken } from "../middleware/authenticateToken";
 import path from "path";
 import { ReimbursementModel } from "../models/reimburse";
-import puppeteer from "puppeteer";
+import wkhtmltopdf from "wkhtmltopdf";
+
 
 const router: Router = Router();
 const conn = mongoose.connection;
@@ -24,11 +25,6 @@ conn.once("open", () => {
 // Set up Multer storage for GridFS
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
-
-// Function to get a sanction letter file and return its path
-const getSanctionLetterFilePath = (fileId: mongoose.Types.ObjectId): string => {
-    return path.join(__dirname, `../uploads/${fileId}`); // Adjust the path as needed
-};
 
 // Route to get the total sum of all project amounts
 router.get('/grandtotal', async (req: Request, res: Response) => {
@@ -307,15 +303,9 @@ router.get('/:id/util_cert', async (req, res) => {
         </body>
         </html>`;
 
-        // 5. Launch Puppeteer to generate PDF
-        const browser = await puppeteer.launch({ headless: false })
-        const page = await browser.newPage()
-        await page.setContent(html, { waitUntil: 'networkidle0' })
-        const pdfBuffer = Buffer.from(await page.pdf({ format: 'A4', timeout: 0 }))
-        await browser.close()
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename="Utilization_Certificate_${project.project_name}.pdf"`);
-        res.send(pdfBuffer);
+        res.setHeader('Content-Disposition', `inline; filename="Utilization_Certificate_${project.project_name}.pdf"`)
+        wkhtmltopdf(html).pipe(res)
 
     } catch (error) {
         console.error('Error generating PDF:', error);

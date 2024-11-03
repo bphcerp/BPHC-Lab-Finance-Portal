@@ -303,6 +303,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               <FileInput
                 id="sanction_letter"
                 onChange={(e) => setSanctionLetter(e.target.files ? e.target.files[0] : null)}
+                accept="application/pdf"
               />
             </div>
 
