@@ -17,7 +17,10 @@ const ProjectDetails = () => {
             credentials: "include",
         })
             .then((res) => res.json())
-            .then((data) => setProjectData(data))
+            .then((data) => {
+                setProjectData(data)
+                calculateCurrentYear(data)
+            })
             .catch((e) => {
                 toastError("Something went wrong");
                 console.error(e);
@@ -49,16 +52,12 @@ const ProjectDetails = () => {
         }
     };
 
-    const calculateCurrentYear = () => {
+    const calculateCurrentYear = (data : Project) => {
         const curr = new Date().getTime();
-        const start = new Date(projectData!.start_date!).getTime();
+        const start = new Date(data.start_date!).getTime();
         const diff = Math.floor((curr - start) / (1000 * 60 * 60 * 24 * 365));
         setCurrentYear(diff >= 0?diff:0)
     };
-
-    useEffect(() => {
-        if (projectData) calculateCurrentYear()
-    },[projectData])
 
     return (
         <>
@@ -87,7 +86,7 @@ const ProjectDetails = () => {
                                         }).map((_, i) => (
                                             <th
                                                 key={i}
-                                                className="py-3 px-6 text-center text-gray-800 font-semibold"
+                                                className={`py-3 px-6 text-center text-gray-600 ${currentYear === i?"text-red-600":"   "}`}
                                             >
                                                 Year {i + 1}
                                             </th>
@@ -107,7 +106,7 @@ const ProjectDetails = () => {
                                                 {allocations.map((amount, i) => (
                                                     <td
                                                         key={i}
-                                                        className="py-3 px-6 text-center text-gray-600"
+                                                        className={`py-3 px-6 text-center text-gray-600 ${currentYear === i?"text-red-600":"   "}`}
                                                     >
                                                         {amount.toLocaleString("en-IN", {
                                                             style: "currency",
@@ -131,7 +130,7 @@ const ProjectDetails = () => {
                                                     }).map((_, i) => (
                                                         <td
                                                             key={i}
-                                                            className="py-3 px-6 text-center text-gray-600"
+                                                            className={`py-3 px-6 text-center text-gray-600 ${currentYear === i?"text-red-600":"   "}`}
                                                         >
                                                             N/A
                                                         </td>
@@ -233,13 +232,13 @@ const ProjectDetails = () => {
                                 })}
                                 <tr className="border-t bg-gray-100 font-semibold">
                                     <td className="py-3 px-6 text-gray-800 text-center">Total</td>
-                                    <td className="py-3 px-6 text-center text-gray-600">
+                                    <td className="py-3 px-6 text-center">
                                         {Object.values(projectData.project_heads).map(arr => arr[currentYear] || 0).reduce((sum, value) => sum + value, 0)}
                                     </td>
-                                    <td className="py-3 px-6 text-center text-gray-600">
+                                    <td className="py-3 px-6 text-center">
                                         {expenseData ? Object.values(expenseData).reduce((acc, value) => acc + value, 0) : "Loading"}
                                     </td>
-                                    <td className="py-3 px-6 text-center text-gray-600">
+                                    <td className="py-3 px-6 text-center">
                                         {expenseData ? Object.values(projectData.project_heads).map(arr => arr[currentYear] || 0).reduce((sum, value) => sum + value, 0) - Object.values(expenseData).reduce((acc, value) => acc + value, 0) : "Loading"}
                                     </td>
                                 </tr>
