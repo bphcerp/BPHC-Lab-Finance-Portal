@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { toastError, toastSuccess } from '../toasts'; // Assuming toastSuccess exists
+import { toastError, toastSuccess } from '../toasts';
 import { Table } from 'flowbite-react';
 import { Reimbursement } from '../components/ReimbursementModal';
+import { MdOutlineDescription } from "react-icons/md";
+
 import { Link } from 'react-router-dom';
+import DescriptionModal from '../components/DescriptionModal';
 
 const ReimbursementPage: React.FC = () => {
     const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
@@ -10,6 +13,8 @@ const ReimbursementPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedProject, setSelectedProject] = useState('');
     const [selectedReimbursements, setSelectedReimbursements] = useState<string[]>([]);
+    const [description, setDescription] = useState("")
+    const [isDescModalOpen, setIsDescModalOpen] = useState(false);
 
     const fetchReimbursements = async () => {
         try {
@@ -96,6 +101,12 @@ const ReimbursementPage: React.FC = () => {
 
     return (
         <div className="container mx-auto p-4">
+            <DescriptionModal
+                isOpen={isDescModalOpen}
+                onClose={() => setIsDescModalOpen(false)}
+                type='reimbursement'
+                description={description}
+            />
             <h1 className="text-2xl font-bold mb-4">List of Reimbursements</h1>
 
             <div className="mb-4">
@@ -143,6 +154,7 @@ const ReimbursementPage: React.FC = () => {
                         <Table.HeadCell>Total Amount</Table.HeadCell>
                         <Table.HeadCell>Created At</Table.HeadCell>
                         <Table.HeadCell>Paid</Table.HeadCell>
+                        <Table.HeadCell className='w-20'>Description</Table.HeadCell>
                     </Table.Head>
                     <Table.Body>
                         {filteredReimbursements.map((reimbursement) => (
@@ -180,6 +192,14 @@ const ReimbursementPage: React.FC = () => {
                                     >
                                         {reimbursement.paidStatus ? "Paid" : "Unpaid"}
                                     </span>
+                                </Table.Cell>
+                                <Table.Cell className='flex justify-center items-center px-0 py-2.5'>
+                                    {reimbursement.description ?
+                                        <MdOutlineDescription className='hover:text-gray-700 hover:cursor-pointer' size="1.75em" onClick={() => {
+                                            setIsDescModalOpen(true)
+                                            setDescription(reimbursement.description)
+                                        }} />
+                                        : "-"}
                                 </Table.Cell>
                             </Table.Row>
                         ))}

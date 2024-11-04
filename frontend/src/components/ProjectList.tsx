@@ -4,6 +4,8 @@ import { FormEvent, FunctionComponent, useEffect, useState } from "react";
 import { toastError, toastSuccess } from "../toasts";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { Link } from "react-router-dom";
+import { MdOutlineDescription } from "react-icons/md";
+import DescriptionModal from "./DescriptionModal";
 
 export interface Project {
     _id?: string;
@@ -18,6 +20,7 @@ export interface Project {
     copis: string[];
     sanction_letter?: File | null;
     sanction_letter_file_id?: string;
+    description : string
 }
 
 const ProjectList: FunctionComponent = () => {
@@ -54,11 +57,33 @@ const ProjectList: FunctionComponent = () => {
     const [projectData, setProjectData] = useState<null | Array<Project>>(null);
     const [pagination, setPagination] = useState<{ currentPage: number, totalPages: number, totalProjects: number }>()
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDescModalOpen, setIsDescModalOpen] = useState(false);
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+    const [description, setDescription] = useState("")
+    const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
 
     const openDeleteModal = (project: Project) => {
         setProjectToDelete(project);
         setIsDeleteModalOpen(true);
+    };
+
+    const handleSelectAll = () => {
+        if (selectedProjects.size === projectData!.length) {
+            setSelectedProjects(new Set());
+        } else {
+            const allIds = new Set(projectData!.map((project) => project._id!));
+            setSelectedProjects(allIds);
+        }
+    };
+
+    const handleSelectProject = (id: string) => {
+        const newSelectedProjects = new Set(selectedProjects);
+        if (newSelectedProjects.has(id)) {
+            newSelectedProjects.delete(id);
+        } else {
+            newSelectedProjects.add(id);
+        }
+        setSelectedProjects(newSelectedProjects);
     };
 
     const handleDeleteProject = async () => {
@@ -91,12 +116,18 @@ const ProjectList: FunctionComponent = () => {
                 onDelete={handleDeleteProject}
                 item={projectToDelete?.project_name || ""}
             />
+             <DescriptionModal
+                isOpen={isDescModalOpen}
+                onClose={() => setIsDescModalOpen(false)}
+                type='project'
+                description={description}
+            />
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-200">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <Checkbox className="focus:ring-0" color="blue" />
+                                <Checkbox className="focus:ring-0" color="blue" checked={selectedProjects.size === projectData.length} onChange={handleSelectAll}/>
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Project Name
@@ -116,6 +147,7 @@ const ProjectList: FunctionComponent = () => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Utilization Certificate
                             </th>
+                            <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                             <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -123,7 +155,7 @@ const ProjectList: FunctionComponent = () => {
                         {projectData.map((project, key) => (
                             <tr key={project._id} className={key % 2 ? "bg-gray-100" : "bg-white"}>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <Checkbox className="focus:ring-0" color="blue" />
+                                    <Checkbox className="focus:ring-0" color="blue" checked={selectedProjects.has(project._id!)} onChange={() => handleSelectProject(project._id!)}/>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <Link className="hover:underline text-blue-600" to={`/project/${project._id}`}>
@@ -165,6 +197,14 @@ const ProjectList: FunctionComponent = () => {
                                     >
                                         View
                                     </Link>
+                                </td>
+                                <td className='flex justify-center items-center px-0 py-2.5'>
+                                    {project.description ?
+                                        <MdOutlineDescription className='hover:text-gray-700 hover:cursor-pointer' size="1.75em" onClick={() => {
+                                            setIsDescModalOpen(true)
+                                            setDescription(project.description)
+                                        }} />
+                                        : "-"}
                                 </td>
                                 <td className="px-2 py-2 w-20 text-center whitespace-nowrap">
                                     <div className='flex justify-center divide-x-2'>

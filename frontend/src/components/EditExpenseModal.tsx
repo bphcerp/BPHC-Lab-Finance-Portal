@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess } from '../toasts';
 import AddCategoryModal from './AddCategoryModal';
 import { Expense } from '../pages/Expenses';
-import { Category } from './AddExpenseModal';
+import { Category, Member } from './AddExpenseModal';
 
 interface EditExpenseModalProps {
   isOpen: boolean;
@@ -25,8 +25,10 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
 }) => {
   const [expenseReason, setExpenseReason] = useState('');
   const [category, setCategory] = useState('');
+  const [members, setMembers] = useState<Array<Member>>([]);
   const [categories, setCategories] = useState<Array<Category>>([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [amount, setAmount] = useState<number | string>('');
   const [paidBy, setPaidBy] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,8 +38,9 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
       setExpenseReason(expense.expenseReason);
       setCategory(expense.category._id);
       setAmount(expense.amount);
-      setPaidBy(expense.paidBy);
+      setPaidBy(expense.paidBy._id);
       fetchCategories();
+      fetchMembers()
     }
   }, [isOpen, expense]);
 
@@ -51,6 +54,19 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
     } catch (error) {
       toastError("Error fetching categories");
       console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchMembers = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category/member`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+      setMembers(data);
+    } catch (error) {
+      toastError('Error fetching members');
+      console.error('Error fetching members:', error);
     }
   };
 
@@ -105,6 +121,13 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
           isOpen={isCategoryModalOpen}
           onClose={() => setIsCategoryModalOpen(false)}
           onAddCategory={handleAddCategory}
+          type='expense'
+        />
+        <AddCategoryModal
+          isOpen={isMemberModalOpen}
+          onClose={() => setIsMemberModalOpen(false)}
+          onAddCategory={handleAddCategory}
+          type='member'
         />
         <div className="space-y-4">
           <div>
@@ -128,7 +151,6 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
                   required
                   className="mt-1"
                 >
-                  <option value="" disabled>Select Category</option>
                   {categories.map((cat) => (
                     <option key={cat._id} value={cat._id}>
                       {cat.name}
@@ -160,13 +182,22 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
           </div>
           <div>
             <Label htmlFor="paidBy" value="Paid By" />
-            <TextInput
-              id="paidBy"
-              value={paidBy}
-              onChange={(e) => setPaidBy(e.target.value)}
-              required
-              className="mt-1"
-            />
+            <div className="flex">
+              <Select
+                id="paidBy"
+                value={paidBy}
+                onChange={(e) => setPaidBy(e.target.value)}
+                required
+                className="mt-1 grow"
+              >
+                {members.map((member) => (
+                  <option key={member._id} value={member._id}>
+                    {member.name}
+                  </option>
+                ))}
+              </Select>
+              <Button color="blue" className="ml-2" onClick={() => setIsMemberModalOpen(true)}>Add Member</Button>
+            </div>
           </div>
         </div>
       </Modal.Body>

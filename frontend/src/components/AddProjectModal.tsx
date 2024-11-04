@@ -17,6 +17,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
   const [newHeadName, setNewHeadName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [sanctionLetter, setSanctionLetter] = useState<File | null>(null);
+  const [description, setDescription] = useState<string>("");
   const [totalAmount, setTotalAmount] = useState<number | null>(null); // Allow user input for total amount
 
   // New states for PIs and Co-PIs
@@ -105,9 +106,10 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     formData.append("start_date", startDate ? new Date(startDate).toISOString() : "");
     formData.append("end_date", endDate ? new Date(endDate).toISOString() : "");
     formData.append("total_amount", totalAmount!.toString());
-    formData.append("pis", JSON.stringify(pis));  // Convert arrays to JSON strings
+    formData.append("pis", JSON.stringify(pis));  
     formData.append("copis", JSON.stringify(coPIs));
-    formData.append("project_heads", JSON.stringify(projectHeads)); // Convert Map or object to JSON string
+    formData.append("project_heads", JSON.stringify(projectHeads)); 
+    formData.append("description", description); 
 
     // Append sanction letter file if present
     if (sanctionLetter) {
@@ -147,6 +149,8 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
       setPIs([]);
       setCoPIs([]);
       setSanctionLetter(null);
+      setLoading(false)
+      setDescription("")
     }
   }, [openModal]);
 
@@ -286,7 +290,16 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                 </div>
               ))}
             </div>
-
+            <div>
+              <Label htmlFor="description" value="Description" />
+              <TextInput
+                id="description"
+                placeholder="Enter project description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+              />
+            </div>
             <div>
               <Label htmlFor="total_amount" value="Total Amount" />
               <TextInput

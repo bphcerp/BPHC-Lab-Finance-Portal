@@ -11,6 +11,7 @@ export interface Reimbursement {
     expenses: { expenseReason: string; amount: number }[];
     projectHead: string;
     paidStatus: boolean;
+    description : string
 }
 
 interface ReimbursementModalProps {

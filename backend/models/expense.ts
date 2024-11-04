@@ -8,7 +8,8 @@ const expenseSchema = new Schema({
   paidBy: { type: mongoose.Schema.Types.ObjectId, ref: 'categories', required: true },
   settled: { type: String, enum: ['Current', 'Savings', null], default: null },
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  updatedAt: { type: Date, default: Date.now },
+  description : {type : String, default : null}
 });
 
 expenseSchema.pre('save', function (next) {

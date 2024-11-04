@@ -27,7 +27,8 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
   const [amount, setAmount] = useState<number | string>('');
   const [paidBy, setPaidBy] = useState('');
   const [members, setMembers] = useState<Array<Member>>([]);
-  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false); // New state for member modal
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+  const [description, setDescription] = useState<string>("");
 
   const fetchCategories = async () => {
     try {
@@ -69,6 +70,8 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
       if (!response.ok) {
         throw new Error((await response.json()).message);
       }
+      if(type === "expense") fetchCategories()
+      else if (type === "member" ) fetchMembers()
 
       toastSuccess('Category added');
     } catch (error) {
@@ -86,7 +89,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
 
   const handleSubmit = () => {
     if (expenseReason && category && amount && paidBy) {
-      onSubmit({ expenseReason, category, amount: Number(amount), paidBy });
+      onSubmit({ expenseReason, category, amount: Number(amount), paidBy, description });
       onClose();
     }
   };
@@ -172,6 +175,16 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
               </Select>
               <Button color="blue" className="ml-2" onClick={() => setIsMemberModalOpen(true)}>Add Member</Button>
             </div>
+          </div>
+          <div>
+            <Label htmlFor="description" value="Description" />
+            <TextInput
+              id="description"
+              placeholder="Enter expense description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
           </div>
         </div>
       </Modal.Body>

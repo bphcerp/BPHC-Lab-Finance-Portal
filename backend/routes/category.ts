@@ -39,7 +39,7 @@ router.post('/', async (req: Request, res: Response) => {
 
         res.status(201).json(newCategory);
     } catch (error) {
-        res.status(500).json({ message: 'Error creating category', error });
+        res.status(500).json({ message: 'Error creating category', error : (error as Error).message });
     }
 });
 

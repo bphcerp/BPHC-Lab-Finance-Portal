@@ -93,7 +93,7 @@ router.post('/paid', async (req: Request, res: Response) => {
 
 router.post('/', async (req: Request, res: Response) => {
     try {
-        const { expenseIds, projectId, projectHead, totalAmount, title } = req.body;
+        const { expenseIds, projectId, projectHead, totalAmount, title, description } = req.body;
 
         const reimbursement = new ReimbursementModel({
             project: projectId,
@@ -101,6 +101,7 @@ router.post('/', async (req: Request, res: Response) => {
             projectHead,
             totalAmount,
             title,
+            description,
             submittedAt: new Date(),
         });
 

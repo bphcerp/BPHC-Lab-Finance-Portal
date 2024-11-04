@@ -34,7 +34,7 @@ const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => P
 router.use(authenticateToken);
 
 // Constants
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 8;
 const VALID_SETTLED_STATUS = ['Current', 'Savings'] as const;
 
 // Validation
@@ -45,15 +45,14 @@ const validateCategory = async (categoryId: Schema.Types.ObjectId): Promise<bool
 
 // Routes
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
-  const { category, ...expenseData } = req.body as ExpenseRequest;
+  const expenseData = req.body as ExpenseRequest;
 
-  if (!await validateCategory(category)) {
+  if (!await validateCategory(expenseData.category)) {
     return res.status(400).json({ message: 'Invalid category ID' });
   }
 
   const expense = new ExpenseModel({
     ...expenseData,
-    category,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -218,9 +217,9 @@ router.get('/member-expenses', async (req: Request, res: Response) => {
 
 router.patch('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { category, ...expenseData } = req.body as ExpenseRequest;
+  const expenseData = req.body as ExpenseRequest;
 
-  if (!await validateCategory(category)) {
+  if (!await validateCategory(expenseData.category)) {
     return res.status(400).json({ message: 'Invalid category ID' });
   }
 
@@ -228,7 +227,6 @@ router.patch('/:id', asyncHandler(async (req: Request, res: Response) => {
     id,
     {
       ...expenseData,
-      category,
       updatedAt: new Date()
     },
     { new: true }

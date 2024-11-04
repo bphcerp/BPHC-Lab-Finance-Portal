@@ -4,7 +4,6 @@ import multer from "multer";
 import mongoose from "mongoose";
 import { Readable } from "stream";
 import { authenticateToken } from "../middleware/authenticateToken";
-import path from "path";
 import { ReimbursementModel } from "../models/reimburse";
 import wkhtmltopdf from "wkhtmltopdf";
 
@@ -48,7 +47,7 @@ router.get('/grandtotal', async (req: Request, res: Response) => {
 // Route to create a new project and upload sanction letter
 router.post('/', upload.single('sanction_letter'), async (req: Request, res: Response) => {
     try {
-        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis } = req.body;
+        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description } = req.body;
 
         const startDate = start_date ? new Date(start_date) : null;
         const endDate = end_date ? new Date(end_date) : null;
@@ -85,7 +84,8 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
             total_amount: Number(total_amount),
             pis: JSON.parse(pis),
             copis: JSON.parse(copis),
-            sanction_letter_file_id: sanctionLetterFileId
+            sanction_letter_file_id: sanctionLetterFileId,
+            description
         });
 
         const savedProject = await newProject.save();
@@ -320,11 +320,11 @@ router.get('/:id/util_cert', async (req, res) => {
 // Route to update a project by ID
 router.put('/projects/:id', async (req: Request, res: Response) => {
     try {
-        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis } = req.body;
+        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description } = req.body;
 
         const updatedProject = await ProjectModel.findByIdAndUpdate(
             req.params.id,
-            { project_name, start_date, end_date, project_heads, total_amount, pis, copis },
+            { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description },
             { new: true }
         );
 

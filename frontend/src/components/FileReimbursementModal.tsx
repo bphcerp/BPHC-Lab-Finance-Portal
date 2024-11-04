@@ -13,7 +13,7 @@ interface FileReimbursementModalProps {
     isOpen: boolean;
     onClose: () => void;
     selectedExpenses: Expense[];
-    onFileReimbursement: (expenseIds: string[], projectId: string, projectHead: string, totalAmount: number, title: string) => Promise<void>;
+    onFileReimbursement: (expenseIds: string[], projectId: string, projectHead: string, totalAmount: number, title: string, description : string) => Promise<void>;
 }
 
 const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
@@ -28,6 +28,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
     const [selectedProjectHead, setSelectedProjectHead] = useState<string | null>(null);
     const [totalExpenseAmount, setTotalExpenseAmount] = useState<number>(0);
     const [reimbursementTitle, setReimbursementTitle] = useState<string>('');
+    const [description, setDescription] = useState<string>("");
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -60,7 +61,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
         setLoading(true);
         try {
             if (selectedProjectId && selectedProjectHead && reimbursementTitle) {
-                await onFileReimbursement(expenseIds, selectedProjectId, selectedProjectHead, totalExpenseAmount, reimbursementTitle);
+                await onFileReimbursement(expenseIds, selectedProjectId, selectedProjectHead, totalExpenseAmount, reimbursementTitle, description);
                 onClose();
             }
         } catch (error) {
@@ -95,6 +96,15 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                         placeholder="Enter reimbursement title"
                         required
                     />
+                    <div>
+                        <TextInput
+                            id="description"
+                            placeholder="Enter reimbursement description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            required
+                        />
+                    </div>
                     <Select
                         onChange={(e) => {
                             const value = e.target.value;

@@ -5,8 +5,10 @@ import AddExpenseModal, { Category } from '../components/AddExpenseModal';
 import SettleExpenseModal from '../components/SettleExpenseModal';
 import FileReimbursementModal from '../components/FileReimbursementModal';
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
+import { MdOutlineDescription } from "react-icons/md";
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import EditExpenseModal from '../components/EditExpenseModal';
+import DescriptionModal from '../components/DescriptionModal';
 
 export interface Expense {
     _id: string;
@@ -15,6 +17,7 @@ export interface Expense {
     amount: number;
     reimbursedID: { title: string, paidStatus: boolean } | null;
     paidBy: Category;
+    description: string
     settled: 'Current' | 'Savings' | null;
     createdAt: Date;
     updatedAt: Date;
@@ -34,10 +37,12 @@ const ExpensesPage: React.FC = () => {
     const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
     const [isFileReimbursementModalOpen, setIsFileReimbursementModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDescModalOpen, setIsDescModalOpen] = useState(false);
     const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
     const [pagination, setPagination] = useState<{ currentPage: number; totalPages: number; totalExpenses: number }>();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+    const [description, setDescription] = useState("")
 
     const handleEditExpense = async (expenseData: EditExpenseData) => {
         try {
@@ -75,7 +80,7 @@ const ExpensesPage: React.FC = () => {
         setIsEditModalOpen(true);
     };
 
-    const handleFileReimbursement = async (expenseIds: string[], projectId: string, projectHead: string, totalAmount: number, title: string) => {
+    const handleFileReimbursement = async (expenseIds: string[], projectId: string, projectHead: string, totalAmount: number, title: string, description: string) => {
         try {
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse`, {
                 method: 'POST',
@@ -83,7 +88,7 @@ const ExpensesPage: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ expenseIds, projectId, projectHead, totalAmount, title }),
+                body: JSON.stringify({ expenseIds, projectId, projectHead, totalAmount, title, description }),
             });
 
             if (!response.ok) {
@@ -138,6 +143,7 @@ const ExpensesPage: React.FC = () => {
 
             const addedExpense = await response.json();
             setExpenses([...expenses, addedExpense]);
+            fetchExpenses()
             toastSuccess('Expense added successfully');
         } catch (error) {
             toastError('Error adding expense');
@@ -150,7 +156,6 @@ const ExpensesPage: React.FC = () => {
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense?page=${page}`, { credentials: "include" });
             const data = await response.json();
             setExpenses(data.expenses);
-            console.log(data.expenses)
             setPagination(data.pagination);
         } catch (error) {
             toastError("Error fetching expenses");
@@ -242,16 +247,39 @@ const ExpensesPage: React.FC = () => {
                 expense={selectedExpense}
                 onSubmit={handleEditExpense}
             />
-            <div className='flex justify-between items-center mb-2'>
+            <DescriptionModal
+                isOpen={isDescModalOpen}
+                onClose={() => setIsDescModalOpen(false)}
+                type='expense'
+                description={description}
+            />
+            <div className='flex justify-between'>
                 <h1 className="text-2xl font-bold mb-4">Expenses</h1>
-                <div className='flex space-x-2'>
-                    <Button color="blue" className='rounded-md' onClick={() => { setIsModalOpen(true) }}>Add Expense</Button>
-                    {selectedExpenses.size > 0 ?
-                        <div className='flex space-x-2'>
-                            <Button color="gray" size="md" className='rounded-md' onClick={() => { setIsSettleModalOpen(true) }}>{"Settle Expense" + (selectedExpenses.size > 1 ? "s" : "")}</Button>
-                            <Button color="gray" size="md" className='rounded-md' onClick={() => { setIsFileReimbursementModalOpen(true) }}>File for Reimbursement</Button>
-                        </div> : <></>
-                    }
+                <div className='flex flex-col items-end mb-4 space-y-4'>
+                    <div className="bg-gray-100 p-3 rounded-lg shadow-md flex items-center space-x-4">
+                        <h2 className="font-semibold text-gray-700 mr-4">Legend:</h2>
+                        <div className="flex items-center space-x-2">
+                            <span className="w-4 h-4 bg-yellow-300 rounded-full"></span>
+                            <span className="text-sm text-gray-700">Filed, Pending Reimbursement</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <span className="w-4 h-4 bg-green-500 rounded-full"></span>
+                            <span className="text-sm text-gray-700">Filed, Reimbursed</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <span className="w-4 h-4 bg-red-500 rounded-full"></span>
+                            <span className="text-sm text-gray-700">Not Filed</span>
+                        </div>
+                    </div>
+                    <div className='flex space-x-2'>
+                        <Button color="blue" className='rounded-md' onClick={() => { setIsModalOpen(true) }}>Add Expense</Button>
+                        {selectedExpenses.size > 0 ?
+                            <div className='flex space-x-2'>
+                                <Button color="gray" size="md" className='rounded-md' onClick={() => { setIsSettleModalOpen(true) }}>{"Settle Expense" + (selectedExpenses.size > 1 ? "s" : "")}</Button>
+                                <Button color="gray" size="md" className='rounded-md' onClick={() => { setIsFileReimbursementModalOpen(true) }}>File for Reimbursement</Button>
+                            </div> : <></>
+                        }
+                    </div>
                 </div>
             </div>
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
@@ -265,7 +293,7 @@ const ExpensesPage: React.FC = () => {
                                 className="focus:ring-0"
                             />
                         </Table.HeadCell>
-                        <Table.HeadCell className="text-left px-0 py-2.5">Reason</Table.HeadCell>
+                        <Table.HeadCell className="text-left px-0 py-2.5 w-10">Reason</Table.HeadCell>
                         <Table.HeadCell className="px-0 py-2.5">Created At</Table.HeadCell>
                         <Table.HeadCell className="px-0 py-2.5">Updated At</Table.HeadCell>
                         <Table.HeadCell className="px-0 py-2.5">Category</Table.HeadCell>
@@ -273,12 +301,15 @@ const ExpensesPage: React.FC = () => {
                         <Table.HeadCell className="px-0 py-2.5">Paid By</Table.HeadCell>
                         <Table.HeadCell className="w-20 px-0 py-2.5">Settled</Table.HeadCell>
                         <Table.HeadCell className="w-20 px-0 py-2.5">Reimbursement</Table.HeadCell>
-                        <Table.HeadCell className="w-20 px-0 py-2.5">Actions</Table.HeadCell>
+                        <Table.HeadCell className="w-24 px-0 py-2.5">Description</Table.HeadCell>
+                        {selectedExpenses.size > 0 ?
+                            <Table.HeadCell className="w-20 px-0 py-2.5">Actions</Table.HeadCell>
+                            : <></>}
                     </Table.Head>
                     <Table.Body className="min-h-[600px]">
                         {expenses.map(expense => (
                             <Table.Row key={expense._id} className="text-center whitespace-nowrap">
-                                <Table.Cell className="px-0 py-2.5"> {/* Removed padding here */}
+                                <Table.Cell className="px-0 py-2.5">
                                     <Checkbox
                                         color="blue"
                                         checked={selectedExpenses.has(expense._id)}
@@ -321,26 +352,36 @@ const ExpensesPage: React.FC = () => {
                                         {!expense.reimbursedID ? "Not Filed" : expense.reimbursedID.title}
                                     </span>
                                 </Table.Cell>
-                                <Table.Cell className="px-0 py-2.5">
-                                    {expense.reimbursedID ? "NA" : (
-                                        <div className="flex justify-center divide-x-2">
-                                            <button
-                                                className="w-10 flex justify-center hover:cursor-pointer"
-                                                onClick={() => openEditModal(expense)}
-                                            >
-                                                <RiEdit2Line color="blue" />
-                                            </button>
-                                            {expense.settled ? null : (
+                                <Table.Cell className='flex justify-center items-center px-0 py-2.5'>
+                                    {expense.description ?
+                                        <MdOutlineDescription className='hover:text-gray-700 hover:cursor-pointer' size="1.75em" onClick={() => {
+                                            setIsDescModalOpen(true)
+                                            setDescription(expense.description)
+                                        }} />
+                                        : "-"}
+                                </Table.Cell>
+                                {selectedExpenses.size > 0 ?
+                                    <Table.Cell className="px-0 py-2.5">
+                                        {expense.reimbursedID ? "NA" : (
+                                            <div className="flex justify-center divide-x-2">
                                                 <button
                                                     className="w-10 flex justify-center hover:cursor-pointer"
-                                                    onClick={() => openDeleteModal(expense)}
+                                                    onClick={() => openEditModal(expense)}
                                                 >
-                                                    <RiDeleteBin6Line color="red" />
+                                                    <RiEdit2Line color="blue" />
                                                 </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </Table.Cell>
+                                                {expense.settled ? null : (
+                                                    <button
+                                                        className="w-10 flex justify-center hover:cursor-pointer"
+                                                        onClick={() => openDeleteModal(expense)}
+                                                    >
+                                                        <RiDeleteBin6Line color="red" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </Table.Cell>
+                                    : <></>}
                             </Table.Row>
                         ))}
                         {expenses.length === 0 && (
