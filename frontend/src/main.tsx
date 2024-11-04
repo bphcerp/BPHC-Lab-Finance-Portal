@@ -15,6 +15,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import ReimbursementPage from './pages/Reimbursement'
 import MembersView from './components/MembersView'
 import ExpensesLayout from './layouts/ExpenseLayout'
+import ProjectOverview from './pages/ProjectOverview'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={import.meta.env.VITE_OAUTH_CID}>
@@ -24,8 +25,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/" element={<ProtectedRoute homePage={true} />} />
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route path="/project/:id" element={<ProjectDetails />} />
             <Route path='/dashboard' element={<DashBoard />} />
+            <Route path='/projects' element={<ProjectOverview />} />
+            <Route path="/project/:id" element={<ProjectDetails />} />
             <Route path='/expenses' element={<ExpensesLayout />}>
               <Route index element={<ExpensesPage />}/>
               <Route path='member-wise' element={<MembersView />}/>

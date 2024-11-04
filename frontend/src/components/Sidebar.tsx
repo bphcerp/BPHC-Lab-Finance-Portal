@@ -1,6 +1,6 @@
 import { HiChartPie } from "react-icons/hi";
 import { IoCashOutline } from "react-icons/io5";
-import { MdCallReceived } from "react-icons/md"
+import { MdCallReceived, MdWorkOutline } from "react-icons/md"
 import { Link, useNavigate } from "react-router-dom";
 
 interface SidebarProps {
@@ -31,6 +31,13 @@ const SidebarComponent: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         >
           <HiChartPie size="24" className="mr-3" />
           <span className="text-lg font-semibold">Dashboard</span>
+        </Link>
+        <Link
+          to="/projects"
+          className="flex items-center px-4 py-3 hover:bg-gray-200 rounded-lg mx-3 mb-2 transition"
+        >
+          <MdWorkOutline size="24" className="mr-3" />
+          <span className="text-lg font-semibold">Projects</span>
         </Link>
         <Link
           to="/expenses"

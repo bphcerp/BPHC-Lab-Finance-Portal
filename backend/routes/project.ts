@@ -113,7 +113,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     const page = parseInt(req.query.page as string) || 1; // Default to page 1
-    const limit = 4; // Limit of 6 expenses per page
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 4// Limit of 4 projects per page
     const skip = (page - 1) * limit;
 
     try {
