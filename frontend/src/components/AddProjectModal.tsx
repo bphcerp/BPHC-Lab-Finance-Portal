@@ -106,34 +106,34 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     formData.append("start_date", startDate ? new Date(startDate).toISOString() : "");
     formData.append("end_date", endDate ? new Date(endDate).toISOString() : "");
     formData.append("total_amount", totalAmount!.toString());
-    formData.append("pis", JSON.stringify(pis));  
+    formData.append("pis", JSON.stringify(pis));
     formData.append("copis", JSON.stringify(coPIs));
-    formData.append("project_heads", JSON.stringify(projectHeads)); 
-    formData.append("description", description); 
+    formData.append("project_heads", JSON.stringify(projectHeads));
+    formData.append("description", description);
 
     // Append sanction letter file if present
     if (sanctionLetter) {
-        formData.append("sanction_letter", sanctionLetter);
+      formData.append("sanction_letter", sanctionLetter);
     }
 
     try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
-            method: "POST",
-            body: formData, // FormData is used here, so no need for 'Content-Type: application/json'
-            credentials: "include",
-        });
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
+        method: "POST",
+        body: formData, // FormData is used here, so no need for 'Content-Type: application/json'
+        credentials: "include",
+      });
 
-        if (res.ok) {
-            toastSuccess("Project added");
-            setOpenModal(false);
-        } else {
-            toastError("Error adding project");
-        }
+      if (res.ok) {
+        toastSuccess("Project added");
+        setOpenModal(false);
+      } else {
+        toastError("Error adding project");
+      }
     } catch (e) {
-        toastError("Error");
-        console.error(e);
+      toastError("Error");
+      console.error(e);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -156,7 +156,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
 
   return (
     <div>
-      <Modal show={openModal} size="lg" popup onClose={() => setOpenModal(false)}>
+      <Modal show={openModal} size="4xl" popup onClose={() => setOpenModal(false)}>
         <Modal.Header className="p-5">
           <h3 className="text-xl font-medium text-gray-900 dark:text-white">Add New Project</h3>
         </Modal.Header>
@@ -194,11 +194,10 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="years" value="Number of Years" />
-              <TextInput id="years" type="number" value={numberOfYears} readOnly />
+              <div>
+                <Label htmlFor="years" value="Number of Years" />
+                <TextInput id="years" type="number" value={numberOfYears} readOnly />
+              </div>
             </div>
 
             {/* Project Heads Section */}
@@ -243,52 +242,54 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               ))}
             </div>
 
-            {/* PIs Section */}
-            <div>
-              <Label htmlFor="pi" value="PIs" />
-              <div className="flex space-x-2">
-                <TextInput
-                  id="pi"
-                  placeholder="Enter PI Name"
-                  value={newPI}
-                  onChange={(e) => setNewPI(e.target.value)}
-                />
-                <Button color="blue" size="sm" onClick={addPI}>
-                  Add PI
-                </Button>
-              </div>
-              {pis.map((pi, index) => (
-                <div key={index} className="mt-2 flex justify-between items-center">
-                  <span>{pi}</span>
-                  <Button color="red" size="xs" onClick={() => deletePI(index)}>
-                    Remove
+            <div className="flex justify-between">
+              {/* PIs Section */}
+              <div>
+                <Label htmlFor="pi" value="PIs" />
+                <div className="flex space-x-2">
+                  <TextInput
+                    id="pi"
+                    placeholder="Enter PI Name"
+                    value={newPI}
+                    onChange={(e) => setNewPI(e.target.value)}
+                  />
+                  <Button color="blue" size="sm" onClick={addPI}>
+                    Add PI
                   </Button>
                 </div>
-              ))}
-            </div>
+                {pis.map((pi, index) => (
+                  <div key={index} className="mt-2 flex justify-between items-center">
+                    <span>{pi}</span>
+                    <Button color="red" size="xs" onClick={() => deletePI(index)}>
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
 
-            {/* Co-PIs Section */}
-            <div>
-              <Label htmlFor="co_pi" value="Co-PIs" />
-              <div className="flex space-x-2">
-                <TextInput
-                  id="co_pi"
-                  placeholder="Enter Co-PI Name"
-                  value={newCoPI}
-                  onChange={(e) => setNewCoPI(e.target.value)}
-                />
-                <Button color="blue" size="sm" onClick={addCoPI}>
-                  Add Co-PI
-                </Button>
-              </div>
-              {coPIs.map((coPI, index) => (
-                <div key={index} className="mt-2 flex justify-between items-center">
-                  <span>{coPI}</span>
-                  <Button color="red" size="xs" onClick={() => deleteCoPI(index)}>
-                    Remove
+              {/* Co-PIs Section */}
+              <div>
+                <Label htmlFor="co_pi" value="Co-PIs" />
+                <div className="flex space-x-2">
+                  <TextInput
+                    id="co_pi"
+                    placeholder="Enter Co-PI Name"
+                    value={newCoPI}
+                    onChange={(e) => setNewCoPI(e.target.value)}
+                  />
+                  <Button color="blue" size="sm" onClick={addCoPI}>
+                    Add Co-PI
                   </Button>
                 </div>
-              ))}
+                {coPIs.map((coPI, index) => (
+                  <div key={index} className="mt-2 flex justify-between items-center">
+                    <span>{coPI}</span>
+                    <Button color="red" size="xs" onClick={() => deleteCoPI(index)}>
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
               <Label htmlFor="description" value="Description" />
@@ -320,7 +321,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               />
             </div>
 
-            <Button type="submit" disabled={loading}>
+            <Button color="blue" type="submit" disabled={loading}>
               {loading ? "Saving..." : "Save Project"}
             </Button>
           </form>

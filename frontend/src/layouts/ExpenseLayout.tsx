@@ -6,8 +6,8 @@ const ExpensesLayout: FunctionComponent = () => {
     const isMembersView = location.pathname.includes("/member-wise");
 
     return (
-        <div className="flex flex-col w-full grow">
-            <Link className="ml-4 mt-3 hover:underline text-blue-600" to={isMembersView ? "/expenses" : "/expenses/member-wise"}>
+        <div className="flex flex-col w-full">
+            <Link className="mt-2 hover:underline text-blue-600" to={isMembersView ? "/expenses" : "/expenses/member-wise"}>
                 {isMembersView ? "Show All Expenses" : "Show Members View"}
             </Link>
             <Outlet />

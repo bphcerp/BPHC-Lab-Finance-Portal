@@ -7,7 +7,7 @@ interface SettleModalProps {
     onSettle: (settlementType: string) => void;
 }
 
-const SettleModal: React.FC<SettleModalProps> = ({ isOpen, onClose, onSettle }) => {
+const SettleMemberModal: React.FC<SettleModalProps> = ({ isOpen, onClose, onSettle }) => {
     const [selectedSettlement, setSelectedSettlement] = useState<string>('Current'); // Default selection
 
     if (!isOpen) return null;
@@ -59,4 +59,4 @@ const SettleModal: React.FC<SettleModalProps> = ({ isOpen, onClose, onSettle }) 
     );
 };
 
-export default SettleModal;
+export default SettleMemberModal;

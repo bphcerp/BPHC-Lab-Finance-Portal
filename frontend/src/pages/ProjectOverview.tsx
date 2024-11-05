@@ -1,51 +1,35 @@
-import { Checkbox, Label } from "flowbite-react";
-import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
-import { FormEvent, FunctionComponent, useEffect, useState } from "react";
+import { FunctionComponent, useEffect, useState } from "react";
 import { toastError, toastSuccess } from "../toasts";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { Link } from "react-router-dom";
 import { MdOutlineDescription } from "react-icons/md";
 import DescriptionModal from "../components/DescriptionModal";
 
-export interface Project {
-    _id?: string;
-    project_name: string;
-    start_date: Date | null;
-    end_date: Date | null;
-    project_heads: {
-        [key: string]: number[];
+import { createColumnHelper } from '@tanstack/react-table'
+import TableCustom from "../components/TableCustom";
+import { Project } from "../components/ProjectList";
+import { Link } from "react-router-dom";
+
+
+const ProjectList: FunctionComponent = () => {
+
+    const getUniqueProjectHeads = (projects: Project[] | null): string[] => {
+        if (!projects) return [];
+        const headsSet = new Set<string>();
+
+        projects.forEach((project) => {
+            Object.keys(project.project_heads).forEach((head) => headsSet.add(head));
+        });
+
+        return Array.from(headsSet);
     };
-    total_amount: number;
-    pis: string[];
-    copis: string[];
-    sanction_letter?: File | null;
-    sanction_letter_file_id?: string;
-    description: string
-}
-
-const getUniqueProjectHeads = (projects: Project[] | null): string[] => {
-    if (!projects) return [];
-    const headsSet = new Set<string>();
-
-    projects.forEach((project) => {
-        Object.keys(project.project_heads).forEach((head) => headsSet.add(head));
-    });
-
-    return Array.from(headsSet);
-};
-
-const ProjectOverview: FunctionComponent = () => {
-
-    const [uniqueHeads, setUniqueHeads] = useState<Array<string>>([])
 
     const fetchProjectData = (page: number = 1) => {
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/?page=${page}?limit=10`, {
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/?page=${page}`, {
             credentials: "include",
         })
             .then((res) =>
                 res.json().then((data) => {
-                    setPagination(data.pagination)
-                    data = data.projects.map((project: Project) => ({
+                    data = data.map((project: Project) => ({
                         ...project,
                         start_date: project.start_date
                             ? new Date(project.start_date)
@@ -68,36 +52,71 @@ const ProjectOverview: FunctionComponent = () => {
         fetchProjectData()
     }, [])
 
-    const [projectData, setProjectData] = useState<null | Array<Project>>(null);
-    const [pagination, setPagination] = useState<{ currentPage: number, totalPages: number, totalProjects: number }>()
+    const [uniqueHeads, setUniqueHeads] = useState<Array<string>>([])
+    const [projectData, setProjectData] = useState<Array<Project>>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDescModalOpen, setIsDescModalOpen] = useState(false);
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
     const [description, setDescription] = useState("")
-    const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
+    const columnHelper = createColumnHelper<Project>()
+    const columns = [
+        columnHelper.accessor('project_name', {
+            header: "Project Name",
+            cell: info => <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
+                {info.getValue()}
+            </Link>,
+            enableColumnFilter: true
+        }),
+        columnHelper.accessor('total_amount', {
+            header: "Granted Amount",
+            cell: info => info.getValue().toLocaleString("en-IN", {
+                style: "currency",
+                currency: "INR",
+            }),
+            enableColumnFilter: false
+        }),
+        columnHelper.accessor('start_date', {
+            header: "Start Date",
+            cell: info => info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
+            enableColumnFilter: false
+        }),
+        columnHelper.accessor('end_date', {
+            header: "End Date",
+            cell: info => info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
+            enableColumnFilter: false
+        }),
+        columnHelper.group({
+            header: "Project Heads",
+            columns: uniqueHeads.map(head => (
+                columnHelper.accessor(row => row.project_heads[head] ? row.project_heads[head].reduce((a, b) => a + b, 0) : 0, {
+                    header: head,
+                    cell: info => info.getValue().toLocaleString("en-IN", {
+                        style: "currency",
+                        currency: "INR",
+                    })
+                })
+            ))
+        }),
+        columnHelper.accessor('description', {
+            header: "Description",
+            cell: ({ row }) => row.original.description ? (
+                <MdOutlineDescription
+                    size="1.75em"
+                    onClick={() => {
+                        setDescription(row.original.description);
+                        setIsDescModalOpen(true);
+                    }}
+                    className="hover:text-gray-700 cursor-pointer"
+                />
+            ) : "-",
+            enableColumnFilter: false,
+            enableSorting: false
+        })
+    ];
 
     const openDeleteModal = (project: Project) => {
         setProjectToDelete(project);
         setIsDeleteModalOpen(true);
-    };
-
-    const handleSelectAll = () => {
-        if (selectedProjects.size === projectData!.length) {
-            setSelectedProjects(new Set());
-        } else {
-            const allIds = new Set(projectData!.map((project) => project._id!));
-            setSelectedProjects(allIds);
-        }
-    };
-
-    const handleSelectProject = (id: string) => {
-        const newSelectedProjects = new Set(selectedProjects);
-        if (newSelectedProjects.has(id)) {
-            newSelectedProjects.delete(id);
-        } else {
-            newSelectedProjects.add(id);
-        }
-        setSelectedProjects(newSelectedProjects);
     };
 
     const handleDeleteProject = async () => {
@@ -122,130 +141,26 @@ const ProjectOverview: FunctionComponent = () => {
         }
     };
 
-    return (
-        <div className="flex flex-col space-y-4 p-4 w-full">
+    return projectData ? (
+        <div className="container mx-auto p-4">
             <h1 className="text-2xl font-bold mb-4">Projects Overview</h1>
-            {
-                projectData ? (
-                    <div className="container mx-auto p-4">
-                        <DeleteConfirmationModal
-                            isOpen={isDeleteModalOpen}
-                            onClose={() => setIsDeleteModalOpen(false)}
-                            onDelete={handleDeleteProject}
-                            item={projectToDelete?.project_name || ""}
-                        />
-                        <DescriptionModal
-                            isOpen={isDescModalOpen}
-                            onClose={() => setIsDescModalOpen(false)}
-                            type='project'
-                            description={description}
-                        />
-                        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-200">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <Checkbox className="focus:ring-0" color="blue" checked={selectedProjects.size === projectData.length} onChange={handleSelectAll} />
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Project Name
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Granted Amount
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Start Date
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            End Date
-                                        </th>
-                                        {
-                                            uniqueHeads.map((head, key) => (
-                                                <th key={key} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{head}</th>
-                                            ))
-                                        }
-                                        <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                        <th className="px-6 py-3 w-20 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {projectData.map((project, key) => (
-                                        <tr key={project._id} className={key % 2 ? "bg-gray-100" : "bg-white"}>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <Checkbox className="focus:ring-0" color="blue" checked={selectedProjects.has(project._id!)} onChange={() => handleSelectProject(project._id!)} />
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <Link className="hover:underline text-blue-600" to={`/project/${project._id}`}>
-                                                    {project.project_name}
-                                                </Link>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {project.total_amount.toLocaleString("en-IN", {
-                                                    style: "currency",
-                                                    currency: "INR",
-                                                })}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {project.start_date ? project.start_date.toLocaleDateString("en-IN") : "-"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {project.end_date ? project.end_date.toLocaleDateString("en-IN") : "-"}
-                                            </td>
-                                            {uniqueHeads.map((head, index) => (
-                                                <td className="w-32 p-3 text-left flex-shrink-0" key={index}>
-                                                    {project.project_heads[head]
-                                                        ? project.project_heads[head]
-                                                            .reduce((a, b) => a + b, 0)
-                                                            .toLocaleString("en-IN", {
-                                                                style: "currency",
-                                                                currency: "INR",
-                                                            })
-                                                        : "-"}
-                                                </td>
-                                            ))}
-                                            <td className='flex justify-center items-center px-0 py-2.5'>
-                                                {project.description ?
-                                                    <MdOutlineDescription className='hover:text-gray-700 hover:cursor-pointer' size="1.75em" onClick={() => {
-                                                        setIsDescModalOpen(true)
-                                                        setDescription(project.description)
-                                                    }} />
-                                                    : "-"}
-                                            </td>
-                                            <td className="px-2 py-2 w-20 text-center whitespace-nowrap">
-                                                <div className='flex justify-center divide-x-2'>
-                                                    <button className='w-10 flex justify-center hover:cursor-pointer'><RiEdit2Line color='blue' /></button>
-                                                    <button className='w-10 flex justify-center hover:cursor-pointer' onClick={() => openDeleteModal(project)}><RiDeleteBin6Line color='red' /></button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div className='flex flex-col items-center w-full mt-2'>
-                            <div className='space-x-2'>
-                                {pagination?.currentPage! > 1 ? <button onClick={() => fetchProjectData(pagination?.currentPage! - 1)} className='underline'>Prev</button> : ""}
-                                <span>Page {pagination?.currentPage} of {pagination?.totalPages}</span>
-                                {pagination?.currentPage! < pagination?.totalPages! ? <button onClick={() => fetchProjectData(pagination?.currentPage! + 1)} className='underline'>Next</button> : ""}
-                            </div>
-                            <div className='mt-2'>
-                                <form className='flex justify-center items-center space-x-3' onSubmit={(e: FormEvent) => {
-                                    e.preventDefault()
-                                    fetchProjectData(parseInt([...(new FormData(e.target as HTMLFormElement)).entries()][0][1] as string))
-                                }}>
-                                    <Label htmlFor='gotoPage' value='Go to' />
-                                    <input id="gotoPage" name="page" className='w-14' type='number' min={1} max={pagination?.totalPages} required />
-                                    <button type='submit' className='bg-blue-500 text-white p-1 rounded-sm'>Go</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="text-center text-gray-500">No projects available</div>
-                )
-            }
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onDelete={handleDeleteProject}
+                item={projectToDelete?.project_name || ""}
+            />
+            <DescriptionModal
+                isOpen={isDescModalOpen}
+                onClose={() => setIsDescModalOpen(false)}
+                type='project'
+                description={description}
+            />
+            <TableCustom data={projectData} columns={columns} />
         </div>
-    )
+    ) : (
+        <div className="text-center text-gray-500">No projects available</div>
+    );
 };
 
-export default ProjectOverview;
+export default ProjectList;

@@ -6,15 +6,83 @@ import { MdOutlineDescription } from "react-icons/md";
 
 import { Link } from 'react-router-dom';
 import DescriptionModal from '../components/DescriptionModal';
+import { createColumnHelper } from '@tanstack/react-table';
+import TableCustom from '../components/TableCustom';
 
 const ReimbursementPage: React.FC = () => {
     const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
-    const [filteredReimbursements, setFilteredReimbursements] = useState<Reimbursement[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedProject, setSelectedProject] = useState('');
     const [selectedReimbursements, setSelectedReimbursements] = useState<string[]>([]);
     const [description, setDescription] = useState("")
     const [isDescModalOpen, setIsDescModalOpen] = useState(false);
+
+    const columnHelper = createColumnHelper<Reimbursement>();
+
+    const columns = [
+        columnHelper.accessor('title', {
+            header: 'Title',
+        }),
+        columnHelper.accessor('project.project_name', {
+            header: 'Project Name',
+            cell: info => <Link className='hover:underline text-blue-600'
+                to={`/project/${info.row.original.project._id}`}
+                target="_blank"
+                rel="noopener noreferrer">
+                {info.row.original.project.project_name}
+            </Link>
+        }),
+        columnHelper.accessor('projectHead', {
+            header: 'Project Head',
+            meta: {
+                filterType: "dropdown"
+            }
+        }),
+        columnHelper.accessor('createdAt', {
+            header: 'Updated At',
+            cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
+            enableColumnFilter: false
+        }),
+        columnHelper.accessor(row => row.paidStatus ? "Paid" : "Unpaid", {
+            header: 'Category',
+            cell: info => {
+                const paidStatus = info.row.original.paidStatus;
+                return <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${paidStatus ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        } shadow-sm`}
+                >
+                    {paidStatus ? "Paid" : "Unpaid"}
+                </span>
+            },
+            meta: {
+                filterType: "dropdown"
+            },
+            filterFn: (row, _columnId, filterValue) => {
+                console.log("filterValue")
+                return (filterValue == "Unpaid" && !row.original.paidStatus) || (filterValue == "Paid" && row.original.paidStatus)
+            }
+        }),
+        columnHelper.accessor('totalAmount', {
+            header: 'Amount',
+            cell: info => info.getValue().toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+            enableColumnFilter: false
+        }),
+        columnHelper.accessor('description', {
+            header: "Description",
+            cell: ({ row }) => row.original.description ? (
+                <MdOutlineDescription
+                    size="1.75em"
+                    onClick={() => {
+                        setDescription(row.original.description);
+                        setIsDescModalOpen(true);
+                    }}
+                    className="hover:text-gray-700 cursor-pointer"
+                />
+            ) : "-",
+            enableColumnFilter: false,
+            enableSorting: false
+        }),
+    ];
 
     const fetchReimbursements = async () => {
         try {
@@ -26,7 +94,6 @@ const ReimbursementPage: React.FC = () => {
             }
             const data = await response.json();
             setReimbursements(data);
-            setFilteredReimbursements(data);
         } catch (error) {
             toastError('Error fetching reimbursements');
             console.error('Error fetching reimbursements:', error);
@@ -39,35 +106,12 @@ const ReimbursementPage: React.FC = () => {
         fetchReimbursements();
     }, []);
 
-    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const projectName = e.target.value;
-        setSelectedProject(projectName);
-
-        if (projectName === '') {
-            setFilteredReimbursements(reimbursements);
-        } else {
-            const filtered = reimbursements.filter(
-                (reimbursement) => reimbursement.project.project_name === projectName
-            );
-            setFilteredReimbursements(filtered);
-        }
-    };
-
     const handleCheckboxChange = (id: string) => {
         setSelectedReimbursements((prev) =>
             prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
         );
     };
 
-    const handleSelectAllChange = () => {
-        if (selectedReimbursements.length === filteredReimbursements.length) {
-            setSelectedReimbursements([]);
-        } else {
-            setSelectedReimbursements(filteredReimbursements.map((r) => r._id));
-        }
-    };
-
-    const isAllSelected = selectedReimbursements.length === filteredReimbursements.length;
 
     const handleMarkAsPaid = async () => {
         try {
@@ -110,23 +154,6 @@ const ReimbursementPage: React.FC = () => {
             <h1 className="text-2xl font-bold mb-4">List of Reimbursements</h1>
 
             <div className="mb-4">
-                <label htmlFor="project-filter" className="mr-2">Filter by Project:</label>
-                <select
-                    id="project-filter"
-                    value={selectedProject}
-                    onChange={handleSelectChange}
-                    className="border rounded p-2"
-                >
-                    <option value="">All Projects</option>
-                    {projectNames.map((name) => (
-                        <option key={name} value={name}>
-                            {name}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            <div className="mb-4">
                 <button
                     className="bg-green-500 text-white px-4 py-2 rounded disabled:opacity-50"
                     onClick={handleMarkAsPaid}
@@ -136,76 +163,7 @@ const ReimbursementPage: React.FC = () => {
                 </button>
             </div>
 
-            {filteredReimbursements.length === 0 ? (
-                <p>No reimbursements found.</p>
-            ) : (
-                <Table hoverable className="min-w-full divide-y divide-gray-200">
-                    <Table.Head className="bg-gray-100">
-                        <Table.HeadCell>
-                            <input
-                                type="checkbox"
-                                checked={isAllSelected}
-                                onChange={handleSelectAllChange}
-                            />
-                        </Table.HeadCell>
-                        <Table.HeadCell>Title</Table.HeadCell>
-                        <Table.HeadCell>Project Name</Table.HeadCell>
-                        <Table.HeadCell>Project Head</Table.HeadCell>
-                        <Table.HeadCell>Total Amount</Table.HeadCell>
-                        <Table.HeadCell>Created At</Table.HeadCell>
-                        <Table.HeadCell>Paid</Table.HeadCell>
-                        <Table.HeadCell className='w-20'>Description</Table.HeadCell>
-                    </Table.Head>
-                    <Table.Body>
-                        {filteredReimbursements.map((reimbursement) => (
-                            <Table.Row key={reimbursement._id}>
-                                <Table.Cell>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedReimbursements.includes(reimbursement._id)}
-                                        onChange={() => handleCheckboxChange(reimbursement._id)}
-                                    />
-                                </Table.Cell>
-                                <Table.Cell>{reimbursement.title}</Table.Cell>
-                                <Table.Cell><Link className='hover:underline text-blue-600'
-                                               to={`/project/${reimbursement.project._id}`}
-                                               target="_blank" 
-                                               rel="noopener noreferrer">
-                                                {reimbursement.project.project_name}
-                                            </Link>
-                                </Table.Cell>
-                                <Table.Cell>{reimbursement.projectHead}</Table.Cell>
-                                <Table.Cell>
-                                    {reimbursement.totalAmount.toLocaleString("en-IN", {
-                                        style: "currency",
-                                        currency: "INR",
-                                    })}
-                                </Table.Cell>
-                                <Table.Cell>
-                                    {new Date(reimbursement.createdAt).toLocaleDateString("en-IN")}
-                                </Table.Cell>
-                                <Table.Cell className="whitespace-nowrap">
-                                    <span
-                                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                                            reimbursement.paidStatus ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                                        } shadow-sm`}
-                                    >
-                                        {reimbursement.paidStatus ? "Paid" : "Unpaid"}
-                                    </span>
-                                </Table.Cell>
-                                <Table.Cell className='flex justify-center items-center px-0 py-2.5'>
-                                    {reimbursement.description ?
-                                        <MdOutlineDescription className='hover:text-gray-700 hover:cursor-pointer' size="1.75em" onClick={() => {
-                                            setIsDescModalOpen(true)
-                                            setDescription(reimbursement.description)
-                                        }} />
-                                        : "-"}
-                                </Table.Cell>
-                            </Table.Row>
-                        ))}
-                    </Table.Body>
-                </Table>
-            )}
+            <TableCustom data={reimbursements} columns={columns} />
         </div>
     );
 };

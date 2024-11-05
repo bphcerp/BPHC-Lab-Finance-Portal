@@ -1,14 +1,16 @@
-import { Button, Checkbox, Label, Table } from 'flowbite-react';
-import React, { FormEvent, useEffect, useState } from 'react';
+import { Button } from 'flowbite-react';
+import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess } from '../toasts';
 import AddExpenseModal, { Category } from '../components/AddExpenseModal';
+import { MdOutlineDescription } from "react-icons/md";
 import SettleExpenseModal from '../components/SettleExpenseModal';
 import FileReimbursementModal from '../components/FileReimbursementModal';
-import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
-import { MdOutlineDescription } from "react-icons/md";
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import EditExpenseModal from '../components/EditExpenseModal';
 import DescriptionModal from '../components/DescriptionModal';
+import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
+import { createColumnHelper, Table } from '@tanstack/react-table';
+import TableCustom from '../components/TableCustom';
 
 export interface Expense {
     _id: string;
@@ -33,16 +35,123 @@ interface EditExpenseData {
 const ExpensesPage: React.FC = () => {
     const [expenses, setExpenses] = useState<Array<Expense>>([]);
     const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set());
+    const [table ,setTable] = useState<Table<any>>()
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
     const [isFileReimbursementModalOpen, setIsFileReimbursementModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDescModalOpen, setIsDescModalOpen] = useState(false);
     const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
-    const [pagination, setPagination] = useState<{ currentPage: number; totalPages: number; totalExpenses: number }>();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
     const [description, setDescription] = useState("")
+
+    const columnHelper = createColumnHelper<Expense>();
+
+    const columns = [
+        columnHelper.accessor('expenseReason', {
+            header: 'Reason',
+            cell: info => info.getValue(),
+        }),
+        columnHelper.accessor('createdAt', {
+            header: 'Created At',
+            cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
+            enableColumnFilter: false
+        }),
+        columnHelper.accessor('updatedAt', {
+            header: 'Updated At',
+            cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
+            enableColumnFilter: false
+        }),
+        columnHelper.accessor('category.name', {
+            header: 'Category',
+            cell: info => info.getValue(),
+            meta: {
+                filterType: "dropdown"
+            }
+        }),
+        columnHelper.accessor('amount', {
+            header: 'Amount',
+            cell: info => info.getValue().toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+            enableColumnFilter: false
+        }),
+        columnHelper.accessor('paidBy.name', {
+            header: 'Paid By',
+            cell: info => info.getValue(),
+            meta: {
+                filterType: "dropdown"
+            }
+        }),
+        columnHelper.accessor(row => row.settled ?? "Not Settled", {
+            header: 'Settled',
+            cell: info => (
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${info.getValue() === 'Current' ? 'bg-blue-100 text-blue-800' :
+                    info.getValue() === 'Savings' ? 'bg-purple-100 text-purple-800' :
+                        'bg-gray-100 text-gray-800'
+                    } shadow-sm`}>
+                    {info.getValue() ?? 'Not Settled'}
+                </span>
+            ),
+            meta: {
+                filterType: "dropdown"
+            }
+        }),
+        columnHelper.accessor(row => row.reimbursedID ? row.reimbursedID.title : "Not Filed", {
+            header: 'Reimbursement',
+            cell: info => {
+                const reimbursedID = info.row.original.reimbursedID;
+                return (
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${!reimbursedID ? 'bg-red-100 text-red-800' :
+                        reimbursedID.paidStatus ? 'bg-green-100 text-green-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        } shadow-sm`}>
+                        {!reimbursedID ? 'Not Filed' : reimbursedID.title}
+                    </span>
+                );
+            },
+            meta: {
+                filterType: "dropdown"
+            }
+        }),
+        columnHelper.accessor('description', {
+            header: "Description",
+            cell: ({ row }) => row.original.description ? (
+                <MdOutlineDescription
+                    size="1.75em"
+                    onClick={() => {
+                        setDescription(row.original.description);
+                        setIsDescModalOpen(true);
+                    }}
+                    className="hover:text-gray-700 cursor-pointer"
+                />
+            ) : "-",
+            enableColumnFilter: false,
+            enableSorting: false
+        }),
+        columnHelper.accessor('_id', {
+            header: () => <div className='w-full text-center'>Actions</div>,
+            cell: ({ row }) => row.original.reimbursedID ? <div className='w-full text-center'>NA</div> : (
+                <div className="flex justify-center divide-x-2">
+                    <button
+                        className="w-10 flex justify-center hover:cursor-pointer"
+                        onClick={() => openEditModal(row.original)}
+                    >
+                        <RiEdit2Line color="blue" />
+                    </button>
+                    {row.original.settled ? null : (
+                        <button
+                            className="w-10 flex justify-center hover:cursor-pointer"
+                            onClick={() => openDeleteModal(row.original)}
+                        >
+                            <RiDeleteBin6Line color="red" />
+                        </button>
+                    )}
+                </div>
+            ),
+            enableColumnFilter: false,
+            enableSorting: false
+        })
+    ];
 
     const handleEditExpense = async (expenseData: EditExpenseData) => {
         try {
@@ -155,8 +264,7 @@ const ExpensesPage: React.FC = () => {
         try {
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense?page=${page}`, { credentials: "include" });
             const data = await response.json();
-            setExpenses(data.expenses);
-            setPagination(data.pagination);
+            setExpenses(data);
         } catch (error) {
             toastError("Error fetching expenses");
             console.error('Error fetching expenses:', error);
@@ -167,24 +275,6 @@ const ExpensesPage: React.FC = () => {
         fetchExpenses();
     }, []);
 
-    const handleSelectAll = () => {
-        if (selectedExpenses.size === expenses.length) {
-            setSelectedExpenses(new Set());
-        } else {
-            const allIds = new Set(expenses.map((expense) => expense._id));
-            setSelectedExpenses(allIds);
-        }
-    };
-
-    const handleSelectExpense = (id: string) => {
-        const newSelectedExpenses = new Set(selectedExpenses);
-        if (newSelectedExpenses.has(id)) {
-            newSelectedExpenses.delete(id);
-        } else {
-            newSelectedExpenses.add(id);
-        }
-        setSelectedExpenses(newSelectedExpenses);
-    };
 
     const handleDeleteExpense = async () => {
         if (!expenseToDelete) return;
@@ -213,8 +303,8 @@ const ExpensesPage: React.FC = () => {
         setIsDeleteModalOpen(true);
     };
 
-    return (
-        <div className="container mx-auto p-4 text-[1px]">
+    return expenses ? (
+        <div className="container mx-auto">
             <AddExpenseModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -255,7 +345,7 @@ const ExpensesPage: React.FC = () => {
             />
             <div className='flex justify-between'>
                 <h1 className="text-2xl font-bold mb-4">Expenses</h1>
-                <div className='flex flex-col items-end mb-4 space-y-4'>
+                <div className='flex justify-center items-end mb-4 space-x-4'>
                     <div className="bg-gray-100 p-3 rounded-lg shadow-md flex items-center space-x-4">
                         <h2 className="font-semibold text-gray-700 mr-4">Legend:</h2>
                         <div className="flex items-center space-x-2">
@@ -282,138 +372,13 @@ const ExpensesPage: React.FC = () => {
                     </div>
                 </div>
             </div>
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                <Table className="shadow-md rounded-lg text-center overflow-hidden divide-y divide-gray-200">
-                    <Table.Head className="bg-gray-100">
-                        <Table.HeadCell>
-                            <Checkbox
-                                color="blue"
-                                checked={selectedExpenses.size === expenses.length}
-                                onChange={handleSelectAll}
-                                className="focus:ring-0"
-                            />
-                        </Table.HeadCell>
-                        <Table.HeadCell className="text-left px-0 py-2.5 w-10">Reason</Table.HeadCell>
-                        <Table.HeadCell className="px-0 py-2.5">Created At</Table.HeadCell>
-                        <Table.HeadCell className="px-0 py-2.5">Updated At</Table.HeadCell>
-                        <Table.HeadCell className="px-0 py-2.5">Category</Table.HeadCell>
-                        <Table.HeadCell className="px-0 py-2.5">Amount</Table.HeadCell>
-                        <Table.HeadCell className="px-0 py-2.5">Paid By</Table.HeadCell>
-                        <Table.HeadCell className="w-20 px-0 py-2.5">Settled</Table.HeadCell>
-                        <Table.HeadCell className="w-20 px-0 py-2.5">Reimbursement</Table.HeadCell>
-                        <Table.HeadCell className="w-24 px-0 py-2.5">Description</Table.HeadCell>
-                        {selectedExpenses.size > 0 ?
-                            <Table.HeadCell className="w-20 px-0 py-2.5">Actions</Table.HeadCell>
-                            : <></>}
-                    </Table.Head>
-                    <Table.Body className="min-h-[600px]">
-                        {expenses.map(expense => (
-                            <Table.Row key={expense._id} className="text-center whitespace-nowrap">
-                                <Table.Cell className="px-0 py-2.5">
-                                    <Checkbox
-                                        color="blue"
-                                        checked={selectedExpenses.has(expense._id)}
-                                        onChange={() => handleSelectExpense(expense._id)}
-                                        className="focus:ring-0"
-                                    />
-                                </Table.Cell>
-                                <Table.Cell className="text-left px-0 py-2.5">{expense.expenseReason}</Table.Cell>
-                                <Table.Cell className="px-0 py-2.5">{new Date(expense.createdAt).toLocaleDateString("en-IN")}</Table.Cell>
-                                <Table.Cell className="px-0 py-2.5">{new Date(expense.updatedAt).toLocaleDateString("en-IN")}</Table.Cell>
-                                <Table.Cell className="px-0 py-2.5">{expense.category.name}</Table.Cell>
-                                <Table.Cell className="px-0 py-2.5">
-                                    {expense.amount.toLocaleString("en-IN", {
-                                        style: "currency",
-                                        currency: "INR",
-                                    })}
-                                </Table.Cell>
-                                <Table.Cell className="px-0 py-2.5">{expense.paidBy.name}</Table.Cell>
-                                <Table.Cell className="px-0 py-2.5">
-                                    <span
-                                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${expense.settled === "Current"
-                                            ? "bg-blue-100 text-blue-800"
-                                            : expense.settled === "Savings"
-                                                ? "bg-purple-100 text-purple-800"
-                                                : "bg-gray-100 text-gray-800"
-                                            } shadow-sm`}
-                                    >
-                                        {expense.settled ?? "Not Settled"}
-                                    </span>
-                                </Table.Cell>
-                                <Table.Cell className="px-0 py-2.5">
-                                    <span
-                                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${expense.reimbursedID
-                                            ? expense.reimbursedID.paidStatus
-                                                ? "bg-green-100 text-green-800"
-                                                : "bg-yellow-100 text-yellow-800"
-                                            : "bg-red-100 text-red-800"
-                                            } shadow-sm`}
-                                    >
-                                        {!expense.reimbursedID ? "Not Filed" : expense.reimbursedID.title}
-                                    </span>
-                                </Table.Cell>
-                                <Table.Cell className='flex justify-center items-center px-0 py-2.5'>
-                                    {expense.description ?
-                                        <MdOutlineDescription className='hover:text-gray-700 hover:cursor-pointer' size="1.75em" onClick={() => {
-                                            setIsDescModalOpen(true)
-                                            setDescription(expense.description)
-                                        }} />
-                                        : "-"}
-                                </Table.Cell>
-                                {selectedExpenses.size > 0 ?
-                                    <Table.Cell className="px-0 py-2.5">
-                                        {expense.reimbursedID ? "NA" : (
-                                            <div className="flex justify-center divide-x-2">
-                                                <button
-                                                    className="w-10 flex justify-center hover:cursor-pointer"
-                                                    onClick={() => openEditModal(expense)}
-                                                >
-                                                    <RiEdit2Line color="blue" />
-                                                </button>
-                                                {expense.settled ? null : (
-                                                    <button
-                                                        className="w-10 flex justify-center hover:cursor-pointer"
-                                                        onClick={() => openDeleteModal(expense)}
-                                                    >
-                                                        <RiDeleteBin6Line color="red" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </Table.Cell>
-                                    : <></>}
-                            </Table.Row>
-                        ))}
-                        {expenses.length === 0 && (
-                            <Table.Row>
-                                <Table.Cell colSpan={10} className="text-center">
-                                    No expenses found.
-                                </Table.Cell>
-                            </Table.Row>
-                        )}
-                    </Table.Body>
-                </Table>
-
-            </div>
-            <div className='flex space-x-2 divide-x text-base justify-center items-center w-full mt-4'>
-                <div className='space-x-2'>
-                    {pagination?.currentPage! > 1 ? <button onClick={() => fetchExpenses(pagination?.currentPage! - 1)} className='underline'>Prev</button> : ""}
-                    <span>Page {pagination?.currentPage} of {pagination?.totalPages}</span>
-                    {pagination?.currentPage! < pagination?.totalPages! ? <button onClick={() => fetchExpenses(pagination?.currentPage! + 1)} className='underline'>Next</button> : ""}
-                </div>
-                <div className='pl-2'>
-                    <form className='flex justify-center items-center space-x-3' onSubmit={(e: FormEvent) => {
-                        e.preventDefault()
-                        fetchExpenses(parseInt([...(new FormData(e.target as HTMLFormElement)).entries()][0][1] as string))
-                    }}>
-                        <Label htmlFor='gotoPage' value='Go to' />
-                        <input id="gotoPage" name="page" className='w-14' type='number' min={1} max={pagination?.totalPages} required />
-                        <button type='submit' className='bg-blue-500 text-white p-1 rounded-sm'>Go</button>
-                    </form>
-                </div>
-            </div>
+            <TableCustom data={expenses} columns={columns} setSelected={(selectedExpenses : Array<Expense>) => {
+                setSelectedExpenses(new Set(selectedExpenses.map(expense => expense._id)))
+            }} />
         </div>
-    );
+    ) : <div>
+        No Expenses to show
+    </div>;
 };
 
 export default ExpensesPage;

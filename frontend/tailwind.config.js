@@ -12,7 +12,7 @@ export default {
   plugins: [flowbite.plugin(),
     function({ addBase }) {
       addBase({
-        html: { fontSize: '13px' },
+        html: { fontSize: '12px' },
       });
     }
   ],

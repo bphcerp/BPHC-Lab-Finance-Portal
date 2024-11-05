@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess, toastWarn } from '../toasts';
-import SettleModal from './SettleModal'; // Import the modal component
+import SettleMemberModal from './SettleMemberModal'; // Import the modal component
 
 interface MemberExpense {
     memberId: string;
@@ -128,7 +128,7 @@ const MembersView: React.FC = () => {
             </div>
 
             {/* Settle Modal */}
-            <SettleModal
+            <SettleMemberModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSettle={handleSettle}
