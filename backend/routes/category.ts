@@ -8,9 +8,9 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // GET /api/categories/:type - Fetch categories by type
-router.get('/:type', async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
     try {
-        const categories = await CategoryModel.find({ type: req.params.type });
+        const categories = await CategoryModel.find();
         res.status(200).json(categories);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching categories: ' + (error as Error).message });

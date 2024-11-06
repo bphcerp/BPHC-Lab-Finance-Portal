@@ -16,6 +16,7 @@ import ReimbursementPage from './pages/Reimbursement'
 import MembersView from './components/MembersView'
 import ExpensesLayout from './layouts/ExpenseLayout'
 import ProjectOverview from './pages/ProjectOverview'
+import AdminPage from './pages/AdminPage'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={import.meta.env.VITE_OAUTH_CID}>
@@ -33,6 +34,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path='member-wise' element={<MembersView />}/>
             </Route>
             <Route path='/reimbursements' element={<ReimbursementPage />} />
+            <Route path='/admin' element={<AdminPage />} />            
           </Route>
           <Route path='/login' element={<LoginPage />} />
         </Routes>

@@ -4,11 +4,10 @@ import { Modal, Button, Label, TextInput } from 'flowbite-react';
 interface AddCategoryModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onAddCategory: (name: string, type: string) => Promise<void>;
-    type: string; // Accept type as a prop
+    onAddCategory: (name: string) => Promise<void>;
 }
 
-const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, onAddCategory, type }) => {
+const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, onAddCategory }) => {
     const [name, setName] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
 
@@ -16,7 +15,7 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, on
         if (!name.trim()) return;
         setLoading(true);
         try {
-            await onAddCategory(name, type); // Use the type prop
+            await onAddCategory(name); // Use the type prop
             onClose();
         } catch (error) {
             console.error(error);
@@ -44,15 +43,6 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, on
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="type" value="Category Type" />
-                        <TextInput
-                            id="type"
-                            type="text"
-                            value={type} // Display the type as read-only
-                            readOnly // Prevent user from changing it
                         />
                     </div>
                 </div>

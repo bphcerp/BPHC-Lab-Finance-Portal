@@ -9,7 +9,7 @@ import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import EditExpenseModal from '../components/EditExpenseModal';
 import DescriptionModal from '../components/DescriptionModal';
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
-import { createColumnHelper, Table } from '@tanstack/react-table';
+import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
 
 export interface Expense {
@@ -35,7 +35,6 @@ interface EditExpenseData {
 const ExpensesPage: React.FC = () => {
     const [expenses, setExpenses] = useState<Array<Expense>>([]);
     const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set());
-    const [table ,setTable] = useState<Table<any>>()
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
     const [isFileReimbursementModalOpen, setIsFileReimbursementModalOpen] = useState(false);
@@ -172,9 +171,7 @@ const ExpensesPage: React.FC = () => {
             }
 
             const updatedExpense = await response.json();
-            setExpenses(expenses.map(exp =>
-                exp._id === updatedExpense._id ? updatedExpense : exp
-            ));
+            fetchExpenses()
             setIsEditModalOpen(false);
             setSelectedExpense(null);
             toastSuccess('Expense updated successfully');
@@ -304,7 +301,7 @@ const ExpensesPage: React.FC = () => {
     };
 
     return expenses ? (
-        <div className="container mx-auto">
+        <div className="container mx-auto p-4">
             <AddExpenseModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}

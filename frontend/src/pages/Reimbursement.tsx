@@ -144,7 +144,7 @@ const ReimbursementPage: React.FC = () => {
     const projectNames = [...new Set(reimbursements.map(r => r.project.project_name))];
 
     return (
-        <div className="container mx-auto p-4">
+        <div className= "container mx-auto p-4">
             <DescriptionModal
                 isOpen={isDescModalOpen}
                 onClose={() => setIsDescModalOpen(false)}

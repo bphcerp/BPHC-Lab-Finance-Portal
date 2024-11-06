@@ -27,12 +27,11 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
   const [amount, setAmount] = useState<number | string>('');
   const [paidBy, setPaidBy] = useState('');
   const [members, setMembers] = useState<Array<Member>>([]);
-  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [description, setDescription] = useState<string>("");
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category/expense`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category`, {
         credentials: 'include',
       });
       const data = await response.json();
@@ -45,7 +44,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
 
   const fetchMembers = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category/member`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/member?type=student`, {
         credentials: 'include',
       });
       const data = await response.json();
@@ -56,7 +55,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
     }
   };
 
-  const handleAddCategory = async (name: string, type: string): Promise<void> => {
+  const handleAddCategory = async (name: string): Promise<void> => {
     try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category`, {
         method: 'POST',
@@ -64,14 +63,13 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ name, type }),
+        body: JSON.stringify({ name }),
       });
 
       if (!response.ok) {
         throw new Error((await response.json()).message);
       }
-      if(type === "expense") fetchCategories()
-      else if (type === "member" ) fetchMembers()
+      fetchCategories()
 
       toastSuccess('Category added');
     } catch (error) {
@@ -102,13 +100,6 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
           isOpen={isCategoryModalOpen}
           onClose={() => setIsCategoryModalOpen(false)}
           onAddCategory={handleAddCategory}
-          type='expense'
-        />
-        <AddCategoryModal
-          isOpen={isMemberModalOpen}
-          onClose={() => setIsMemberModalOpen(false)}
-          onAddCategory={handleAddCategory}
-          type='member'
         />
         <div className="space-y-4">
           <div>
@@ -173,7 +164,6 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
                   </option>
                 ))}
               </Select>
-              <Button color="blue" className="ml-2" onClick={() => setIsMemberModalOpen(true)}>Add Member</Button>
             </div>
           </div>
           <div>

@@ -34,7 +34,6 @@ const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => P
 router.use(authenticateToken);
 
 // Constants
-const ITEMS_PER_PAGE = 8;
 const VALID_SETTLED_STATUS = ['Current', 'Savings'] as const;
 
 // Validation
@@ -58,7 +57,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   });
 
   await expense.save();
-  await expense.populate('category');
+  await expense.populate('category paidBy');
   return res.status(201).json(expense);
 }));
 

@@ -46,7 +46,7 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category/expense`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category`, {
         credentials: "include"
       });
       const data = await response.json();
@@ -59,7 +59,7 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
 
   const fetchMembers = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category/member`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/member?type=student`, {
         credentials: 'include',
       });
       const data = await response.json();
@@ -70,7 +70,7 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
     }
   };
 
-  const handleAddCategory = async (name: string, type: string): Promise<void> => {
+  const handleAddCategory = async (name: string): Promise<void> => {
     try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/category`, {
         method: 'POST',
@@ -78,7 +78,7 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
           'Content-Type': 'application/json',
         },
         credentials: "include",
-        body: JSON.stringify({ name, type }),
+        body: JSON.stringify({ name }),
       });
 
       if (!response.ok) {
@@ -121,13 +121,11 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
           isOpen={isCategoryModalOpen}
           onClose={() => setIsCategoryModalOpen(false)}
           onAddCategory={handleAddCategory}
-          type='expense'
         />
         <AddCategoryModal
           isOpen={isMemberModalOpen}
           onClose={() => setIsMemberModalOpen(false)}
           onAddCategory={handleAddCategory}
-          type='member'
         />
         <div className="space-y-4">
           <div>
@@ -196,7 +194,6 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
                   </option>
                 ))}
               </Select>
-              <Button color="blue" className="ml-2" onClick={() => setIsMemberModalOpen(true)}>Add Member</Button>
             </div>
           </div>
         </div>

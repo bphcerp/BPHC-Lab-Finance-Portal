@@ -7,10 +7,16 @@ interface AddProjectProps {
   setOpenModal: Dispatch<SetStateAction<boolean>>;
 }
 
+type Member = {
+  _id : string
+  name : string
+  type : string
+}
+
 export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal, setOpenModal }) => {
   const [projectName, setProjectName] = useState<string>("");
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>();
+  const [endDate, setEndDate] = useState<string>();
   const [projectHeads, setProjectHeads] = useState<{ [key: string]: number[] }>({});
   const [headTotals, setHeadTotals] = useState<{ [key: string]: number }>({});
   const [numberOfYears, setNumberOfYears] = useState<number>(0);
@@ -18,24 +24,28 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
   const [loading, setLoading] = useState<boolean>(false);
   const [sanctionLetter, setSanctionLetter] = useState<File | null>(null);
   const [description, setDescription] = useState<string>("");
-  const [totalAmount, setTotalAmount] = useState<number | null>(null); // Allow user input for total amount
-
-  // New states for PIs and Co-PIs
+  const [totalAmount, setTotalAmount] = useState<number | null>(null);
   const [pis, setPIs] = useState<string[]>([]);
   const [newPI, setNewPI] = useState<string>("");
   const [coPIs, setCoPIs] = useState<string[]>([]);
   const [newCoPI, setNewCoPI] = useState<string>("");
 
-  const calculateNumberOfYears = () => {
-    if (startDate && endDate) {
-      const start = new Date(startDate).getTime();
-      const end = new Date(endDate).getTime();
-      const yearsDiff = (end - start) / (1000 * 60 * 60 * 24 * 365);
-      setNumberOfYears(yearsDiff >= 1 ? Math.floor(yearsDiff) : 0);
-    }
-  };
+  const [faculties, setFaculties] = useState<Array<Member>>([])
 
-  useEffect(calculateNumberOfYears, [startDate, endDate]);
+  function calculateFinancialYears(startDate: Date, endDate: Date): number {
+    const startYear = startDate.getMonth() < 3 
+        ? startDate.getFullYear() - 1 
+        : startDate.getFullYear();
+    const endYear = endDate.getMonth() < 3 
+        ? endDate.getFullYear() - 1 
+        : endDate.getFullYear();
+
+    return Math.max(0, endYear - startYear + 1);
+}
+
+  useEffect(() => {
+    if (startDate && endDate) setNumberOfYears(calculateFinancialYears(new Date(startDate),new Date(endDate)))
+  }, [startDate, endDate]);
 
   const addProjectHead = () => {
     if (!newHeadName || numberOfYears <= 0) return;
@@ -96,6 +106,19 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     setCoPIs((prevCoPIs) => prevCoPIs.filter((_, i) => i !== index));
   };
 
+  const fetchFaculties = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/member?type=faculty`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+      setFaculties(data);
+    } catch (error) {
+      toastError('Error fetching members');
+      console.error('Error fetching members:', error);
+    }
+  };
+
   const handleAddProject: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -139,6 +162,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
 
   useEffect(() => {
     if (!openModal) {
+      fetchFaculties()
       setProjectName("");
       setStartDate("");
       setEndDate("");
@@ -247,11 +271,18 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               <div>
                 <Label htmlFor="pi" value="PIs" />
                 <div className="flex space-x-2">
+                <datalist
+                    id="pi_list">
+                    {faculties.map(faculty => (
+                      <option key={faculty._id}>{faculty.name}</option>
+                    ))}
+                  </datalist>
                   <TextInput
-                    id="pi"
+                    id="cpi"
                     placeholder="Enter PI Name"
                     value={newPI}
                     onChange={(e) => setNewPI(e.target.value)}
+                    list="pi_list"
                   />
                   <Button color="blue" size="sm" onClick={addPI}>
                     Add PI
@@ -271,11 +302,18 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               <div>
                 <Label htmlFor="co_pi" value="Co-PIs" />
                 <div className="flex space-x-2">
+                <datalist
+                    id="co_pi_list">
+                    {faculties.map(faculty => (
+                      <option key={faculty._id}>{faculty.name}</option>
+                    ))}
+                  </datalist>
                   <TextInput
                     id="co_pi"
-                    placeholder="Enter Co-PI Name"
+                    placeholder="Enter Co PI Name"
                     value={newCoPI}
                     onChange={(e) => setNewCoPI(e.target.value)}
+                    list="co_pi_list"
                   />
                   <Button color="blue" size="sm" onClick={addCoPI}>
                     Add Co-PI

@@ -9,7 +9,7 @@ import projectRoutes from './routes/project';
 import expenseRoutes from './routes/expense';
 import categoryRoutes from './routes/category';
 import reimburseRoutes from './routes/reimburse';
-import { OAuth2Client } from 'google-auth-library';
+import memberRoutes from './routes/member';
 import { authenticateToken } from './middleware/authenticateToken';
 
 dotenv.config();
@@ -33,6 +33,7 @@ app.use('/api/project', projectRoutes);
 app.use('/api/expense', expenseRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/reimburse', reimburseRoutes);
+app.use('/api/member', memberRoutes);
 
 app.use(express.static("public"))
 

@@ -1,6 +1,7 @@
 import { HiChartPie } from "react-icons/hi";
 import { IoCashOutline } from "react-icons/io5";
 import { MdCallReceived, MdWorkOutline } from "react-icons/md"
+import { IoSettingsOutline } from "react-icons/io5";
 import { Link, useNavigate } from "react-router-dom";
 
 interface SidebarProps {
@@ -52,6 +53,13 @@ const SidebarComponent: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         >
           <MdCallReceived size="24" className="mr-3" />
           <span className="text-lg font-semibold">Reimbursements</span>
+        </Link>
+        <Link
+          to="/admin"
+          className="flex items-center px-4 py-3 hover:bg-gray-200 rounded-lg mx-3 mb-2 transition"
+        >
+          <IoSettingsOutline size="24" className="mr-3" />
+          <span className="text-lg font-semibold">Admin</span>
         </Link>
 
       </nav>
