@@ -72,8 +72,12 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     const aPaidStatus = a.reimbursedID?.paidStatus ?? false;
     const bPaidStatus = b.reimbursedID?.paidStatus ?? false;
 
-    return (a.reimbursedID === null ? 0 : 1) - (b.reimbursedID === null ? 0 : 1) ||
+    const reimbursementSort = (a.reimbursedID === null ? 0 : 1) - (b.reimbursedID === null ? 0 : 1) ||
       (aPaidStatus ? 1 : 0) - (bPaidStatus ? 1 : 0);
+    
+    if (reimbursementSort !== 0) return reimbursementSort;
+
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
 
   return res.status(200).send(expenses);
@@ -128,7 +132,7 @@ router.patch('/settle', asyncHandler(async (req: Request, res: Response) => {
 // Settle expenses for a specific member identified by their name in categories
 router.post('/settle/:memberId', async (req, res) => {
   const { memberId } = req.params;
-  const { settlementType } = req.body; // Get the settlement type from the request body
+  const { settlementType, amount } = req.body; // Get the settlement type from the request body
 
   try {
     // Validate the settlementType (optional)

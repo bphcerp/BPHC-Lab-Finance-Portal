@@ -8,6 +8,7 @@ import { createColumnHelper } from '@tanstack/react-table'
 import TableCustom from "../components/TableCustom";
 import { Project } from "../components/ProjectList";
 import { Link } from "react-router-dom";
+import { calculateCurrentYear } from "./ProjectDetails";
 
 
 const ProjectList: FunctionComponent = () => {
@@ -86,14 +87,15 @@ const ProjectList: FunctionComponent = () => {
             enableColumnFilter: false
         }),
         columnHelper.group({
-            header: "Project Heads",
+            header: "Project Heads (Remaining)",
             columns: uniqueHeads.map(head => (
-                columnHelper.accessor(row => row.project_heads[head] ? row.project_heads[head].reduce((a, b) => a + b, 0) : 0, {
+                columnHelper.accessor(row => `${row.project_name}_${head}`, {
                     header: head,
-                    cell: info => info.getValue().toLocaleString("en-IN", {
+                    cell: info => (info.row.original.project_heads[head] ? (info.row.original.project_heads[head][calculateCurrentYear(info.row.original)] - (info.row.original.project_head_expenses[head] ?? 0) ) : 0).toLocaleString("en-IN", {
                         style: "currency",
                         currency: "INR",
-                    })
+                    }),
+                    enableColumnFilter : false
                 })
             ))
         }),

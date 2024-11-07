@@ -1,16 +1,33 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Project } from "../components/ProjectList";
-import { toastError } from "../toasts";
+import { toastError, toastWarn } from "../toasts";
 import ReimbursementModal, { Reimbursement } from "../components/ReimbursementModal";
+
+export const calculateCurrentYear = (data: Project) => {
+    const curr = new Date();
+
+    if (curr > new Date(data.end_date!)) {
+        return -1
+    }
+
+    const start = new Date(data.start_date!);
+    let currentYear = curr.getFullYear() - start.getFullYear(); //should be +1, 0-indexing makes it +0
+
+    if (curr.getMonth() > 3) currentYear++ //should be +2, but 0 indexing makes it +1
+    if (start.getMonth() > 3) currentYear--;
+
+    return (currentYear >= 0 ? currentYear : 0);
+};
 
 const ProjectDetails = () => {
     const { id } = useParams();
     const [projectData, setProjectData] = useState<Project>();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [reimbursements, setReimbursements] = useState<Array<Reimbursement>>([]);
-    const [expenseData, setExpenseData] = useState<{[key : string] : number}>()
+    const [expenseData, setExpenseData] = useState<{ [key: string]: number }>()
     const [currentYear, setCurrentYear] = useState(0)
+    const [isProjectOver, setIsProjectOver] = useState(false)
 
     useEffect(() => {
         fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${id}`, {
@@ -19,14 +36,15 @@ const ProjectDetails = () => {
             .then((res) => res.json())
             .then((data) => {
                 setProjectData(data)
-                calculateCurrentYear(data)
+                const curr = calculateCurrentYear(data)
+                curr >= 0 ? setCurrentYear(curr) : setIsProjectOver(true)
             })
             .catch((e) => {
                 toastError("Something went wrong");
                 console.error(e);
             });
 
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse/total-expenses/${id}`, {
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${id}/total-expenses`, {
             credentials: "include",
         })
             .then((res) => res.json())
@@ -36,6 +54,10 @@ const ProjectDetails = () => {
                 console.error(e);
             });
     }, [id]);
+
+    useEffect(() => {
+        if (isProjectOver) toastWarn("Project's end date has been crossed!")
+    }, [isProjectOver])
 
     const fetchReimbursements = async (head: string) => {
         try {
@@ -50,13 +72,6 @@ const ProjectDetails = () => {
             toastError("Error fetching reimbursements");
             console.error(error);
         }
-    };
-
-    const calculateCurrentYear = (data : Project) => {
-        const curr = new Date().getTime();
-        const start = new Date(data.start_date!).getTime();
-        const diff = Math.floor((curr - start) / (1000 * 60 * 60 * 24 * 365));
-        setCurrentYear(diff >= 0?diff:0)
     };
 
     return (
@@ -86,7 +101,7 @@ const ProjectDetails = () => {
                                         }).map((_, i) => (
                                             <th
                                                 key={i}
-                                                className={`py-3 px-6 text-center text-gray-600 ${currentYear === i?"text-red-600":"   "}`}
+                                                className={`py-3 px-6 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
                                             >
                                                 Year {i + 1}
                                             </th>
@@ -106,7 +121,7 @@ const ProjectDetails = () => {
                                                 {allocations.map((amount, i) => (
                                                     <td
                                                         key={i}
-                                                        className={`py-3 px-6 text-center text-gray-600 ${currentYear === i?"text-red-600":"   "}`}
+                                                        className={`py-3 px-6 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
                                                     >
                                                         {amount.toLocaleString("en-IN", {
                                                             style: "currency",
@@ -130,7 +145,7 @@ const ProjectDetails = () => {
                                                     }).map((_, i) => (
                                                         <td
                                                             key={i}
-                                                            className={`py-3 px-6 text-center text-gray-600 ${currentYear === i?"text-red-600":"   "}`}
+                                                            className={`py-3 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
                                                         >
                                                             N/A
                                                         </td>
@@ -150,7 +165,7 @@ const ProjectDetails = () => {
                             </table>
                         </div>
 
-                        <div className="mt-6 md:mt-0 md:w-1/3">
+                        <div className="flex flex-col space-y-4 mt-6 md:mt-0 md:w-1/3">
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="bg-blue-100 p-6 rounded-lg shadow-md text-center">
                                     <p className="text-md font-semibold">Total Amount</p>
@@ -188,12 +203,24 @@ const ProjectDetails = () => {
                                     </div>
                                 </div>
                             </div>
+                            <div className="piDetails flex flex-col space-y-3 p-4 font-semibold w-full bg-gray-100 rounded-md shadow-md">
+                                <div className="flex items-center">
+                                    <span className="inline-block w-20 text-gray-700">PIs:</span>
+                                    <span className="text-gray-900">{projectData.pis.join(", ")}</span>
+                                </div>
+
+                                <div className="flex items-center">
+                                    <span className="inline-block w-20 text-gray-700">Co-PIs:</span>
+                                    <span className="text-gray-900">{projectData.copis.join(", ")}</span>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
                     <h2 className="text-2xl font-semibold text-gray-700 mt-6">Current Financial Year</h2>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full bg-white shadow-md rounded-lg mt-2">
+                    <div className="flex overflow-x-auto">
+                        {!isProjectOver ? <table className="min-w-full bg-white shadow-md rounded-lg mt-2">
                             <thead className="bg-gray-200">
                                 <tr>
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">
@@ -243,7 +270,9 @@ const ProjectDetails = () => {
                                     </td>
                                 </tr>
                             </tbody>
-                        </table>
+                        </table> : <div>
+                            <span>Project's end date has been crossed.</span>
+                        </div>}
                     </div>
                 </div>
             )}

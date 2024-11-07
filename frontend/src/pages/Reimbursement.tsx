@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess } from '../toasts';
-import { Table } from 'flowbite-react';
 import { Reimbursement } from '../components/ReimbursementModal';
 import { MdOutlineDescription } from "react-icons/md";
 
@@ -12,8 +11,7 @@ import TableCustom from '../components/TableCustom';
 const ReimbursementPage: React.FC = () => {
     const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedProject, setSelectedProject] = useState('');
-    const [selectedReimbursements, setSelectedReimbursements] = useState<string[]>([]);
+    const [selectedReimbursements, setSelectedReimbursements] = useState<Set<string>>(new Set());
     const [description, setDescription] = useState("")
     const [isDescModalOpen, setIsDescModalOpen] = useState(false);
 
@@ -106,11 +104,6 @@ const ReimbursementPage: React.FC = () => {
         fetchReimbursements();
     }, []);
 
-    const handleCheckboxChange = (id: string) => {
-        setSelectedReimbursements((prev) =>
-            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-        );
-    };
 
 
     const handleMarkAsPaid = async () => {
@@ -121,7 +114,7 @@ const ReimbursementPage: React.FC = () => {
                     'Content-Type': 'application/json',
                 },
                 credentials: "include",
-                body: JSON.stringify({ reimbursementIds: selectedReimbursements }),
+                body: JSON.stringify({ reimbursementIds: Array.from(selectedReimbursements) }),
             });
 
             if (!response.ok) {
@@ -130,7 +123,7 @@ const ReimbursementPage: React.FC = () => {
 
             toastSuccess('Selected reimbursements marked as paid.');
             fetchReimbursements(); // Refresh the list after updating
-            setSelectedReimbursements([]); // Clear selection
+            setSelectedReimbursements(new Set()); // Clear selection
         } catch (error) {
             toastError('Error marking reimbursements as paid');
             console.error('Error marking reimbursements as paid:', error);
@@ -140,8 +133,6 @@ const ReimbursementPage: React.FC = () => {
     if (loading) {
         return <div>Loading...</div>;
     }
-
-    const projectNames = [...new Set(reimbursements.map(r => r.project.project_name))];
 
     return (
         <div className= "container mx-auto p-4">
@@ -157,13 +148,15 @@ const ReimbursementPage: React.FC = () => {
                 <button
                     className="bg-green-500 text-white px-4 py-2 rounded disabled:opacity-50"
                     onClick={handleMarkAsPaid}
-                    disabled={selectedReimbursements.length === 0}
+                    disabled={selectedReimbursements.size === 0}
                 >
                     Mark as Paid
                 </button>
             </div>
 
-            <TableCustom data={reimbursements} columns={columns} />
+            <TableCustom data={reimbursements} columns={columns} setSelected={(selectedReimbursements : Array<Reimbursement>) => {
+                setSelectedReimbursements(new Set(selectedReimbursements.map(reimbursement => reimbursement._id)))
+            }} />
         </div>
     );
 };

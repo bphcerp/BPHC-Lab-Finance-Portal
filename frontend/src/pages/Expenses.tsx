@@ -170,7 +170,6 @@ const ExpensesPage: React.FC = () => {
                 throw new Error('Failed to update expense');
             }
 
-            const updatedExpense = await response.json();
             fetchExpenses()
             setIsEditModalOpen(false);
             setSelectedExpense(null);

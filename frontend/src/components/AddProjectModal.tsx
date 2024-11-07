@@ -274,7 +274,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                 <datalist
                     id="pi_list">
                     {faculties.map(faculty => (
-                      <option key={faculty._id}>{faculty.name}</option>
+                      <option value={faculty.name} key={faculty._id}></option>
                     ))}
                   </datalist>
                   <TextInput
@@ -305,7 +305,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                 <datalist
                     id="co_pi_list">
                     {faculties.map(faculty => (
-                      <option key={faculty._id}>{faculty.name}</option>
+                      <option value={faculty.name} key={faculty._id}></option>
                     ))}
                   </datalist>
                   <TextInput

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 import './index.css'
+import './globalFetch.js'
 import LoginPage from './pages/LoginPage'
 import DashBoard from './pages/Dashboard'
 import Layout from './layouts/Layout'

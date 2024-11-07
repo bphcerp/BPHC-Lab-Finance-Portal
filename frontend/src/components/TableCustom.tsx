@@ -1,4 +1,4 @@
-import { useReactTable, getCoreRowModel, getFilteredRowModel, getSortedRowModel, getPaginationRowModel, flexRender, Column, getFacetedRowModel, getFacetedUniqueValues } from "@tanstack/react-table";
+import { useReactTable, getCoreRowModel, getFilteredRowModel, getSortedRowModel, getPaginationRowModel, flexRender, Column, getFacetedRowModel, getFacetedUniqueValues, InitialTableState } from "@tanstack/react-table";
 import { Checkbox, TextInput, Table } from "flowbite-react";
 import { FunctionComponent, useEffect, useMemo } from "react";
 
@@ -6,9 +6,10 @@ interface TableCustomProps {
     data: Array<any>
     columns: Array<any>
     setSelected? : (selected : Array<any>) => void
+    initialState? : InitialTableState
 }
 
-const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSelected }) => {
+const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSelected, initialState }) => {
 
     const getSortedUniqueValues = (column: Column<any, unknown>) => {
         return useMemo(
@@ -24,6 +25,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
     const table = useReactTable({
         data,
         columns,
+        initialState,
         enableMultiRowSelection : true,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
@@ -42,8 +44,8 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
             <div className="flex flex-col w-full bg-white shadow-md rounded-lg">
                 <Table>
                     {table.getHeaderGroups().map(headerGroup => (
-                        <Table.Head key={headerGroup.id}>
-                            <Table.HeadCell className="px-4 py-2.5">
+                        <Table.Head className="bg-gray-200" key={headerGroup.id}>
+                            <Table.HeadCell className="bg-inherit px-4 py-2.5">
                                 {table.getHeaderGroups().length > 1 && !headerGroup.depth ? null : <Checkbox
                                     {...{
                                         checked: table.getIsAllRowsSelected(),
@@ -52,7 +54,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                 />}
                             </Table.HeadCell>
                             {headerGroup.headers.map(header => (
-                                <Table.HeadCell className={`px-0 py-2.5 ${table.getHeaderGroups().length > 1 && !headerGroup.depth ? 'text-center' : ""}`} key={header.id} colSpan={header.colSpan}>
+                                <Table.HeadCell className={`bg-inherit px-0 py-2.5 ${table.getHeaderGroups().length > 1 && !headerGroup.depth ? 'text-center' : ""}`} key={header.id} colSpan={header.colSpan}>
                                     {header.isPlaceholder ? null : (
                                         <>
                                             <div
@@ -95,8 +97,8 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                         </Table.Head>
                     ))}
                     <Table.Body>
-                        {table.getRowModel().rows.map(row => (
-                            <Table.Row key={row.id} className={row.index % 2 ? "bg-gray-100" : "bg-white"}>
+                        {table.getRowModel().rows.map((row, index) => (
+                            <Table.Row key={row.id} className={index % 2 ? "bg-gray-100" : "bg-white"}>
                                 <Table.Cell className="px-4 py-2.5">
                                     <Checkbox
                                         {...{
@@ -107,7 +109,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                     />
                                 </Table.Cell>
                                 {row.getVisibleCells().map(cell => (
-                                    <Table.Cell className="px-0 py-2.5" key={cell.id}>
+                                    <Table.Cell className="text-gray-700 px-0 py-2.5" key={cell.id}>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </Table.Cell>
                                 ))}

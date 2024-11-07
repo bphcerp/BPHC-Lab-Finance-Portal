@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess, toastWarn } from '../toasts';
-import SettleMemberModal from './SettleMemberModal'; // Import the modal component
+import SettleModal from './SettleModal';
+import TableCustom from './TableCustom'; // Assume this is the component you shared
+import { createColumnHelper } from '@tanstack/react-table';
 
 interface MemberExpense {
     memberId: string;
@@ -32,11 +34,7 @@ const MembersView: React.FC = () => {
         fetchMembersExpenses();
     }, []);
 
-    const handleSelectMember = (member: MemberExpense) => {
-        setSelectedMember(selectedMember === member ? null : member); // Toggle selection
-    };
-
-    const handleSettle = async (settlementType: string) => {
+    const handleSettle = async (settlementType: string, amount: number) => {
         if (selectedMember) {
             try {
                 const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/settle/${selectedMember.memberId}`, {
@@ -44,13 +42,22 @@ const MembersView: React.FC = () => {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ settlementType }), // Send the settlement type
+                    body: JSON.stringify({ settlementType, amount }),
                     credentials: 'include'
                 });
                 if (response.ok) {
-                    toastSuccess(`Successfully settled member : ${selectedMember.memberName} from ${settlementType}`);
-                    fetchMembersExpenses(); // Refresh the expenses after settling
+                    const newTotalDue = selectedMember.totalDue - amount;
+                    const updatedMember = { ...selectedMember, totalDue: newTotalDue, totalSettled: selectedMember.totalSettled + amount };
+
+                    setMembersExpenses(prevExpenses =>
+                        prevExpenses.map(member =>
+                            member.memberId === selectedMember.memberId ? updatedMember : member
+                        )
+                    );
+
+                    toastSuccess(`Successfully settled member: ${selectedMember.memberName} from ${settlementType}`);
                     setSelectedMember(null); // Clear selection after settling
+                    setIsModalOpen(false); // Close modal
                 } else {
                     toastError("Error settling the member");
                 }
@@ -61,6 +68,26 @@ const MembersView: React.FC = () => {
         }
     };
 
+    const columnHelper = createColumnHelper<MemberExpense>();
+
+    const columns = [
+        columnHelper.accessor('memberName', {
+            header: 'Member Name',
+        }),
+        columnHelper.accessor('totalPaid', {
+            header: 'Total Paid',
+            cell: info => info.getValue().toLocaleString("en-IN", { style: "currency", currency: "INR" }),
+        }),
+        columnHelper.accessor('totalSettled', {
+            header: 'Amount Settled',
+            cell: info => info.getValue().toLocaleString("en-IN", { style: "currency", currency: "INR" }),
+        }),
+        columnHelper.accessor('totalDue', {
+            header: 'Amount Due',
+            cell: info => info.getValue().toLocaleString("en-IN", { style: "currency", currency: "INR" }),
+        }),
+    ];
+
     return (
         <div className="container mx-auto p-4">
             <div className='flex justify-between items-center'>
@@ -69,10 +96,11 @@ const MembersView: React.FC = () => {
                     {selectedMember && (
                         <button
                             onClick={() => {
-                                if (selectedMember.totalDue === 0){
-                                    toastWarn("No due to settle!")  
+                                if (selectedMember.totalDue === 0) {
+                                    toastWarn("No due to settle!");
+                                } else {
+                                    setIsModalOpen(true);
                                 }
-                                else setIsModalOpen(true)
                             }}
                             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                         >
@@ -81,58 +109,23 @@ const MembersView: React.FC = () => {
                     )}
                 </div>
             </div>
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Paid</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Settled</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Due</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {membersExpenses.map(member => (
-                            <tr key={member.memberId}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <input
-                                        type="radio"
-                                        name="memberSelect"
-                                        checked={selectedMember === member}
-                                        onChange={() => handleSelectMember(member)}
-                                    />
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">{member.memberName}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">{member.totalPaid.toLocaleString("en-IN", {
-                                    style: "currency",
-                                    currency: "INR",
-                                })}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">{member.totalSettled.toLocaleString("en-IN", {
-                                    style: "currency",
-                                    currency: "INR",
-                                })}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">{member.totalDue.toLocaleString("en-IN", {
-                                    style: "currency",
-                                    currency: "INR",
-                                })}</td>
-                            </tr>
-                        ))}
-                        {membersExpenses.length === 0 && (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-4 text-center">No member expenses found.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+
+            {/* Use the TableCustom component for display */}
+            <TableCustom
+                data={membersExpenses}
+                columns={columns}
+                setSelected={(selected) => setSelectedMember(selected[0] || null)}
+            />
 
             {/* Settle Modal */}
-            <SettleMemberModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSettle={handleSettle}
-            />
+            {selectedMember && (
+                <SettleModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onSettle={handleSettle}
+                    maxAmount={selectedMember.totalDue}
+                />
+            )}
         </div>
     );
 };

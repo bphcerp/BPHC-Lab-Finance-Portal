@@ -16,6 +16,9 @@ export interface Project {
     project_heads: {
         [key: string]: number[];
     };
+    project_head_expenses : {
+        [key : string] : number
+    }
     total_amount: number;
     pis: string[];
     copis: string[];

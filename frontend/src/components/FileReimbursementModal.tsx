@@ -2,12 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Button, Select, TextInput } from 'flowbite-react';
 import { toastError, toastWarn } from '../toasts';
 import { Expense } from '../pages/Expenses';
-
-interface Project {
-    _id: string;
-    project_name: string;
-    project_heads: { [key: string]: number[] };
-}
+import { Project } from './ProjectList';
+import { calculateCurrentYear } from '../pages/ProjectDetails';
 
 interface FileReimbursementModalProps {
     isOpen: boolean;
@@ -114,7 +110,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                         required
                     >
                         <option value="">Select a Project</option>
-                        {projects.map((project) => (
+                        {projects.filter(project => new Date() <= new Date(project.end_date!)).map((project) => (
                             <option key={project._id} value={project._id}>
                                 {project.project_name}
                             </option>
@@ -129,12 +125,11 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                             required
                         >
                             <option value="">Select a Project Head</option>
-                            {Object.keys(projects.find(p => p._id === selectedProjectId)?.project_heads || {}).map(head => {
-                                const amounts = projects.find(p => p._id === selectedProjectId)?.project_heads[head] || [];
-                                const totalHeadAmount = amounts.reduce((acc, amount) => acc + amount, 0);
+                            {Object.entries(projects.find(p => p._id === selectedProjectId)?.project_heads || {}).map(([head , amounts]) => {
+                                const currentYearHeadAmount = amounts[calculateCurrentYear(projects.find(p => p._id === selectedProjectId)!)]
                                 return (
                                     <option key={head} value={head}>
-                                        {head} - {totalHeadAmount.toLocaleString("en-IN", {
+                                        {head} - {currentYearHeadAmount.toLocaleString("en-IN", {
                                             style: "currency",
                                             currency: "INR",
                                         })}
@@ -145,7 +140,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                     )}
                     {selectedProjectHead && (
                         <div>
-                            {projects.find(p => p._id === selectedProjectId)!.project_heads[selectedProjectHead].reduce((acc, amount) => acc + amount, 0) < totalExpenseAmount ? (
+                            {projects.find(p => p._id === selectedProjectId)!.project_heads[selectedProjectHead][calculateCurrentYear(projects.find(p => p._id === selectedProjectId)!)] < totalExpenseAmount ? (
                                 <p className="text-red-500">
                                     Selected head cannot cover the total expenses of {totalExpenseAmount.toLocaleString("en-IN", {
                                         style: "currency",

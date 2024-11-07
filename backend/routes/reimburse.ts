@@ -3,6 +3,7 @@ import { ReimbursementModel } from '../models/reimburse';
 import { ExpenseModel } from '../models/expense';
 import { authenticateToken } from '../middleware/authenticateToken';
 import mongoose from 'mongoose';
+import { ProjectModel } from '../models/project';
 
 const router = express.Router();
 
@@ -10,40 +11,10 @@ router.use(authenticateToken);
 
 router.get('/', async (req: Request, res: Response) => {
     try {
-        const reimbursements = await ReimbursementModel.find().sort({paidStatus : 1, createdAt : 1}).populate('project expenses');
+        const reimbursements = await ReimbursementModel.find().sort({paidStatus : 1, createdAt : -1}).populate('project expenses');
         res.status(200).json(reimbursements);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
-    }
-});
-
-router.get('/total-expenses/:projectId', async (req, res) => {
-    try {
-        const { projectId } = req.params;
-
-        // Use aggregation to group expenses by projectHead and sum totalAmount
-        const totalExpenses = await ReimbursementModel.aggregate([
-            {
-                $match: { project: new mongoose.Types.ObjectId(projectId) }
-            },
-            {
-                $group: {
-                    _id: "$projectHead",
-                    totalExpense: { $sum: "$totalAmount" }
-                }
-            }
-        ]);
-
-        // Format the result to an object with heads as keys and total expenses as values
-        const expensesByHead: { [key: string]: number } = {};
-        
-        totalExpenses.forEach((item: { _id: string; totalExpense: number }) => {
-            expensesByHead[item._id] = item.totalExpense;
-        });
-
-        res.status(200).json(expensesByHead);
-    } catch (error) {
-        res.status(400).json({ message: 'Error fetching total expenses: ' + (error as Error).message });
     }
 });
 
@@ -66,30 +37,46 @@ router.get('/:projectId/:head', async (req, res) => {
         res.status(400).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
     }
 });
+
 router.post('/paid', async (req: Request, res: Response) => {
     try {
         const { reimbursementIds } = req.body;
 
         if (!Array.isArray(reimbursementIds) || reimbursementIds.length === 0) {
             res.status(400).json({ message: 'Invalid input. Please provide an array of reimbursement IDs.' });
-            return
+            return;
         }
 
-        const updatedReimbursements = await ReimbursementModel.updateMany(
+        const reimbursements = await ReimbursementModel.find({ _id: { $in: reimbursementIds } });
+
+        if (!reimbursements || reimbursements.length === 0) {
+            res.status(404).json({ message: 'No reimbursements found with the provided IDs.' });
+            return;
+        }
+
+        await ReimbursementModel.updateMany(
             { _id: { $in: reimbursementIds } },
             { paidStatus: true }
         );
 
-        if (updatedReimbursements.matchedCount === 0) {
-            res.status(404).json({ message: 'No reimbursements found with the provided IDs.' });
-            return
-        }
+        const updatePromises = reimbursements.map(reimbursement => {
+            const { totalAmount, projectHead, project } = reimbursement;
+            return ProjectModel.findByIdAndUpdate(
+                project,
+                {
+                    $inc: { [`project_head_expenses.${projectHead}`]: totalAmount }
+                }
+            );
+        });
 
-        res.status(200).json({ message: 'Reimbursements updated successfully.' });
+        await Promise.all(updatePromises);
+
+        res.status(200).json({ message: 'Reimbursements updated successfully, and project head expenses updated.' });
     } catch (error) {
         res.status(500).json({ message: 'Error updating reimbursements: ' + (error as Error).message });
     }
 });
+
 
 router.post('/', async (req: Request, res: Response) => {
     try {

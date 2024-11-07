@@ -25,6 +25,24 @@ conn.once("open", () => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
+
+const calculateCurrentYear = (data: Project) => {
+    const curr = new Date();
+
+    if (curr > new Date(data.end_date!)){
+        return -1
+    }
+
+    const start = new Date(data.start_date!);
+    let currentYear = curr.getFullYear() - start.getFullYear(); //should be +1, 0-indexing makes it +0
+
+    if (curr.getMonth() > 3) currentYear++ //should be +2, but 0 indexing makes it +1
+    if (start.getMonth() > 3) currentYear--;
+
+    return (currentYear >= 0 ? currentYear : 0);
+}
+
 // Route to get the total sum of all project amounts
 router.get('/grandtotal', async (req: Request, res: Response) => {
     try {
@@ -41,6 +59,30 @@ router.get('/grandtotal', async (req: Request, res: Response) => {
         res.json({ total_amount_sum: totalAmountSum });
     } catch (error) {
         res.status(500).json({ message: 'Error calculating total sum', error });
+    }
+});
+
+router.get('/:id/total-expenses', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const project = await ProjectModel.findById(id);
+
+        if (!project) {
+            res.status(404).json({ message: 'Project not found.' });
+            return
+        }
+
+        const projectHeadExpenses = project.project_head_expenses;
+
+        if (!projectHeadExpenses) {
+            res.status(200).json({ message: 'No expenses found for this project.' });
+            return
+        }
+
+        res.status(200).json(projectHeadExpenses);
+    } catch (error) {
+        res.status(400).json({ message: 'Error fetching total expenses: ' + (error as Error).message });
     }
 });
 
@@ -98,12 +140,20 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
 // Route to get all projects without sanction letter files
 router.get('/', async (req: Request, res: Response) => {
     try {
+        const { current } = req.query
+
         const projects = await ProjectModel.find();
+
+        if (current){
+
+        }
+
         res.json(projects);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching projects', error });
     }
 });
+
 
 // Route to get a single project by ID
 router.get('/:id', async (req: Request, res: Response) => {
