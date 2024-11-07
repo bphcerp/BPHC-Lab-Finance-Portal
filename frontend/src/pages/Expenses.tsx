@@ -95,7 +95,7 @@ const ExpensesPage: React.FC = () => {
                 filterType: "dropdown"
             }
         }),
-        columnHelper.accessor(row => row.reimbursedID ? row.reimbursedID.title : "Not Filed", {
+        columnHelper.accessor(row => row.reimbursedID ? row.reimbursedID.paidStatus? "Filed and Reimbursed" : "Only Filed" : "Not Filed", {
             header: 'Reimbursement',
             cell: info => {
                 const reimbursedID = info.row.original.reimbursedID;
@@ -108,6 +108,24 @@ const ExpensesPage: React.FC = () => {
                     </span>
                 );
             },
+            meta: {
+                filterType: "dropdown"
+            }
+        }),
+        columnHelper.accessor((row) => row.reimbursedID && row.reimbursedID.paidStatus && row.settled === "Savings" ? (
+            "Yes"
+        ) : (
+            "No"
+        ), {
+            header: "Appropriation",
+            cell : ({getValue}) => (
+                <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${(getValue() == "Yes") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        } shadow-sm`}
+                >
+                    {getValue()}
+                </span>
+            ),
             meta: {
                 filterType: "dropdown"
             }
@@ -368,7 +386,7 @@ const ExpensesPage: React.FC = () => {
                     </div>
                 </div>
             </div>
-            <TableCustom data={expenses} columns={columns} setSelected={(selectedExpenses : Array<Expense>) => {
+            <TableCustom data={expenses} columns={columns} setSelected={(selectedExpenses: Array<Expense>) => {
                 setSelectedExpenses(new Set(selectedExpenses.map(expense => expense._id)))
             }} />
         </div>
