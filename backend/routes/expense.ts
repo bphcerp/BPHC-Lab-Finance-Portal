@@ -23,26 +23,21 @@ interface MemberExpenseSummary {
   totalDue: number;
 }
 
-// Error Handler
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
 
-// Middleware
 router.use(authenticateToken);
 
-// Constants
 const VALID_SETTLED_STATUS = ['Current', 'Savings'] as const;
 
-// Validation
 const validateCategory = async (categoryId: Schema.Types.ObjectId): Promise<boolean> => {
   const categoryExists = await CategoryModel.findById(categoryId);
   return !!categoryExists;
 };
 
-// Routes
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const expenseData = req.body as ExpenseRequest;
 
@@ -79,6 +74,18 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
+
+  return res.status(200).send(expenses);
+}));
+
+router.get('/passbook', asyncHandler(async (req: Request, res: Response) => {
+
+  const { type } = req.query
+
+  const expenses = await ExpenseModel.find({settled : type})
+    .populate<{ reimbursedID: { _id: ObjectId; title: string; paidStatus: boolean } }>({ path: 'reimbursedID', select: 'title paidStatus' })
+    .populate('category paidBy')
+    .lean();
 
   return res.status(200).send(expenses);
 }));
@@ -129,25 +136,22 @@ router.patch('/settle', asyncHandler(async (req: Request, res: Response) => {
   });
 }));
 
-// Settle expenses for a specific member identified by their name in categories
+
 router.post('/settle/:memberId', async (req, res) => {
   const { memberId } = req.params;
-  const { settlementType, amount } = req.body; // Get the settlement type from the request body
+  const { settlementType, amount } = req.body;
 
   try {
-    // Validate the settlementType (optional)
     if (!['Current', 'Savings'].includes(settlementType)) {
       res.status(400).json({ message: 'Invalid settlement type' });
       return
     }
 
-    // Settle expenses for the found member ID
     const result = await ExpenseModel.updateMany(
-      { paidBy: memberId, settled: null }, // Find expenses for this member that are not settled
-      { settled: settlementType } // Use the settlementType from the request
+      { paidBy: memberId, settled: null },
+      { settled: settlementType }
     );
 
-    // Check if any expenses were updated
     if (result.modifiedCount > 0) {
       res.status(200).json({ message: `Settled expenses for member` });
     } else {

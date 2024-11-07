@@ -1,0 +1,145 @@
+import React, { useEffect, useState } from 'react';
+import { toastError } from '../toasts';
+import { Category } from '../components/AddExpenseModal';
+import { MdOutlineDescription } from "react-icons/md";
+import DescriptionModal from '../components/DescriptionModal';
+import { createColumnHelper } from '@tanstack/react-table';
+import TableCustom from '../components/TableCustom';
+
+export interface CurrentData {
+    _id: string;
+    expenseReason: string;
+    category: Category;
+    amount: number;
+    reimbursedID: { title: string, paidStatus: boolean } | null;
+    paidBy: Category;
+    description: string
+    settled: 'Current';
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const CurrentPage: React.FC = () => {
+    const [currentData, setCurrentData] = useState<Array<CurrentData>>([]);
+    const [isDescModalOpen, setIsDescModalOpen] = useState(false);
+    const [description, setDescription] = useState("")
+
+    const columnHelper = createColumnHelper<CurrentData>();
+
+    const columns = [
+        columnHelper.accessor('expenseReason', {
+            header: 'Reason',
+            cell: info => info.getValue(),
+        }),
+        columnHelper.accessor('createdAt', {
+            header: 'Created At',
+            cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
+            enableColumnFilter: false
+        }),
+        columnHelper.accessor('updatedAt', {
+            header: 'Updated At',
+            cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
+            enableColumnFilter: false
+        }),
+        columnHelper.accessor('category.name', {
+            header: 'Category',
+            cell: info => info.getValue(),
+            meta: {
+                filterType: "dropdown"
+            }
+        }),
+        columnHelper.accessor('amount', {
+            header: 'Amount',
+            cell: info => info.getValue().toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+            enableColumnFilter: false
+        }),
+        columnHelper.accessor('paidBy.name', {
+            header: 'Paid By',
+            cell: info => info.getValue(),
+            meta: {
+                filterType: "dropdown"
+            }
+        }),
+        columnHelper.accessor(row => row.reimbursedID ? row.reimbursedID.paidStatus ? "Filed and Reimbursed" : "Only Filed" : "Not Filed", {
+            header: 'Reimbursement',
+            cell: info => {
+                const reimbursedID = info.row.original.reimbursedID;
+                return (
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${!reimbursedID ? 'bg-red-100 text-red-800' :
+                        reimbursedID.paidStatus ? 'bg-green-100 text-green-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        } shadow-sm`}>
+                        {!reimbursedID ? 'Not Filed' : reimbursedID.title}
+                    </span>
+                );
+            },
+            meta: {
+                filterType: "dropdown"
+            }
+        }),
+        columnHelper.accessor('description', {
+            header: "Description",
+            cell: ({ row }) => row.original.description ? (
+                <MdOutlineDescription
+                    size="1.75em"
+                    onClick={() => {
+                        setDescription(row.original.description);
+                        setIsDescModalOpen(true);
+                    }}
+                    className="hover:text-gray-700 cursor-pointer"
+                />
+            ) : "-",
+            enableColumnFilter: false,
+            enableSorting: false
+        }),
+    ];
+
+    const fetchCurrentDatas = async () => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/passbook?type=Current`, { credentials: "include" });
+            const data = await response.json();
+            setCurrentData(data);
+        } catch (error) {
+            toastError("Error fetching data");
+            console.error('Error fetching data:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchCurrentDatas();
+    }, []);
+
+    return currentData ? (
+        <div className="container mx-auto p-4">
+            <DescriptionModal
+                isOpen={isDescModalOpen}
+                onClose={() => setIsDescModalOpen(false)}
+                type='expense'
+                description={description}
+            />
+            <div className='flex justify-between'>
+                <h1 className="text-2xl font-bold mb-4">Current Passbook</h1>
+                <div className="bg-gray-100 p-3 rounded-lg shadow-md flex items-center space-x-4 mb-4">
+                    <h2 className="font-semibold text-gray-700 mr-4">Legend:</h2>
+                    <div className="flex items-center space-x-2">
+                        <span className="w-4 h-4 bg-yellow-300 rounded-full"></span>
+                        <span className="text-sm text-gray-700">Filed, Pending Reimbursement</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <span className="w-4 h-4 bg-green-500 rounded-full"></span>
+                        <span className="text-sm text-gray-700">Filed, Reimbursed</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <span className="w-4 h-4 bg-red-500 rounded-full"></span>
+                        <span className="text-sm text-gray-700">Not Filed</span>
+                    </div>
+                </div>
+            </div>
+            <TableCustom data={currentData} columns={columns}/>
+        </div>
+    ) : <div>
+        No CurrentDatas to show
+    </div>;
+};
+
+export default CurrentPage;

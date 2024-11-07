@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, Select, TextInput } from 'flowbite-react';
 import { toastError, toastWarn } from '../toasts';
-import { Expense } from '../pages/Expenses';
-import { Project } from './ProjectList';
 import { calculateCurrentYear } from '../pages/ProjectDetails';
+import { Expense, Project } from '../types';
 
 interface FileReimbursementModalProps {
     isOpen: boolean;

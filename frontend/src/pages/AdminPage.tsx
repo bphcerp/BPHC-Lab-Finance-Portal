@@ -3,10 +3,7 @@ import { Button } from "flowbite-react";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import TableCustom from "../components/TableCustom";
-
-type Inputs = {
-    selectedConfig: string
-}
+import { Inputs } from "../types";
 
 const AdminPage: React.FC = () => {
 

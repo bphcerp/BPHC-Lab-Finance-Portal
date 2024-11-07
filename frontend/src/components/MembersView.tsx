@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess, toastWarn } from '../toasts';
 import SettleModal from './SettleModal';
-import TableCustom from './TableCustom'; // Assume this is the component you shared
+import TableCustom from './TableCustom';
 import { createColumnHelper } from '@tanstack/react-table';
-
-interface MemberExpense {
-    memberId: string;
-    memberName: string;
-    totalPaid: number;
-    totalSettled: number;
-    totalDue: number;
-}
+import { MemberExpense } from '../types';
 
 const MembersView: React.FC = () => {
     const [membersExpenses, setMembersExpenses] = useState<Array<MemberExpense>>([]);

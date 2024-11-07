@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess } from '../toasts';
-import { Reimbursement } from '../components/ReimbursementModal';
 import { MdOutlineDescription } from "react-icons/md";
 
 import { Link } from 'react-router-dom';
 import DescriptionModal from '../components/DescriptionModal';
 import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
+import { Reimbursement } from '../types';
 
 const ReimbursementPage: React.FC = () => {
     const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);

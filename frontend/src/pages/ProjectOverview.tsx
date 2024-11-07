@@ -6,9 +6,9 @@ import DescriptionModal from "../components/DescriptionModal";
 
 import { createColumnHelper } from '@tanstack/react-table'
 import TableCustom from "../components/TableCustom";
-import { Project } from "../components/ProjectList";
 import { Link } from "react-router-dom";
 import { calculateCurrentYear } from "./ProjectDetails";
+import { Project } from "../types";
 
 
 const ProjectList: FunctionComponent = () => {

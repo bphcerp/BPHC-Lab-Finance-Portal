@@ -18,6 +18,8 @@ import MembersView from './components/MembersView'
 import ExpensesLayout from './layouts/ExpenseLayout'
 import ProjectOverview from './pages/ProjectOverview'
 import AdminPage from './pages/AdminPage'
+import SavingsPage from './pages/Savings.js'
+import CurrentPage from './pages/Current.js'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={import.meta.env.VITE_OAUTH_CID}>
@@ -36,6 +38,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             </Route>
             <Route path='/reimbursements' element={<ReimbursementPage />} />
             <Route path='/admin' element={<AdminPage />} />            
+            <Route path='/savings' element={<SavingsPage />} />            
+            <Route path='/current' element={<CurrentPage />} />            
           </Route>
           <Route path='/login' element={<LoginPage />} />
         </Routes>

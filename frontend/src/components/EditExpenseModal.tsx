@@ -2,19 +2,13 @@ import { Button, Modal, Label, TextInput, Select } from 'flowbite-react';
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess } from '../toasts';
 import AddCategoryModal from './AddCategoryModal';
-import { Expense } from '../pages/Expenses';
-import { Category, Member } from './AddExpenseModal';
+import { Category, EditExpenseData, Expense, Member } from '../types';
 
 interface EditExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
   expense: Expense | null;
-  onSubmit: (expenseData: {
-    expenseReason: string;
-    category: string;
-    amount: number;
-    paidBy: string;
-  }) => Promise<void>;
+  onSubmit: (expenseData: EditExpenseData) => Promise<void>;
 }
 
 const EditExpenseModal: React.FC<EditExpenseModalProps> = ({ 

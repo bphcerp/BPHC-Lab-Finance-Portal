@@ -1,18 +1,6 @@
 import React from 'react';
 import { Modal, Button } from 'flowbite-react';
-import { Project } from './ProjectList';
-
-export interface Reimbursement {
-    _id: string;
-    project: Project;
-    totalAmount: number;
-    createdAt: Date;
-    title: string;
-    expenses: { expenseReason: string; amount: number }[];
-    projectHead: string;
-    paidStatus: boolean;
-    description : string
-}
+import { Reimbursement } from '../types';
 
 interface ReimbursementModalProps {
     isOpen: boolean;

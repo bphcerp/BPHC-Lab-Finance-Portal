@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Project } from "../components/ProjectList";
 import { toastError, toastWarn } from "../toasts";
-import ReimbursementModal, { Reimbursement } from "../components/ReimbursementModal";
+import ReimbursementModal from "../components/ReimbursementModal";
+import { Project, Reimbursement } from "../types";
 
 export const calculateCurrentYear = (data: Project) => {
     const curr = new Date();

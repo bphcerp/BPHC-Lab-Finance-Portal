@@ -7,26 +7,7 @@ import DescriptionModal from "./DescriptionModal";
 
 import { createColumnHelper } from '@tanstack/react-table'
 import TableCustom from "./TableCustom";
-
-export interface Project {
-    _id?: string;
-    project_name: string;
-    start_date: Date | null;
-    end_date: Date | null;
-    project_heads: {
-        [key: string]: number[];
-    };
-    project_head_expenses : {
-        [key : string] : number
-    }
-    total_amount: number;
-    pis: string[];
-    copis: string[];
-    sanction_letter?: File | null;
-    sanction_letter_file_id?: string;
-    description: string
-    util_cert: File
-}
+import { Project } from "../types";
 
 const ProjectList: FunctionComponent = () => {
 

@@ -1,7 +1,7 @@
 import { Button, Modal, Label, Radio } from 'flowbite-react';
 import React, { useEffect, useState } from 'react';
 import { toastError, toastWarn } from '../toasts';
-import { Expense } from '../pages/Expenses';
+import { Expense } from '../types';
 
 interface SettleExpenseModalProps {
     isOpen: boolean;

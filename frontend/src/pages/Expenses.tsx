@@ -1,7 +1,7 @@
 import { Button } from 'flowbite-react';
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess } from '../toasts';
-import AddExpenseModal, { Category } from '../components/AddExpenseModal';
+import AddExpenseModal from '../components/AddExpenseModal';
 import { MdOutlineDescription } from "react-icons/md";
 import SettleExpenseModal from '../components/SettleExpenseModal';
 import FileReimbursementModal from '../components/FileReimbursementModal';
@@ -11,26 +11,7 @@ import DescriptionModal from '../components/DescriptionModal';
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
-
-export interface Expense {
-    _id: string;
-    expenseReason: string;
-    category: Category;
-    amount: number;
-    reimbursedID: { title: string, paidStatus: boolean } | null;
-    paidBy: Category;
-    description: string
-    settled: 'Current' | 'Savings' | null;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-interface EditExpenseData {
-    expenseReason: string;
-    category: string;
-    amount: number;
-    paidBy: string;
-}
+import { EditExpenseData, Expense } from '../types';
 
 const ExpensesPage: React.FC = () => {
     const [expenses, setExpenses] = useState<Array<Expense>>([]);
@@ -274,9 +255,9 @@ const ExpensesPage: React.FC = () => {
         }
     };
 
-    const fetchExpenses = async (page: number = 1) => {
+    const fetchExpenses = async () => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense?page=${page}`, { credentials: "include" });
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense`, { credentials: "include" });
             const data = await response.json();
             setExpenses(data);
         } catch (error) {

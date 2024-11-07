@@ -2,21 +2,12 @@ import { Button, Modal, Label, TextInput, Select } from 'flowbite-react';
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess } from '../toasts';
 import AddCategoryModal from './AddCategoryModal';
+import { Category, Member } from '../types';
 
 interface AddExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: Function;
-}
-
-export interface Category {
-  _id: string;
-  name: string;
-}
-
-export interface Member {
-  _id: string;
-  name: string;
 }
 
 const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSubmit }) => {

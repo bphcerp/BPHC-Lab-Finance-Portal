@@ -1,16 +1,11 @@
 import { Button, Label, Modal, TextInput, FileInput } from "flowbite-react";
 import { Dispatch, FormEventHandler, FunctionComponent, SetStateAction, useEffect, useState } from "react";
 import { toastError, toastSuccess, toastWarn } from "../toasts";
+import { Member } from "../types";
 
 interface AddProjectProps {
   openModal: boolean;
   setOpenModal: Dispatch<SetStateAction<boolean>>;
-}
-
-type Member = {
-  _id: string
-  name: string
-  type: string
 }
 
 export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal, setOpenModal }) => {
