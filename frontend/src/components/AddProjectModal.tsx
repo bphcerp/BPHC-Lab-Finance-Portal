@@ -1,6 +1,6 @@
 import { Button, Label, Modal, TextInput, FileInput } from "flowbite-react";
 import { Dispatch, FormEventHandler, FunctionComponent, SetStateAction, useEffect, useState } from "react";
-import { toastError, toastSuccess } from "../toasts";
+import { toastError, toastSuccess, toastWarn } from "../toasts";
 
 interface AddProjectProps {
   openModal: boolean;
@@ -8,9 +8,9 @@ interface AddProjectProps {
 }
 
 type Member = {
-  _id : string
-  name : string
-  type : string
+  _id: string
+  name: string
+  type: string
 }
 
 export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal, setOpenModal }) => {
@@ -33,18 +33,18 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
   const [faculties, setFaculties] = useState<Array<Member>>([])
 
   function calculateFinancialYears(startDate: Date, endDate: Date): number {
-    const startYear = startDate.getMonth() < 3 
-        ? startDate.getFullYear() - 1 
-        : startDate.getFullYear();
-    const endYear = endDate.getMonth() < 3 
-        ? endDate.getFullYear() - 1 
-        : endDate.getFullYear();
+    const startYear = startDate.getMonth() < 3
+      ? startDate.getFullYear() - 1
+      : startDate.getFullYear();
+    const endYear = endDate.getMonth() < 3
+      ? endDate.getFullYear() - 1
+      : endDate.getFullYear();
 
     return Math.max(0, endYear - startYear + 1);
-}
+  }
 
   useEffect(() => {
-    if (startDate && endDate) setNumberOfYears(calculateFinancialYears(new Date(startDate),new Date(endDate)))
+    if (startDate && endDate) setNumberOfYears(calculateFinancialYears(new Date(startDate), new Date(endDate)))
   }, [startDate, endDate]);
 
   const addProjectHead = () => {
@@ -271,7 +271,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               <div>
                 <Label htmlFor="pi" value="PIs" />
                 <div className="flex space-x-2">
-                <datalist
+                  <datalist
                     id="pi_list">
                     {faculties.map(faculty => (
                       <option value={faculty.name} key={faculty._id}></option>
@@ -302,7 +302,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               <div>
                 <Label htmlFor="co_pi" value="Co-PIs" />
                 <div className="flex space-x-2">
-                <datalist
+                  <datalist
                     id="co_pi_list">
                     {faculties.map(faculty => (
                       <option value={faculty.name} key={faculty._id}></option>
@@ -354,7 +354,25 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               <Label htmlFor="sanction_letter" value="Upload Sanction Letter" />
               <FileInput
                 id="sanction_letter"
-                onChange={(e) => setSanctionLetter(e.target.files ? e.target.files[0] : null)}
+                onChange={(e) => {
+                  if (!e.target.files) return
+                  const file = e.target.files[0]
+                  if (file && file.type !== "application/pdf") {
+                    toastWarn("Please upload a PDF file.");
+                    e.target.value = ""
+                    return
+                  }
+
+                  const maxSizeInMB = 10;
+                  const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+                  if (file && file.size > maxSizeInBytes) {
+                    toastWarn(`File size exceeds ${maxSizeInMB} MB. Please upload a smaller file.`);
+                    e.target.value = ""
+                    return;
+                  }
+
+                  setSanctionLetter(e.target.files ? e.target.files[0] : null)
+                }}
                 accept="application/pdf"
               />
             </div>
