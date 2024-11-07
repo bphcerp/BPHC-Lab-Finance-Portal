@@ -10,6 +10,7 @@ import expenseRoutes from './routes/expense';
 import categoryRoutes from './routes/category';
 import reimburseRoutes from './routes/reimburse';
 import memberRoutes from './routes/member';
+import accountRoutes from './routes/account';
 import { authenticateToken } from './middleware/authenticateToken';
 
 dotenv.config();
@@ -34,6 +35,7 @@ app.use('/api/expense', expenseRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/reimburse', reimburseRoutes);
 app.use('/api/member', memberRoutes);
+app.use('/api/account', accountRoutes);
 
 app.use(express.static("public"))
 

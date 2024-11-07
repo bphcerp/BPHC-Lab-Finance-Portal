@@ -4,6 +4,7 @@ import { ExpenseModel } from '../models/expense';
 import { authenticateToken } from '../middleware/authenticateToken';
 import mongoose from 'mongoose';
 import { ProjectModel } from '../models/project';
+import { AccountModel } from '../models/account';
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ router.use(authenticateToken);
 
 router.get('/', async (req: Request, res: Response) => {
     try {
-        const reimbursements = await ReimbursementModel.find().sort({paidStatus : 1, createdAt : -1}).populate('project expenses');
+        const reimbursements = await ReimbursementModel.find().sort({ paidStatus: 1, createdAt: -1 }).populate('project expenses');
         res.status(200).json(reimbursements);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
@@ -47,12 +48,39 @@ router.post('/paid', async (req: Request, res: Response) => {
             return;
         }
 
-        const reimbursements = await ReimbursementModel.find({ _id: { $in: reimbursementIds } });
+        const reimbursements = await ReimbursementModel.find({ _id: { $in: reimbursementIds } })
+            .populate<{ expenses : {amount : number, settled : { type : String }}[] }>({
+                path: 'expenses',
+                populate: {
+                    path: 'settled',
+                    select: 'type'
+                }
+            });
+
 
         if (!reimbursements || reimbursements.length === 0) {
             res.status(404).json({ message: 'No reimbursements found with the provided IDs.' });
             return;
         }
+
+        let totalTransferableAmount = 0, amount = 0;
+        reimbursements.forEach(reimbursement => {
+            amount += reimbursement.totalAmount
+            reimbursement.expenses.forEach(expense => {
+
+                if (expense.settled?.type === "Savings") {
+                    totalTransferableAmount += expense.amount;
+                }
+            });
+        });
+
+        await new AccountModel({
+            amount,
+            type: "Current",
+            remarks: "Reimbursement money",
+            credited: true,
+            transferable: totalTransferableAmount
+        }).save();
 
         await ReimbursementModel.updateMany(
             { _id: { $in: reimbursementIds } },
@@ -76,6 +104,7 @@ router.post('/paid', async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error updating reimbursements: ' + (error as Error).message });
     }
 });
+
 
 
 router.post('/', async (req: Request, res: Response) => {

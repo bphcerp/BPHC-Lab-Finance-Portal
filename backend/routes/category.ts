@@ -4,7 +4,6 @@ import { authenticateToken } from '../middleware/authenticateToken';
 
 const router = express.Router();
 
-// Apply authenticateToken middleware to all routes in this router
 router.use(authenticateToken);
 
 // GET /api/categories/:type - Fetch categories by type

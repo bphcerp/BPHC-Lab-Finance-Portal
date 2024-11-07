@@ -1,6 +1,6 @@
 import { Button } from 'flowbite-react';
 import React, { useEffect, useState } from 'react';
-import { toastError, toastSuccess } from '../toasts';
+import { toastError, toastSuccess, toastWarn } from '../toasts';
 import AddExpenseModal from '../components/AddExpenseModal';
 import { MdOutlineDescription } from "react-icons/md";
 import SettleExpenseModal from '../components/SettleExpenseModal';
@@ -207,7 +207,7 @@ const ExpensesPage: React.FC = () => {
         }
     };
 
-    const handleSettleExpenses = async (ids: string[], settledStatus: 'Current' | 'Savings') => {
+    const handleSettleExpenses = async (ids: string[], type: 'Current' | 'Savings', remarks : string, amount : number) => {
         try {
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/settle`, {
                 method: 'PATCH',
@@ -215,7 +215,7 @@ const ExpensesPage: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ ids, settledStatus }),
+                body: JSON.stringify({ ids, type,remarks, amount }),
             });
 
             if (!response.ok) {
@@ -360,8 +360,22 @@ const ExpensesPage: React.FC = () => {
                         <Button color="blue" className='rounded-md' onClick={() => { setIsModalOpen(true) }}>Add Expense</Button>
                         {selectedExpenses.size > 0 ?
                             <div className='flex space-x-2'>
-                                <Button color="gray" size="md" className='rounded-md' onClick={() => { setIsSettleModalOpen(true) }}>{"Settle Expense" + (selectedExpenses.size > 1 ? "s" : "")}</Button>
-                                <Button color="gray" size="md" className='rounded-md' onClick={() => { setIsFileReimbursementModalOpen(true) }}>File for Reimbursement</Button>
+                                <Button color="gray" size="md" className='rounded-md' onClick={() => {
+                                    const eligibleExpenses = expenses.filter(expense => selectedExpenses.has(expense._id)).filter((expense) => (!expense.settled && !expense.reimbursedID?.paidStatus));
+                                    if (eligibleExpenses.length === 0) {
+                                        toastWarn('No eligible expenses for settling');
+                                        return
+                                    } 
+                                    setIsSettleModalOpen(true) 
+                                    }}>{"Settle Expense" + (selectedExpenses.size > 1 ? "s" : "")}</Button>
+                                <Button color="gray" size="md" className='rounded-md' onClick={() => {
+                                    const eligibleExpenses = expenses.filter(expense => selectedExpenses.has(expense._id)).filter((expense) => (!expense.reimbursedID));
+                                    if (eligibleExpenses.length === 0) {
+                                        toastWarn('No eligible expenses for filing');
+                                        return
+                                    } 
+                                    setIsFileReimbursementModalOpen(true) 
+                                    }}>File for Reimbursement</Button>
                             </div> : <></>
                         }
                     </div>

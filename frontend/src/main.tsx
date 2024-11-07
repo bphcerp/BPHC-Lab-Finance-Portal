@@ -18,8 +18,7 @@ import MembersView from './components/MembersView'
 import ExpensesLayout from './layouts/ExpenseLayout'
 import ProjectOverview from './pages/ProjectOverview'
 import AdminPage from './pages/AdminPage'
-import SavingsPage from './pages/Savings.js'
-import CurrentPage from './pages/Current.js'
+import AccountPage from './pages/AccountPage.js'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={import.meta.env.VITE_OAUTH_CID}>
@@ -33,13 +32,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path='/projects' element={<ProjectOverview />} />
             <Route path="/project/:id" element={<ProjectDetails />} />
             <Route path='/expenses' element={<ExpensesLayout />}>
-              <Route index element={<ExpensesPage />}/>
-              <Route path='member-wise' element={<MembersView />}/>
+              <Route index element={<ExpensesPage />} />
+              <Route path='member-wise' element={<MembersView />} />
             </Route>
             <Route path='/reimbursements' element={<ReimbursementPage />} />
-            <Route path='/admin' element={<AdminPage />} />            
-            <Route path='/savings' element={<SavingsPage />} />            
-            <Route path='/current' element={<CurrentPage />} />            
+            <Route path='/admin' element={<AdminPage />} />
+            <Route path="/account/savings" element={<AccountPage type='Savings'/>} />
+            <Route path="/account/current" element={<AccountPage type='Current'/>} />
           </Route>
           <Route path='/login' element={<LoginPage />} />
         </Routes>

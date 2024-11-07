@@ -45,7 +45,7 @@ export interface Reimbursement {
     expenses: { expenseReason: string; amount: number }[];
     projectHead: string;
     paidStatus: boolean;
-    description : string
+    description: string
 }
 
 export interface Project {
@@ -56,8 +56,8 @@ export interface Project {
     project_heads: {
         [key: string]: number[];
     };
-    project_head_expenses : {
-        [key : string] : number
+    project_head_expenses: {
+        [key: string]: number
     }
     total_amount: number;
     pis: string[];
@@ -66,6 +66,16 @@ export interface Project {
     sanction_letter_file_id?: string;
     description: string
     util_cert: File
+}
+
+export interface Account {
+    _id: string
+    amount: number;
+    createdAt : Date
+    type: 'Current' | 'Savings' | null;
+    remarks?: string;
+    credited: boolean;
+    transferable: number;
 }
 
 

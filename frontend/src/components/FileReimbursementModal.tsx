@@ -37,17 +37,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
             }
         };
 
-        if (isOpen) {
-            const eligibleExpenses = selectedExpenses.filter(expense => !expense.reimbursedID);
-            setTotalExpenseAmount(eligibleExpenses.reduce((acc, expense) => acc + expense.amount, 0));
-
-            if (eligibleExpenses.length === 0) {
-                toastWarn('No eligible expenses for reimbursement');
-                onClose();
-            }
-
-            fetchProjects();
-        }
+        if (isOpen) fetchProjects()
     }, [isOpen, selectedExpenses]);
 
     const handleSubmit = async () => {

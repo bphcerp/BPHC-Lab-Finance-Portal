@@ -3,6 +3,7 @@ import { ExpenseModel } from '../models/expense';
 import { CategoryModel } from '../models/category';
 import { authenticateToken } from '../middleware/authenticateToken';
 import { ObjectId, Schema } from 'mongoose';
+import { AccountModel } from '../models/account';
 
 const router = express.Router();
 
@@ -113,27 +114,41 @@ router.get('/unsettled', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.patch('/settle', asyncHandler(async (req: Request, res: Response) => {
-  const { ids, settledStatus } = req.body;
+  try {
+    const { ids, type, amount, remarks } = req.body;
 
-  if (!Array.isArray(ids) || ids.length === 0) {
-    return res.status(400).json({ message: 'Invalid or empty ids array' });
-  }
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: 'Invalid or empty ids array' });
+    }
 
-  if (!VALID_SETTLED_STATUS.includes(settledStatus)) {
-    return res.status(400).json({
-      message: `Invalid settled status. Must be one of: ${VALID_SETTLED_STATUS.join(', ')}`
+    if (!VALID_SETTLED_STATUS.includes(type)) {
+      return res.status(400).json({
+        message: `Invalid settled status. Must be one of: ${VALID_SETTLED_STATUS.join(', ')}`,
+      });
+    }
+
+    const accountEntry = await new AccountModel({
+      amount,
+      type,
+      remarks : remarks ?? "Settled Expenses",
+      credited: false,
+    }).save();
+
+    console.log(accountEntry)
+
+    const result = await ExpenseModel.updateMany(
+      { _id: { $in: ids } },
+      { settled: accountEntry._id}
+    );
+
+    return res.status(200).json({
+      message: 'Expenses settled successfully',
+      updatedCount: result.modifiedCount,
     });
+  } catch (error) {
+    console.error('Error settling expenses:', error);
+    return res.status(500).json({ message: 'An error occurred while settling expenses' });
   }
-
-  const result = await ExpenseModel.updateMany(
-    { _id: { $in: ids } },
-    { settled: settledStatus }
-  );
-
-  return res.status(200).json({
-    message: 'Expenses settled successfully',
-    updatedCount: result.modifiedCount
-  });
 }));
 
 
@@ -166,7 +181,10 @@ router.post('/settle/:memberId', async (req, res) => {
 // Get member-wise expenses
 router.get('/member-expenses', async (req: Request, res: Response) => {
   try {
-    const expenses = await ExpenseModel.find().populate<{ paidBy: { _id: Schema.Types.ObjectId, name: string } }>('paidBy').lean(); // Adjust populate as necessary
+    const expenses = await ExpenseModel.find()
+    .populate<{ paidBy: { _id: Schema.Types.ObjectId, name: string } }>('paidBy')
+    .populate<{ settled: { _id: Schema.Types.ObjectId, type: string } }>('settled')
+    .lean();
 
     const memberExpenses: Record<string, MemberExpenseSummary> = {};
 
@@ -185,7 +203,7 @@ router.get('/member-expenses', async (req: Request, res: Response) => {
 
       memberExpenses[memberName].totalPaid += expense.amount;
 
-      if (expense.settled === 'Current' || expense.settled === 'Savings') {
+      if (expense.settled.type === 'Current' || expense.settled.type === 'Savings') {
         memberExpenses[memberName].totalSettled += expense.amount;
       } else {
         memberExpenses[memberName].totalDue += expense.amount;

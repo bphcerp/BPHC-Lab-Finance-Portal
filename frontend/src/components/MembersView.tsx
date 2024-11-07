@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess, toastWarn } from '../toasts';
-import SettleModal from './SettleModal';
 import TableCustom from './TableCustom';
 import { createColumnHelper } from '@tanstack/react-table';
 import { MemberExpense } from '../types';
+import SettleMemberModal from './SettleMemberModal';
 
 const MembersView: React.FC = () => {
     const [membersExpenses, setMembersExpenses] = useState<Array<MemberExpense>>([]);
@@ -27,7 +27,7 @@ const MembersView: React.FC = () => {
         fetchMembersExpenses();
     }, []);
 
-    const handleSettle = async (settlementType: string, amount: number) => {
+    const handleSettle = async (settlementType: string, remarks : string) => {
         if (selectedMember) {
             try {
                 const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/settle/${selectedMember.memberId}`, {
@@ -35,12 +35,12 @@ const MembersView: React.FC = () => {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ settlementType, amount }),
+                    body: JSON.stringify({ settlementType }),
                     credentials: 'include'
                 });
                 if (response.ok) {
-                    const newTotalDue = selectedMember.totalDue - amount;
-                    const updatedMember = { ...selectedMember, totalDue: newTotalDue, totalSettled: selectedMember.totalSettled + amount };
+                    const newTotalDue = selectedMember.totalDue;
+                    const updatedMember = { ...selectedMember, totalDue: newTotalDue, totalSettled: selectedMember.totalSettled };
 
                     setMembersExpenses(prevExpenses =>
                         prevExpenses.map(member =>
@@ -112,11 +112,10 @@ const MembersView: React.FC = () => {
 
             {/* Settle Modal */}
             {selectedMember && (
-                <SettleModal
+                <SettleMemberModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     onSettle={handleSettle}
-                    maxAmount={selectedMember.totalDue}
                 />
             )}
         </div>

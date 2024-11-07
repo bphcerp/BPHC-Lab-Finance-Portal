@@ -72,14 +72,14 @@ const SidebarComponent: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           >
             <div className="grid grid-rows-2 mb-2">
               <Link
-                to="/savings"
+                to="/account/savings"
                 className="flex items-center px-7 py-3 hover:bg-gray-300 rounded-lg transition"
               >
                 <MdOutlineSavings size="24" className="mr-3" />
                 <span className="text-lg font-semibold">Savings</span>
               </Link>
               <Link
-                to="/current"
+                to="/account/current"
                 className="flex items-center px-7 py-3 hover:bg-gray-300 rounded-lg transition"
               >
                 <FaBuildingColumns size="24" className="mr-3" />
