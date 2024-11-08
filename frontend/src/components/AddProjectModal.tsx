@@ -1,4 +1,4 @@
-import { Button, Label, Modal, TextInput, FileInput } from "flowbite-react";
+import { Button, Label, Modal, TextInput, FileInput, Radio, Textarea } from "flowbite-react";
 import { Dispatch, FormEventHandler, FunctionComponent, SetStateAction, useEffect, useState } from "react";
 import { toastError, toastSuccess, toastWarn } from "../toasts";
 import { Member } from "../types";
@@ -10,51 +10,80 @@ interface AddProjectProps {
 
 export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal, setOpenModal }) => {
   const [projectName, setProjectName] = useState<string>("");
-  const [startDate, setStartDate] = useState<string>();
-  const [endDate, setEndDate] = useState<string>();
+  const [projectType, setProjectType] = useState<string>("yearly");  // Default to 'yearly'
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [projectHeads, setProjectHeads] = useState<{ [key: string]: number[] }>({});
   const [headTotals, setHeadTotals] = useState<{ [key: string]: number }>({});
   const [numberOfYears, setNumberOfYears] = useState<number>(0);
+  const [numberOfInstallments, setNumberOfInstallments] = useState<number>(0); // New state for installments
   const [newHeadName, setNewHeadName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [sanctionLetter, setSanctionLetter] = useState<File | null>(null);
   const [description, setDescription] = useState<string>("");
   const [totalAmount, setTotalAmount] = useState<number | null>(null);
+  const [faculties, setFaculties] = useState<Array<Member>>([])
+
+  // New states for PIs and Co-PIs
   const [pis, setPIs] = useState<string[]>([]);
   const [newPI, setNewPI] = useState<string>("");
   const [coPIs, setCoPIs] = useState<string[]>([]);
   const [newCoPI, setNewCoPI] = useState<string>("");
 
-  const [faculties, setFaculties] = useState<Array<Member>>([])
+  // New state for installment dates
+  const [installmentDates, setInstallmentDates] = useState<{ start: string; end: string }[]>([]);
 
-  function calculateFinancialYears(startDate: Date, endDate: Date): number {
-    const startYear = startDate.getMonth() < 3
-      ? startDate.getFullYear() - 1
-      : startDate.getFullYear();
-    const endYear = endDate.getMonth() < 3
-      ? endDate.getFullYear() - 1
-      : endDate.getFullYear();
+  const fetchFaculties = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/member?type=faculty`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+      setFaculties(data);
+    } catch (error) {
+      toastError('Error fetching members');
+      console.error('Error fetching members:', error);
+    }
+  };
 
-    return Math.max(0, endYear - startYear + 1);
-  }
+  const calculateNumberOfYears = () => {
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
 
-  useEffect(() => {
-    if (startDate && endDate) setNumberOfYears(calculateFinancialYears(new Date(startDate), new Date(endDate)))
-  }, [startDate, endDate]);
+      // Get the financial year start for the start and end dates
+      const startYear = start.getMonth() < 3 ? start.getFullYear() - 1 : start.getFullYear();
+      const endYear = end.getMonth() < 3 ? end.getFullYear() - 1 : end.getFullYear();
+
+      const yearsDiff = endYear - startYear + 1;
+      setNumberOfYears(yearsDiff >= 1 ? yearsDiff : 0);
+    }
+  };
+  useEffect(calculateNumberOfYears, [startDate, endDate]);
 
   const addProjectHead = () => {
-    if (!newHeadName || numberOfYears <= 0) return;
+    // Check if the newHeadName is empty or if the project type and associated values are invalid
+    if (!newHeadName || (projectType === "yearly" && numberOfYears <= 0) || (projectType === "invoice" && numberOfInstallments <= 0)) {
+      return;
+    }
+
+    // Determine the count based on the project type
+    const count = projectType === "yearly" ? numberOfYears : numberOfInstallments;
+
+    // Update the projectHeads state
     setProjectHeads((prevHeads) => ({
       ...prevHeads,
-      [newHeadName]: Array(numberOfYears).fill(0),
+      [newHeadName]: Array(count).fill(0),
     }));
+
+    // Reset the newHeadName
     setNewHeadName("");
   };
 
-  const handleProjectHeadYearChange = (headName: string, yearIndex: number, value: number) => {
+  const handleProjectHeadYearChange = (headName: string, index: number, value: number) => {
     setProjectHeads((prevHeads) => ({
       ...prevHeads,
-      [headName]: prevHeads[headName].map((val, idx) => (idx === yearIndex ? value : val)),
+      [headName]: prevHeads[headName].map((val, idx) => (idx === index ? value : val)),
     }));
   };
 
@@ -101,24 +130,10 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     setCoPIs((prevCoPIs) => prevCoPIs.filter((_, i) => i !== index));
   };
 
-  const fetchFaculties = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/member?type=faculty`, {
-        credentials: 'include',
-      });
-      const data = await response.json();
-      setFaculties(data);
-    } catch (error) {
-      toastError('Error fetching members');
-      console.error('Error fetching members:', error);
-    }
-  };
-
   const handleAddProject: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Create FormData to handle both the project data and the file
     const formData = new FormData();
     formData.append("project_name", projectName);
     formData.append("start_date", startDate ? new Date(startDate).toISOString() : "");
@@ -127,9 +142,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     formData.append("pis", JSON.stringify(pis));
     formData.append("copis", JSON.stringify(coPIs));
     formData.append("project_heads", JSON.stringify(projectHeads));
-    formData.append("description", description);
 
-    // Append sanction letter file if present
     if (sanctionLetter) {
       formData.append("sanction_letter", sanctionLetter);
     }
@@ -137,7 +150,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     try {
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
         method: "POST",
-        body: formData, // FormData is used here, so no need for 'Content-Type: application/json'
+        body: formData,
         credentials: "include",
       });
 
@@ -164,12 +177,12 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
       setProjectHeads({});
       setHeadTotals({});
       setNumberOfYears(0);
-      setTotalAmount(null); // Reset total amount when closing modal
+      setNumberOfInstallments(0);
+      setTotalAmount(null);
       setPIs([]);
       setCoPIs([]);
       setSanctionLetter(null);
-      setLoading(false)
-      setDescription("")
+      setInstallmentDates([]);
     }
   }, [openModal]);
 
@@ -191,6 +204,28 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                 required
               />
             </div>
+            <div>
+              <Label value="Project Type" />
+              <div className="flex space-x-4">
+                <Radio
+                  id="yearly"
+                  name="projectType"
+                  value="yearly"
+                  checked={projectType === "yearly"}
+                  onChange={() => setProjectType("yearly")}
+                />
+                <Label htmlFor="yearly" value="Yearly" />
+
+                <Radio
+                  id="invoice"
+                  name="projectType"
+                  value="invoice"
+                  checked={projectType === "invoice"}
+                  onChange={() => setProjectType("invoice")}
+                />
+                <Label htmlFor="invoice" value="Invoice" />
+              </div>
+            </div>
 
             <div className="flex space-x-3">
               <div className="w-1/2">
@@ -211,173 +246,241 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  required
                 />
-              </div>
-              <div>
-                <Label htmlFor="years" value="Number of Years" />
-                <TextInput id="years" type="number" value={numberOfYears} readOnly />
               </div>
             </div>
 
-            {/* Project Heads Section */}
-            <div>
-              <Label htmlFor="project_head" value="Project Heads" />
-              <div className="flex space-x-2">
+            {projectType === "invoice" ? (
+              <div>
+                <Label htmlFor="installments" value="Number of Installments" />
                 <TextInput
-                  id="project_head"
-                  placeholder="Enter Project Head Name"
+                  id="installments"
+                  type="number"
+                  value={numberOfInstallments}
+                  onChange={(e) => setNumberOfInstallments(Number(e.target.value))}
+                  required
+                />
+
+                {numberOfInstallments > 0 && (
+                  <div className="grid grid-cols-2 gap-y-6 mt-3">
+                    {Array.from({ length: numberOfInstallments }).map((_, index) => (
+                      <div key={index} className="flex space-x-2">
+                        <div>
+                          <Label htmlFor={`installment_start_${index}`} value={`Installment ${index + 1} Start Date`} />
+                          <TextInput
+                            id={`installment_start_${index}`}
+                            type="date"
+                            value={installmentDates[index]?.start || ""}
+                            onChange={(e) => {
+                              const updatedDates = [...installmentDates];
+                              updatedDates[index] = {
+                                ...updatedDates[index],
+                                start: e.target.value,
+                              };
+                              setInstallmentDates(updatedDates);
+                            }}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`installment_end_${index}`} value={`Installment ${index + 1} End Date`} />
+                          <TextInput
+                            id={`installment_end_${index}`}
+                            type="date"
+                            value={installmentDates[index]?.end || ""}
+                            onChange={(e) => {
+                              const updatedDates = [...installmentDates];
+                              updatedDates[index] = {
+                                ...updatedDates[index],
+                                end: e.target.value,
+                              };
+                              setInstallmentDates(updatedDates);
+                            }}
+                            required
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : <div>
+              <Label htmlFor="years" value="Number of Years" />
+              <TextInput id="years" type="number" value={numberOfYears} readOnly />
+            </div>}
+
+            {/* Project Heads section */}
+            <div>
+              <Label htmlFor="head_name" value="Project Head" />
+              <div className="flex items-center space-x-3">
+                <TextInput
+                  id="head_name"
                   value={newHeadName}
                   onChange={(e) => setNewHeadName(e.target.value)}
+                  placeholder="Enter head name"
                 />
-                <Button color="blue" size="sm" onClick={addProjectHead}>
-                  Add Project Head
-                </Button>
+                <Button color="blue" onClick={addProjectHead}>Add Project Head</Button>
               </div>
-              {Object.keys(projectHeads).map((headName, index) => (
-                <div key={index} className="mt-2">
-                  <span>{headName}</span>
-                  <div className="flex space-x-2">
-                    {projectHeads[headName].map((yearValue, yearIndex) => (
-                      <TextInput
-                        key={yearIndex}
-                        type="number"
-                        value={yearValue}
-                        onChange={(e) =>
-                          handleProjectHeadYearChange(headName, yearIndex, Number(e.target.value))
-                        }
-                      />
-                    ))}
-                    <Button color="green" size="xs" onClick={() => saveProjectHead(headName)}>
-                      Save
-                    </Button>
-                    <Button color="yellow" size="xs" onClick={() => editProjectHead(headName)}>
-                      Edit
-                    </Button>
-                    <Button color="red" size="xs" onClick={() => deleteProjectHead(headName)}>
-                      Remove
-                    </Button>
+              {Object.keys(projectHeads).map((head) => (
+                <div key={head} className="mt-4 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-lg">{head}</h4>
+                    <div className="flex justify-end space-x-2">
+                      <Button color="green" size="xs" onClick={() => saveProjectHead(head)}>
+                        Save
+                      </Button>
+                      <Button color="yellow" size="xs" onClick={() => editProjectHead(head)}>
+                        Edit
+                      </Button>
+                      <Button color="red" size="xs" onClick={() => deleteProjectHead(head)}>
+                        Remove
+                      </Button>
+
+                    </div>
                   </div>
+                  {projectHeads[head].map((_, idx) => (
+                    <div key={idx} className="mt-2">
+
+                      <TextInput
+                        type="number"
+                        value={projectHeads[head][idx]}
+                        onChange={(e) => handleProjectHeadYearChange(head, idx, Number(e.target.value))}
+                        required
+                      />
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
 
+            {/* PIs and Co-PIs */}
             <div className="flex justify-between">
-              {/* PIs Section */}
-              <div>
-                <Label htmlFor="pi" value="PIs" />
-                <div className="flex space-x-2">
-                  <datalist
-                    id="pi_list">
-                    {faculties.map(faculty => (
-                      <option value={faculty.name} key={faculty._id}></option>
-                    ))}
-                  </datalist>
+              <div className="space-y-2">
+                <datalist
+                  id="pi_list">
+                  {faculties.map(faculty => (
+                    <option value={faculty.name} key={faculty._id}></option>
+                  ))}
+                </datalist>
+                <Label htmlFor="pi" value="Add Principal Investigators (PIs)" />
+                <div className="flex items-center space-x-3">
                   <TextInput
-                    id="cpi"
-                    placeholder="Enter PI Name"
+                    id="pi"
                     value={newPI}
                     onChange={(e) => setNewPI(e.target.value)}
+                    placeholder="Enter PI name"
                     list="pi_list"
                   />
-                  <Button color="blue" size="sm" onClick={addPI}>
-                    Add PI
-                  </Button>
+                  <Button color="blue" onClick={addPI}>Add PI</Button>
                 </div>
-                {pis.map((pi, index) => (
-                  <div key={index} className="mt-2 flex justify-between items-center">
-                    <span>{pi}</span>
-                    <Button color="red" size="xs" onClick={() => deletePI(index)}>
-                      Remove
-                    </Button>
+                {pis.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-bold">PIs:</h4>
+                    <ul>
+                      {pis.map((pi, idx) => (
+                        <li key={idx} className="flex justify-between">
+                          <span>{pi}</span>
+                          <Button color="blue" onClick={() => deletePI(idx)} type="button" size="xs">Delete</Button>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                ))}
+                )}
               </div>
 
-              {/* Co-PIs Section */}
-              <div>
-                <Label htmlFor="co_pi" value="Co-PIs" />
-                <div className="flex space-x-2">
-                  <datalist
-                    id="co_pi_list">
-                    {faculties.map(faculty => (
-                      <option value={faculty.name} key={faculty._id}></option>
-                    ))}
-                  </datalist>
+              <div className="space-y-2">
+                <datalist
+                  id="co_pi_list">
+                  {faculties.map(faculty => (
+                    <option value={faculty.name} key={faculty._id}></option>
+                  ))}
+                </datalist>
+                <Label value="Add Co-Principal Investigators (Co-PIs)" />
+                <div className="flex items-center space-x-3">
                   <TextInput
-                    id="co_pi"
-                    placeholder="Enter Co PI Name"
                     value={newCoPI}
                     onChange={(e) => setNewCoPI(e.target.value)}
+                    placeholder="Enter Co-PI name"
                     list="co_pi_list"
                   />
-                  <Button color="blue" size="sm" onClick={addCoPI}>
-                    Add Co-PI
-                  </Button>
+                  <Button color="blue" onClick={addCoPI}>Add Co-PI</Button>
                 </div>
-                {coPIs.map((coPI, index) => (
-                  <div key={index} className="mt-2 flex justify-between items-center">
-                    <span>{coPI}</span>
-                    <Button color="red" size="xs" onClick={() => deleteCoPI(index)}>
-                      Remove
-                    </Button>
+                {coPIs.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-bold">Co-PIs:</h4>
+                    <ul>
+                      {coPIs.map((coPI, idx) => (
+                        <li key={idx} className="flex justify-between">
+                          <span>{coPI}</span>
+                          <Button color="blue" onClick={() => deleteCoPI(idx)} type="button" size="xs">Delete</Button>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                ))}
+                )}
               </div>
             </div>
-            <div>
-              <Label htmlFor="description" value="Description" />
-              <TextInput
-                id="description"
-                placeholder="Enter project description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-              />
+
+            <div className="space-y-2">
+              {/* Add other fields like Total Amount, Description, etc */}
+              <div>
+                <Label htmlFor="total_amount" value="Total Amount" />
+                <TextInput
+                  id="total_amount"
+                  type="number"
+                  value={totalAmount ?? ""}
+                  onChange={(e) => setTotalAmount(Number(e.target.value))}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description" value="Project Description" />
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Enter description"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="sanction_letter" value="Sanction Letter" />
+                <FileInput
+                  id="sanction_letter"
+                  onChange={(e) => {
+                    if (!e.target.files) return
+                    const file = e.target.files[0]
+                    if (file && file.type !== "application/pdf") {
+                      toastWarn("Please upload a PDF file.");
+                      e.target.value = ""
+                      return
+                    }
+
+                    const maxSizeInMB = 10;
+                    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+                    if (file && file.size > maxSizeInBytes) {
+                      toastWarn(`File size exceeds ${maxSizeInMB} MB. Please upload a smaller file.`);
+                      e.target.value = ""
+                      return;
+                    }
+
+                    setSanctionLetter(e.target.files ? e.target.files[0] : null)
+                  }}
+                  accept="application/pdf"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="total_amount" value="Total Amount" />
-              <TextInput
-                id="total_amount"
-                type="number"
-                value={totalAmount ?? ""} // Use nullish coalescing to avoid uncontrolled input warning
-                onChange={(e) => setTotalAmount(Number(e.target.value))}
-                required
-              />
+
+            <div className="flex justify-center space-x-3 mt-4">
+              <Button color="blue" type="submit" disabled={loading}>Save Project</Button>
+              <Button color="failure" onClick={() => setOpenModal(false)} disabled={loading}>Cancel</Button>
             </div>
-
-            <div>
-              <Label htmlFor="sanction_letter" value="Upload Sanction Letter" />
-              <FileInput
-                id="sanction_letter"
-                onChange={(e) => {
-                  if (!e.target.files) return
-                  const file = e.target.files[0]
-                  if (file && file.type !== "application/pdf") {
-                    toastWarn("Please upload a PDF file.");
-                    e.target.value = ""
-                    return
-                  }
-
-                  const maxSizeInMB = 10;
-                  const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
-                  if (file && file.size > maxSizeInBytes) {
-                    toastWarn(`File size exceeds ${maxSizeInMB} MB. Please upload a smaller file.`);
-                    e.target.value = ""
-                    return;
-                  }
-
-                  setSanctionLetter(e.target.files ? e.target.files[0] : null)
-                }}
-                accept="application/pdf"
-              />
-            </div>
-
-            <Button color="blue" type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save Project"}
-            </Button>
           </form>
         </Modal.Body>
       </Modal>
     </div>
-  );
+  )
 };
