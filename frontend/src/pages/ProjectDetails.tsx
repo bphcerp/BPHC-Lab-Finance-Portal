@@ -20,6 +20,28 @@ export const calculateCurrentYear = (data: Project) => {
     return (currentYear >= 0 ? currentYear : 0);
 };
 
+export const getCurrentInstallmentIndex = (project: Project): number => {
+    const currentDate = new Date();
+
+    for (let i = 0; i < project.installments!.length; i++) {
+        const installment = project.installments![i];
+        const startDate = new Date(installment.start_date);
+        const endDate = new Date(installment.end_date);
+
+        if (currentDate >= startDate && currentDate <= endDate) {
+            return i;
+        }
+    }
+
+    return 0; // Return null if no active installment is found
+}
+
+const formatDate = (dateStr?: string) =>
+    dateStr ? new Date(dateStr).toLocaleDateString("en-IN") : "N/A";
+
+const formatCurrency = (amount: number) =>
+    amount.toLocaleString("en-IN", { style: "currency", currency: "INR" });
+
 const ProjectDetails = () => {
     const { id } = useParams();
     const [projectData, setProjectData] = useState<Project>();
@@ -36,7 +58,7 @@ const ProjectDetails = () => {
             .then((res) => res.json())
             .then((data) => {
                 setProjectData(data)
-                const curr = calculateCurrentYear(data)
+                const curr = data.project_type === "invoice" ? getCurrentInstallmentIndex(data) : calculateCurrentYear(data)
                 curr >= 0 ? setCurrentYear(curr) : setIsProjectOver(true)
             })
             .catch((e) => {
@@ -103,7 +125,10 @@ const ProjectDetails = () => {
                                                 key={i}
                                                 className={`py-3 px-6 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
                                             >
-                                                Year {i + 1}
+                                                <div className="flex flex-col">
+                                                    {projectData.project_type === "invoice"? "Installment" :"Year"} {i + 1}
+                                                    {projectData.project_type === "invoice"? <span>{formatDate(projectData.installments![i].start_date)} - {formatDate(projectData.installments![i].end_date)}</span> :<></>}
+                                                </div>
                                             </th>
                                         ))}
                                         <th className="py-3 px-6 text-center text-gray-800 font-semibold">

@@ -43,6 +43,22 @@ const calculateCurrentYear = (data: Project) => {
     return (currentYear >= 0 ? currentYear : 0);
 }
 
+const getCurrentInstallmentIndex = (project: Project): number => {
+    const currentDate = new Date();
+
+    for (let i = 0; i < project.installments!.length; i++) {
+        const installment = project.installments![i];
+        const startDate = new Date(installment.start_date);
+        const endDate = new Date(installment.end_date);
+
+        if (currentDate >= startDate && currentDate <= endDate) {
+            return i;
+        }
+    }
+
+    return 0;
+}
+
 // Route to get the total sum of all project amounts
 router.get('/grandtotal', async (req: Request, res: Response) => {
     try {
@@ -86,10 +102,9 @@ router.get('/:id/total-expenses', async (req, res) => {
     }
 });
 
-// Route to create a new project and upload sanction letter
 router.post('/', upload.single('sanction_letter'), async (req: Request, res: Response) => {
     try {
-        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description } = req.body;
+        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description, installments, project_type } = req.body;
 
         const startDate = start_date ? new Date(start_date) : null;
         const endDate = end_date ? new Date(end_date) : null;
@@ -117,9 +132,13 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
             });
         }
 
+        // Parse installments if provided
+        const parsedInstallments = installments ? JSON.parse(installments) : [];
+
         // Create and save new project
         const newProject = new ProjectModel({
             project_name,
+            project_type,
             start_date: startDate,
             end_date: endDate,
             project_heads: projectHeads,
@@ -127,7 +146,8 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
             pis: JSON.parse(pis),
             copis: JSON.parse(copis),
             sanction_letter_file_id: sanctionLetterFileId,
-            description
+            description,
+            installments: parsedInstallments, // Include installments
         });
 
         const savedProject = await newProject.save();
@@ -137,22 +157,98 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
     }
 });
 
-// Route to get all projects without sanction letter files
-router.get('/', async (req: Request, res: Response) => {
+// Route to update a project by ID
+router.put('/:id', async (req: Request, res: Response) => {
     try {
-        const { current } = req.query
+        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description, installments } = req.body;
 
-        const projects = await ProjectModel.find();
+        // Parse installments if provided
+        const parsedInstallments = installments ? JSON.parse(installments) : [];
 
-        if (current){
+        const updatedProject = await ProjectModel.findByIdAndUpdate(
+            req.params.id,
+            {
+                project_name,
+                start_date,
+                end_date,
+                project_heads,
+                total_amount,
+                pis,
+                copis,
+                description,
+                installments: parsedInstallments, // Include installments
+            },
+            { new: true }
+        );
 
+        if (!updatedProject) {
+            res.status(404).json({ message: 'Project not found' });
+        } else {
+            res.json(updatedProject);
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating project', error });
+    }
+});
+
+// Route to get a single project by ID (including installments)
+router.get('/:id', async (req: Request, res: Response) => {
+    try {
+        const project = await ProjectModel.findById(req.params.id);
+
+        if (!project) {
+            res.status(404).json({ message: 'Project not found' });
+            return;
         }
 
-        res.json(projects);
+        res.json(project);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching project', error });
+    }
+});
+
+
+router.get('/', async (req: Request, res: Response) => {
+    try {
+        const { past, balance } = req.query;
+        const projects = await ProjectModel.find();
+
+        const filteredProjects = past
+            ? projects
+            : projects.filter(project => calculateCurrentYear(project) !== -1);
+
+        if (balance === 'true') {
+            const updatedProjects = filteredProjects.map(project => {
+                const isInvoice = project.project_type === "invoice";
+                const curr = isInvoice ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project);
+
+                if (curr !== -1) {
+                    const projectHeads = project.project_heads;
+
+                    projectHeads.forEach((allocations, head) => {
+                        const allocation = allocations[curr];
+                        const headExpense = project.project_head_expenses.get(head) || 0;
+
+                        allocations[curr] = allocation - headExpense;
+                        projectHeads.set(head, [allocations[curr]])
+                    });
+
+                    return project;
+                }
+
+                return project;
+            });
+            res.send(updatedProjects);
+            return;
+        }
+
+        res.send(filteredProjects);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching projects', error });
     }
 });
+
+
 
 
 // Route to get a single project by ID

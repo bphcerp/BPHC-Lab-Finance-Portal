@@ -64,7 +64,14 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
             <div className="flex justify-between">
                 <h1 className="text-2xl font-bold mb-4">{type} Account</h1>
             </div>
-            <TableCustom data={accountData} columns={columns} />
+            <TableCustom data={accountData} columns={columns} initialState={{
+                sorting : [
+                    {
+                        id : "createdAt",
+                        desc: true
+                    }
+                ]
+            }} />
         </div>
     ) : (
         <div>No {type} account data to show</div>

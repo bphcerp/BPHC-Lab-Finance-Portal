@@ -7,7 +7,7 @@ import DescriptionModal from "../components/DescriptionModal";
 import { createColumnHelper } from '@tanstack/react-table'
 import TableCustom from "../components/TableCustom";
 import { Link } from "react-router-dom";
-import { calculateCurrentYear } from "./ProjectDetails";
+import { calculateCurrentYear, getCurrentInstallmentIndex } from "./ProjectDetails";
 import { Project } from "../types";
 
 
@@ -66,7 +66,12 @@ const ProjectList: FunctionComponent = () => {
             cell: info => <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
                 {info.getValue()}
             </Link>,
-            enableColumnFilter: true
+        }),
+        columnHelper.accessor(row => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1), {
+            header: "Project Type",
+            meta : {
+                filterType : "dropdown"
+            }
         }),
         columnHelper.accessor('total_amount', {
             header: "Granted Amount",
@@ -91,7 +96,7 @@ const ProjectList: FunctionComponent = () => {
             columns: uniqueHeads.map(head => (
                 columnHelper.accessor(row => `${row.project_name}_${head}`, {
                     header: head,
-                    cell: info => (info.row.original.project_heads[head] ? (info.row.original.project_heads[head][calculateCurrentYear(info.row.original)] - (info.row.original.project_head_expenses[head] ?? 0) ) : 0).toLocaleString("en-IN", {
+                    cell: info => (info.row.original.project_heads[head] ? (info.row.original.project_heads[head][info.row.original.project_type === "invoice"?getCurrentInstallmentIndex(info.row.original):calculateCurrentYear(info.row.original)] - (info.row.original.project_head_expenses[head] ?? 0) ) : 0).toLocaleString("en-IN", {
                         style: "currency",
                         currency: "INR",
                     }),

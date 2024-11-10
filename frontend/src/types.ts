@@ -48,6 +48,11 @@ export interface Reimbursement {
     description: string
 }
 
+export interface Installment {
+    start_date: string;
+    end_date: string;
+}
+
 export interface Project {
     _id?: string;
     project_name: string;
@@ -59,6 +64,8 @@ export interface Project {
     project_head_expenses: {
         [key: string]: number
     }
+    project_type: string;
+    installments?: Installment[];
     total_amount: number;
     pis: string[];
     copis: string[];

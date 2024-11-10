@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, Select, TextInput } from 'flowbite-react';
-import { toastError, toastWarn } from '../toasts';
-import { calculateCurrentYear } from '../pages/ProjectDetails';
+import { toastError } from '../toasts';
 import { Expense, Project } from '../types';
 
 interface FileReimbursementModalProps {
@@ -28,8 +27,8 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
     useEffect(() => {
         const fetchProjects = async () => {
             try {
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project?all=true`, { credentials: "include" });
-                const data: Project[] = await response.json();
+                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project?balance=true&past=true`, { credentials: "include" });
+                const data = await response.json();
                 setProjects(data);
             } catch (error) {
                 toastError('Error fetching projects');
@@ -68,6 +67,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
         if (!isOpen) {
             resetModalData();
         }
+        else setTotalExpenseAmount(selectedExpenses.reduce((acc, obj) => acc + obj.amount, 0))
     }, [isOpen]);
 
     return (
@@ -115,10 +115,9 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                         >
                             <option value="">Select a Project Head</option>
                             {Object.entries(projects.find(p => p._id === selectedProjectId)?.project_heads || {}).map(([head , amounts]) => {
-                                const currentYearHeadAmount = amounts[calculateCurrentYear(projects.find(p => p._id === selectedProjectId)!)]
                                 return (
                                     <option key={head} value={head}>
-                                        {head} - {currentYearHeadAmount.toLocaleString("en-IN", {
+                                        {head} - {amounts[0].toLocaleString("en-IN", {
                                             style: "currency",
                                             currency: "INR",
                                         })}
@@ -129,7 +128,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                     )}
                     {selectedProjectHead && (
                         <div>
-                            {projects.find(p => p._id === selectedProjectId)!.project_heads[selectedProjectHead][calculateCurrentYear(projects.find(p => p._id === selectedProjectId)!)] < totalExpenseAmount ? (
+                            {projects.find(p => p._id === selectedProjectId)!.project_heads[selectedProjectHead][0] < totalExpenseAmount ? (
                                 <p className="text-red-500">
                                     Selected head cannot cover the total expenses of {totalExpenseAmount.toLocaleString("en-IN", {
                                         style: "currency",

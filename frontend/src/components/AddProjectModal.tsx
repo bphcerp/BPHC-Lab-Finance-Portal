@@ -16,7 +16,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
   const [projectHeads, setProjectHeads] = useState<{ [key: string]: number[] }>({});
   const [headTotals, setHeadTotals] = useState<{ [key: string]: number }>({});
   const [numberOfYears, setNumberOfYears] = useState<number>(0);
-  const [numberOfInstallments, setNumberOfInstallments] = useState<number>(0); // New state for installments
+  const [numberOfInstallments, setNumberOfInstallments] = useState<number>(0);
   const [newHeadName, setNewHeadName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [sanctionLetter, setSanctionLetter] = useState<File | null>(null);
@@ -31,7 +31,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
   const [newCoPI, setNewCoPI] = useState<string>("");
 
   // New state for installment dates
-  const [installmentDates, setInstallmentDates] = useState<{ start: string; end: string }[]>([]);
+  const [installmentDates, setInstallmentDates] = useState<{ start_date: string; end_date: string }[]>([]);
 
   const fetchFaculties = async () => {
     try {
@@ -139,34 +139,43 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     formData.append("start_date", startDate ? new Date(startDate).toISOString() : "");
     formData.append("end_date", endDate ? new Date(endDate).toISOString() : "");
     formData.append("total_amount", totalAmount!.toString());
+    formData.append("project_type", projectType);
     formData.append("pis", JSON.stringify(pis));
     formData.append("copis", JSON.stringify(coPIs));
     formData.append("project_heads", JSON.stringify(projectHeads));
+    formData.append("project_head_expenses", JSON.stringify(headTotals));
+
+    if (projectType === "invoice" && numberOfInstallments > 0) {
+        formData.append("installments", JSON.stringify(installmentDates));
+    }
 
     if (sanctionLetter) {
-      formData.append("sanction_letter", sanctionLetter);
+        formData.append("sanction_letter", sanctionLetter);
     }
+
+    formData.append("description", description);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+        });
 
-      if (res.ok) {
-        toastSuccess("Project added");
-        setOpenModal(false);
-      } else {
-        toastError("Error adding project");
-      }
+        if (res.ok) {
+            toastSuccess("Project added");
+            setOpenModal(false);
+        } else {
+            toastError("Error adding project");
+        }
     } catch (e) {
-      toastError("Error");
-      console.error(e);
+        toastError("Error");
+        console.error(e);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
+
 
   useEffect(() => {
     if (!openModal) {
@@ -271,12 +280,12 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                           <TextInput
                             id={`installment_start_${index}`}
                             type="date"
-                            value={installmentDates[index]?.start || ""}
+                            value={installmentDates[index]?.start_date || ""}
                             onChange={(e) => {
                               const updatedDates = [...installmentDates];
                               updatedDates[index] = {
                                 ...updatedDates[index],
-                                start: e.target.value,
+                                start_date: e.target.value,
                               };
                               setInstallmentDates(updatedDates);
                             }}
@@ -288,12 +297,12 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                           <TextInput
                             id={`installment_end_${index}`}
                             type="date"
-                            value={installmentDates[index]?.end || ""}
+                            value={installmentDates[index]?.end_date || ""}
                             onChange={(e) => {
                               const updatedDates = [...installmentDates];
                               updatedDates[index] = {
                                 ...updatedDates[index],
-                                end: e.target.value,
+                                end_date: e.target.value,
                               };
                               setInstallmentDates(updatedDates);
                             }}

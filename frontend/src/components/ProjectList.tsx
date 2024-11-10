@@ -53,6 +53,12 @@ const ProjectList: FunctionComponent = () => {
             </Link>,
             enableColumnFilter: true
         }),
+        columnHelper.accessor(row => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1), {
+            header: "Project Type",
+            meta : {
+                filterType : "dropdown"
+            }
+        }),
         columnHelper.accessor('total_amount', {
             header: "Granted Amount",
             cell: info => info.getValue().toLocaleString("en-IN", {
