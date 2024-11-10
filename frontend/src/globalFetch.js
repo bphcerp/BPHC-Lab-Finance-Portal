@@ -7,15 +7,11 @@ window.fetch = async (url, options = {}) => {
 
   const response = await originalFetch(url, options);
 
-  if (response.status === 401) {
+  if (response.status === 440) {
     toastWarn("Session Expired. Redirecting...")
     window.location.href = '/login';
     return;
   }
 
-  if (response.ok) {
-    return response;
-  }
-
-  throw new Error(`Request failed with status ${response.status}`);
+  else return response
 };

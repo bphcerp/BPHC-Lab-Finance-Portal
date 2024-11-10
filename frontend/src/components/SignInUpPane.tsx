@@ -18,9 +18,9 @@ const SignInUpPane = () => {
             },
             body: JSON.stringify(credentials),
         })
-            .then((res) => {
+            .then(async (res) => {
                 if (res.status === 401) {
-                    toastWarn("Wrong Credentials");
+                    toastWarn((await res.text()));
                 } else if (res.status === 200) {
                     navigate("/dashboard");
                 } else if (res.status === 404) {

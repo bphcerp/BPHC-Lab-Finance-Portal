@@ -19,7 +19,8 @@ router.get('/', async (req: Request, res: Response) => {
 
 // POST /api/categories - Add a new member
 router.post('/', async (req: Request, res: Response) => {
-    const { name, type, institute_id } = req.body;
+    const { name, institute_id } = req.body;
+    const { type } = req.query
 
     if (!name || !type || !institute_id) {
         res.status(400).json({ message: 'Some fields are missing' });

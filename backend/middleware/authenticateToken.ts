@@ -22,7 +22,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
         next();  // Proceed to the next middleware or route handler
       })
       .catch(() => {
-        res.status(401).json({ authenticated: false, message: 'Invalid or expired token' });
+        res.status(440).json({ authenticated: false, message: 'Invalid or expired token' });
       });
     } else {
       next();  // Token is valid, move to next middleware or route handler
