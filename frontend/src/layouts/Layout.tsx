@@ -1,10 +1,12 @@
-import { FunctionComponent, useState } from "react";
+import { FunctionComponent, useEffect, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { RxHamburgerMenu, RxCross2 } from "react-icons/rx";
 import SidebarComponent from "../components/Sidebar";
+import NewFinancialYearModal from "../components/NewFinancialYearModal";
 
 const Layout: FunctionComponent = () => {
   const [isSideBarOpen, setISSideBarOpen] = useState(false);
+  const [isReset, setIsReset] = useState(false)
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -15,8 +17,13 @@ const Layout: FunctionComponent = () => {
     navigate("/login");
   };
 
+  useEffect(() => {
+    setIsReset(new Date().getMonth() === 3 && new Date().getDate() === 1)
+  },[])
+
   return (
     <div className="flex flex-col w-screen h-screen">
+      <NewFinancialYearModal isOpen={isReset} onClose={() => setIsReset(false)}/>
       <SidebarComponent isOpen={isSideBarOpen} setIsOpen={setISSideBarOpen} />
       <div className="header relative flex w-full h-14 px-4 bg-gray-100 shadow-lg items-center justify-between">
         <div className="flex items-center space-x-3">
