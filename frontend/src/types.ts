@@ -13,10 +13,10 @@ export interface Expense {
     expenseReason: string;
     category: Category;
     amount: number;
-    reimbursedID: { title: string, paidStatus: boolean } | null;
+    reimbursedID: Reimbursement | null;
     paidBy: Category;
     description: string
-    settled: 'Current' | 'Savings' | null;
+    settled: Account | null;
     createdAt: Date;
     updatedAt: Date;
 }

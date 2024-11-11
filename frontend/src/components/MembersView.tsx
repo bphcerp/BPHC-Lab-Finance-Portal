@@ -35,19 +35,11 @@ const MembersView: React.FC = () => {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ settlementType }),
+                    body: JSON.stringify({ settlementType, remarks, amount : selectedMember.totalDue }),
                     credentials: 'include'
                 });
                 if (response.ok) {
-                    const newTotalDue = selectedMember.totalDue;
-                    const updatedMember = { ...selectedMember, totalDue: newTotalDue, totalSettled: selectedMember.totalSettled };
-
-                    setMembersExpenses(prevExpenses =>
-                        prevExpenses.map(member =>
-                            member.memberId === selectedMember.memberId ? updatedMember : member
-                        )
-                    );
-
+                    fetchMembersExpenses()
                     toastSuccess(`Successfully settled member: ${selectedMember.memberName} from ${settlementType}`);
                     setSelectedMember(null); // Clear selection after settling
                     setIsModalOpen(false); // Close modal

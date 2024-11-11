@@ -1,4 +1,4 @@
-import {toastWarn} from "./toasts"
+import {toastError, toastWarn} from "./toasts"
 
 const originalFetch = window.fetch;
 
@@ -11,6 +11,12 @@ window.fetch = async (url, options = {}) => {
     toastWarn("Session Expired. Redirecting...")
     window.location.href = '/login';
     return;
+  }
+
+  else if (response.status === 500){
+    toastError((await response.json()).message || "Something went wrong")
+    console.error((await response.json()).message || "Something went wrong")
+    return
   }
 
   else return response

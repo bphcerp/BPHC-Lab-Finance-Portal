@@ -62,7 +62,7 @@ const ExpensesPage: React.FC = () => {
                 filterType: "dropdown"
             }
         }),
-        columnHelper.accessor(row => row.settled ?? "Not Settled", {
+        columnHelper.accessor(row => row.settled ? row.settled.type : "Not Settled", {
             header: 'Settled',
             cell: info => (
                 <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${info.getValue() === 'Current' ? 'bg-blue-100 text-blue-800' :
@@ -93,7 +93,7 @@ const ExpensesPage: React.FC = () => {
                 filterType: "dropdown"
             }
         }),
-        columnHelper.accessor((row) => row.reimbursedID && row.reimbursedID.paidStatus && row.settled === "Savings" ? (
+        columnHelper.accessor((row) => row.reimbursedID && row.reimbursedID.paidStatus && row.settled?.type === "Savings" ? (
             "Yes"
         ) : (
             "No"

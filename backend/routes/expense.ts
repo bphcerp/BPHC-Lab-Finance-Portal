@@ -61,6 +61,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 
   const expensesData = await ExpenseModel.find()
     .populate<{ reimbursedID: { _id: ObjectId; title: string; paidStatus: boolean } }>({ path: 'reimbursedID', select: 'title paidStatus' })
+    .populate<{ settled: { _id: Schema.Types.ObjectId, type: string } }>('settled')
     .populate('category paidBy')
     .lean();
 
@@ -154,17 +155,26 @@ router.patch('/settle', asyncHandler(async (req: Request, res: Response) => {
 
 router.post('/settle/:memberId', async (req, res) => {
   const { memberId } = req.params;
-  const { settlementType, amount } = req.body;
+  const { settlementType, remarks, amount } = req.body;
 
   try {
     if (!['Current', 'Savings'].includes(settlementType)) {
       res.status(400).json({ message: 'Invalid settlement type' });
-      return
+      return;
     }
+
+    const accountEntry = new AccountModel({
+      amount: amount,
+      type: settlementType,
+      remarks,
+      credited: false,
+    });
+
+    await accountEntry.save();
 
     const result = await ExpenseModel.updateMany(
       { paidBy: memberId, settled: null },
-      { settled: settlementType }
+      { settled: accountEntry._id }
     );
 
     if (result.modifiedCount > 0) {
@@ -203,7 +213,7 @@ router.get('/member-expenses', async (req: Request, res: Response) => {
 
       memberExpenses[memberName].totalPaid += expense.amount;
 
-      if (expense.settled.type === 'Current' || expense.settled.type === 'Savings') {
+      if (expense.settled && (expense.settled.type === 'Current' || expense.settled.type === 'Savings')) {
         memberExpenses[memberName].totalSettled += expense.amount;
       } else {
         memberExpenses[memberName].totalDue += expense.amount;
