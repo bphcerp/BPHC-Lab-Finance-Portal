@@ -248,25 +248,6 @@ router.get('/', async (req: Request, res: Response) => {
     }
 });
 
-
-
-
-// Route to get a single project by ID
-router.get('/:id', async (req: Request, res: Response) => {
-    try {
-        const project = await ProjectModel.findById(req.params.id);
-
-        if (!project) {
-            res.status(404).json({ message: 'Project not found' });
-            return;
-        }
-
-        res.json(project);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching project', error });
-    }
-});
-
 // Route to get the sanction letter by project ID
 router.get('/:id/sanction_letter', async (req: Request, res: Response) => {
     try {
@@ -431,35 +412,16 @@ router.get('/:id/util_cert', async (req, res) => {
     }
 });
 
-// Route to update a project by ID
-router.put('/projects/:id', async (req: Request, res: Response) => {
-    try {
-        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description } = req.body;
-
-        const updatedProject = await ProjectModel.findByIdAndUpdate(
-            req.params.id,
-            { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description },
-            { new: true }
-        );
-
-        if (!updatedProject) {
-            res.status(404).json({ message: 'Project not found' });
-        } else {
-            res.json(updatedProject);
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating project', error });
-    }
-});
-
 // Route to delete a project by ID
 router.delete('/:id', async (req: Request, res: Response) => {
     try {
-        const deletedProject = await ProjectModel.findByIdAndDelete(req.params.id);
-        if (!deletedProject) {
+        const toBeDeletedProject = await ProjectModel.findById(req.params.id).lean();
+        if (!toBeDeletedProject) {
             res.status(404).json({ message: 'Project not found' });
         } else {
-            res.status(204).send();  // No Content
+            const projectReimbursements = await ReimbursementModel.findOne({project : toBeDeletedProject!._id})
+            if (projectReimbursements) res.status(409).send({ message : "Cannot delete, project has reimbursements filed against. Please delete them and try again."})
+            else res.status(204).send();
         }
     } catch (error) {
         res.status(500).json({ message: 'Error deleting project', error });

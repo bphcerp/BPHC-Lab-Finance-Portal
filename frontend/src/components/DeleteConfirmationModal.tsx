@@ -13,7 +13,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({ isOpe
         <Modal show={isOpen} onClose={onClose} size="md">
             <Modal.Header>Confirm Deletion</Modal.Header>
             <Modal.Body>
-                <p>Are you sure you want to delete the expense "{item}"?</p>
+                <p>Are you sure you want to delete "{item}"?</p>
             </Modal.Body>
             <Modal.Footer>
                 <Button color="gray" onClick={onClose}>

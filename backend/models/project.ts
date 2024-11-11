@@ -18,6 +18,20 @@ const projectSchema = new Schema({
     sanction_letter_file_id: { type: Schema.Types.ObjectId, ref: 'uploads.files' },
     description: { type: String, default: null },
     installments: { type: [installmentSchema], default: [] },
+    updated_at : { type : Date},
+    negative_heads : { type : [String], default : []}
+});
+
+// Add middleware to update the updated_at timestamp on save
+projectSchema.pre('save', function (next) {
+    this.updated_at = new Date();
+    next();
+});
+
+// Add middleware to handle updates
+projectSchema.pre('findOneAndUpdate', function (next) {
+    this.set({ updated_at: new Date() });
+    next();
 });
 
 export const ProjectModel = mongoose.model('Project', projectSchema);

@@ -4,12 +4,20 @@ import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { Link } from "react-router-dom";
 import { MdOutlineDescription } from "react-icons/md";
 import DescriptionModal from "./DescriptionModal";
-
-import { createColumnHelper } from '@tanstack/react-table'
+import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from "./TableCustom";
 import { Project } from "../types";
+import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
+import EditProjectModal from "./EditProjectModal";
 
 const ProjectList: FunctionComponent = () => {
+    const [projectData, setProjectData] = useState<Array<Project>>([]);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDescModalOpen, setIsDescModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+    const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+    const [description, setDescription] = useState("");
 
     const fetchProjectData = (page: number = 1) => {
         fetch(`${import.meta.env.VITE_BACKEND_URL}/project/?page=${page}`, {
@@ -19,12 +27,8 @@ const ProjectList: FunctionComponent = () => {
                 res.json().then((data) => {
                     data = data.map((project: Project) => ({
                         ...project,
-                        start_date: project.start_date
-                            ? new Date(project.start_date)
-                            : null,
-                        end_date: project.end_date
-                            ? new Date(project.end_date)
-                            : null,
+                        start_date: project.start_date ? new Date(project.start_date) : null,
+                        end_date: project.end_date ? new Date(project.end_date) : null,
                     }));
                     setProjectData(data);
                 })
@@ -33,65 +37,71 @@ const ProjectList: FunctionComponent = () => {
                 toastError("Something went wrong");
                 console.error(e);
             });
-    }
+    };
 
     useEffect(() => {
-        fetchProjectData()
-    }, [])
+        fetchProjectData();
+    }, []);
 
-    const [projectData, setProjectData] = useState<Array<Project>>([]);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [isDescModalOpen, setIsDescModalOpen] = useState(false);
-    const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
-    const [description, setDescription] = useState("")
-    const columnHelper = createColumnHelper<Project>()
+    const columnHelper = createColumnHelper<Project>();
     const columns = [
-        columnHelper.accessor('project_name', {
+        columnHelper.accessor("project_name", {
             header: "Project Name",
-            cell: info => <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
-                {info.getValue()}
-            </Link>,
-            enableColumnFilter: true
-        }),
-        columnHelper.accessor(row => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1), {
-            header: "Project Type",
-            meta : {
-                filterType : "dropdown"
-            }
-        }),
-        columnHelper.accessor('total_amount', {
-            header: "Granted Amount",
-            cell: info => info.getValue().toLocaleString("en-IN", {
-                style: "currency",
-                currency: "INR",
-            }),
-            enableColumnFilter: false
-        }),
-        columnHelper.accessor('start_date', {
-            header: "Start Date",
-            cell: info => info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
-            enableColumnFilter: false
-        }),
-        columnHelper.accessor('end_date', {
-            header: "End Date",
-            cell: info => info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
-            enableColumnFilter: false
-        }),
-        columnHelper.accessor('sanction_letter_file_id', {
-            header: "Sanction Letter",
-            cell: ({ row }) => row.original.sanction_letter_file_id ? (
-                <Link
-                    to={`${import.meta.env.VITE_BACKEND_URL}/project/${row.original._id}/sanction_letter`}
-                    target="_blank"
-                    className="text-blue-600 hover:underline"
-                >
-                    View
+            cell: (info) => (
+                <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
+                    {info.getValue()}
                 </Link>
-            ) : "-",
-            enableColumnFilter: false,
-            enableSorting: false
+            ),
+            enableColumnFilter: true,
         }),
-        columnHelper.accessor('util_cert', {
+        columnHelper.accessor(
+            (row) => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1),
+            {
+                header: "Project Type",
+                meta: {
+                    filterType: "dropdown",
+                },
+            }
+        ),
+        columnHelper.accessor("total_amount", {
+            header: "Granted Amount",
+            cell: (info) =>
+                info.getValue().toLocaleString("en-IN", {
+                    style: "currency",
+                    currency: "INR",
+                }),
+            enableColumnFilter: false,
+        }),
+        columnHelper.accessor("start_date", {
+            header: "Start Date",
+            cell: (info) =>
+                info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
+            enableColumnFilter: false,
+        }),
+        columnHelper.accessor("end_date", {
+            header: "End Date",
+            cell: (info) =>
+                info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
+            enableColumnFilter: false,
+        }),
+        columnHelper.accessor("sanction_letter_file_id", {
+            header: "Sanction Letter",
+            cell: ({ row }) =>
+                row.original.sanction_letter_file_id ? (
+                    <Link
+                        to={`${import.meta.env.VITE_BACKEND_URL}/project/${row.original._id}/sanction_letter`}
+                        target="_blank"
+                        className="text-blue-600 hover:underline"
+                    >
+                        View
+                    </Link>
+                ) : (
+                    "-"
+                ),
+            enableColumnFilter: false,
+            enableSorting: false,
+        }),
+        columnHelper.accessor("util_cert", {
             header: "Utilization Certificate",
             cell: ({ row }) => (
                 <Link
@@ -103,23 +113,47 @@ const ProjectList: FunctionComponent = () => {
                 </Link>
             ),
             enableColumnFilter: false,
-            enableSorting: false
+            enableSorting: false,
         }),
-        columnHelper.accessor('description', {
+        columnHelper.accessor("description", {
             header: "Description",
-            cell: ({ row }) => row.original.description ? (
-                <MdOutlineDescription
-                    size="1.75em"
-                    onClick={() => {
-                        setDescription(row.original.description);
-                        setIsDescModalOpen(true);
-                    }}
-                    className="hover:text-gray-700 cursor-pointer"
-                />
-            ) : "-",
+            cell: ({ row }) =>
+                row.original.description ? (
+                    <MdOutlineDescription
+                        size="1.75em"
+                        onClick={() => {
+                            setDescription(row.original.description);
+                            setIsDescModalOpen(true);
+                        }}
+                        className="hover:text-gray-700 cursor-pointer"
+                    />
+                ) : (
+                    "-"
+                ),
             enableColumnFilter: false,
-            enableSorting: false
-        })
+            enableSorting: false,
+        }),
+        columnHelper.accessor("_id", {
+            header: () => <div className="w-full text-center">Actions</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-center divide-x-2">
+                    <button
+                        className="w-10 flex justify-center hover:cursor-pointer"
+                        onClick={() => openEditModal(row.original)}
+                    >
+                        <RiEdit2Line color="blue" />
+                    </button>
+                    <button
+                        className="w-10 flex justify-center hover:cursor-pointer"
+                        onClick={() => openDeleteModal(row.original)}
+                    >
+                        <RiDeleteBin6Line color="red" />
+                    </button>
+                </div>
+            ),
+            enableColumnFilter: false,
+            enableSorting: false,
+        })        
     ];
 
     const openDeleteModal = (project: Project) => {
@@ -127,25 +161,59 @@ const ProjectList: FunctionComponent = () => {
         setIsDeleteModalOpen(true);
     };
 
+    const openEditModal = (project: Project) => {
+        setProjectToEdit(project);
+        setIsEditModalOpen(true);
+    };
+
     const handleDeleteProject = async () => {
         if (!projectToDelete) return;
         try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectToDelete._id}`, {
-                credentials: "include",
-                method: 'DELETE',
-            });
+            const response = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/project/${projectToDelete._id}`,
+                {
+                    credentials: "include",
+                    method: "DELETE",
+                }
+            );
 
             if (!response.ok) {
-                throw new Error('Failed to delete project');
+                throw new Error(((await response.json()).message) || "Something went wrong");
             }
 
-            setProjectData(projectData!.filter(project => project._id !== projectToDelete._id));
-            toastSuccess('Project deleted successfully');
+            setProjectData(projectData.filter((project) => project._id !== projectToDelete._id));
+            toastSuccess("Project deleted successfully");
         } catch (error) {
-            toastError('Error deleting project');
-            console.error('Error deleting project:', error);
+            toastError((error as Error).message);
+            console.error("Error deleting project:", error);
         } finally {
             setIsDeleteModalOpen(false);
+        }
+    };
+
+    const handleSaveProject = async (updatedProject: Project) => {
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/project/${updatedProject._id}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify(updatedProject),
+                }
+            );
+            if (!response.ok) {
+                throw new Error("Failed to update project");
+            }
+            toastSuccess("Project updated successfully");
+            setProjectData((prev) =>
+                prev.map((p) => (p._id === updatedProject._id ? updatedProject : p))
+            );
+        } catch (error) {
+            toastError("Error updating project");
+            console.error("Error updating project:", error);
         }
     };
 
@@ -160,8 +228,14 @@ const ProjectList: FunctionComponent = () => {
             <DescriptionModal
                 isOpen={isDescModalOpen}
                 onClose={() => setIsDescModalOpen(false)}
-                type='project'
+                type="project"
                 description={description}
+            />
+            <EditProjectModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                project={projectToEdit}
+                onSave={handleSaveProject}
             />
             <TableCustom data={projectData} columns={columns} />
         </div>
