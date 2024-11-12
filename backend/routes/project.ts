@@ -104,7 +104,7 @@ router.get('/:id/total-expenses', async (req, res) => {
 
 router.post('/', upload.single('sanction_letter'), async (req: Request, res: Response) => {
     try {
-        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description, installments, project_type } = req.body;
+        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description, installments, project_type, negative_heads } = req.body;
 
         const startDate = start_date ? new Date(start_date) : null;
         const endDate = end_date ? new Date(end_date) : null;
@@ -147,12 +147,14 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
             copis: JSON.parse(copis),
             sanction_letter_file_id: sanctionLetterFileId,
             description,
-            installments: parsedInstallments, // Include installments
+            installments: parsedInstallments,
+            negative_heads
         });
 
         const savedProject = await newProject.save();
         res.status(201).json(savedProject);
     } catch (error) {
+        console.log(error)
         res.status(500).json({ message: 'Error creating project', error: (error as Error).message });
     }
 });
@@ -160,10 +162,10 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
 // Route to update a project by ID
 router.put('/:id', async (req: Request, res: Response) => {
     try {
-        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description, installments } = req.body;
+        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description, installments, negative_heads } = req.body;
 
         // Parse installments if provided
-        const parsedInstallments = installments ? JSON.parse(installments) : [];
+        const parsedInstallments = (installments as Array<any>).length ? JSON.parse(installments) : [];
 
         const updatedProject = await ProjectModel.findByIdAndUpdate(
             req.params.id,
@@ -176,7 +178,8 @@ router.put('/:id', async (req: Request, res: Response) => {
                 pis,
                 copis,
                 description,
-                installments: parsedInstallments, // Include installments
+                installments: parsedInstallments,
+                negative_heads
             },
             { new: true }
         );
@@ -187,7 +190,8 @@ router.put('/:id', async (req: Request, res: Response) => {
             res.json(updatedProject);
         }
     } catch (error) {
-        res.status(500).json({ message: 'Error updating project', error });
+        console.log(error)
+        res.status(500).json({ message: 'Error updating project', error : (error as Error).message });
     }
 });
 
@@ -203,7 +207,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
         res.json(project);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching project', error });
+        res.status(500).json({ message: 'Error fetching project', error : (error as Error).message });
     }
 });
 
@@ -424,7 +428,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
             else res.status(204).send();
         }
     } catch (error) {
-        res.status(500).json({ message: 'Error deleting project', error });
+        res.status(500).json({ message: 'Error deleting project', error : (error as Error).message });
     }
 });
 

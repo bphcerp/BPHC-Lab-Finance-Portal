@@ -18,7 +18,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
 }) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [projects, setProjects] = useState<Project[]>([]);
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+    const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [selectedProjectHead, setSelectedProjectHead] = useState<string | null>(null);
     const [totalExpenseAmount, setTotalExpenseAmount] = useState<number>(0);
     const [reimbursementTitle, setReimbursementTitle] = useState<string>('');
@@ -44,8 +44,8 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
 
         setLoading(true);
         try {
-            if (selectedProjectId && selectedProjectHead && reimbursementTitle) {
-                await onFileReimbursement(expenseIds, selectedProjectId, selectedProjectHead, totalExpenseAmount, reimbursementTitle, description);
+            if (selectedProject && selectedProjectHead && reimbursementTitle) {
+                await onFileReimbursement(expenseIds, selectedProject._id!, selectedProjectHead, totalExpenseAmount, reimbursementTitle, description);
                 onClose();
             }
         } catch (error) {
@@ -57,7 +57,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
     };
 
     const resetModalData = () => {
-        setSelectedProjectId(null);
+        setSelectedProject(null);
         setSelectedProjectHead(null);
         setTotalExpenseAmount(0);
         setReimbursementTitle('');
@@ -93,7 +93,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                     <Select
                         onChange={(e) => {
                             const value = e.target.value;
-                            setSelectedProjectId(value === "" ? null : value);
+                            setSelectedProject(value === "" ? null : projects.find(p => p._id === value)!);
                             setSelectedProjectHead(null);
                         }}
                         required
@@ -105,7 +105,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                             </option>
                         ))}
                     </Select>
-                    {selectedProjectId && (
+                    {selectedProject && (
                         <Select
                             onChange={(e) => {
                                 const value = e.target.value;
@@ -114,7 +114,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                             required
                         >
                             <option value="">Select a Project Head</option>
-                            {Object.entries(projects.find(p => p._id === selectedProjectId)?.project_heads || {}).map(([head , amounts]) => {
+                            {Object.entries(selectedProject?.project_heads || {}).map(([head , amounts]) => {
                                 return (
                                     <option key={head} value={head}>
                                         {head} - {amounts[0].toLocaleString("en-IN", {
@@ -128,7 +128,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                     )}
                     {selectedProjectHead && (
                         <div>
-                            {projects.find(p => p._id === selectedProjectId)!.project_heads[selectedProjectHead][0] < totalExpenseAmount ? (
+                            {!selectedProject?.negative_heads.includes(selectedProjectHead) && (selectedProject!.project_heads[selectedProjectHead][0] < totalExpenseAmount) ? (
                                 <p className="text-red-500">
                                     Selected head cannot cover the total expenses of {totalExpenseAmount.toLocaleString("en-IN", {
                                         style: "currency",
@@ -158,7 +158,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                 <Button onClick={onClose} disabled={loading} color="failure">
                     Cancel
                 </Button>
-                <Button color="blue" onClick={handleSubmit} disabled={loading || !selectedProjectId || !selectedProjectHead || !reimbursementTitle || (selectedProjectHead != null && projects.find(p => p._id === selectedProjectId)!.project_heads[selectedProjectHead].reduce((acc, amount) => acc + amount, 0) < totalExpenseAmount)}>
+                <Button color="blue" onClick={handleSubmit} disabled={loading || !selectedProject || !selectedProjectHead || !reimbursementTitle || (selectedProjectHead != null && (!selectedProject?.negative_heads.includes(selectedProjectHead) && (selectedProject!.project_heads[selectedProjectHead][0] < totalExpenseAmount)))}>
                     {loading ? 'Submitting...' : 'Submit Reimbursement'}
                 </Button>
             </Modal.Footer>

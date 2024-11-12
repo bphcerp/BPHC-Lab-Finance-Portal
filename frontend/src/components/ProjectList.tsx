@@ -101,7 +101,7 @@ const ProjectList: FunctionComponent = () => {
             enableColumnFilter: false,
             enableSorting: false,
         }),
-        columnHelper.accessor("util_cert", {
+        columnHelper.accessor(() => "util_cert", {
             header: "Utilization Certificate",
             cell: ({ row }) => (
                 <Link
@@ -208,9 +208,7 @@ const ProjectList: FunctionComponent = () => {
                 throw new Error("Failed to update project");
             }
             toastSuccess("Project updated successfully");
-            setProjectData((prev) =>
-                prev.map((p) => (p._id === updatedProject._id ? updatedProject : p))
-            );
+            fetchProjectData()
         } catch (error) {
             toastError("Error updating project");
             console.error("Error updating project:", error);

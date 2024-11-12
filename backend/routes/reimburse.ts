@@ -87,18 +87,6 @@ router.post('/paid', async (req: Request, res: Response) => {
             { paidStatus: true }
         );
 
-        const updatePromises = reimbursements.map(reimbursement => {
-            const { totalAmount, projectHead, project } = reimbursement;
-            return ProjectModel.findByIdAndUpdate(
-                project,
-                {
-                    $inc: { [`project_head_expenses.${projectHead}`]: totalAmount }
-                }
-            );
-        });
-
-        await Promise.all(updatePromises);
-
         res.status(200).json({ message: 'Reimbursements updated successfully, and project head expenses updated.' });
     } catch (error) {
         res.status(500).json({ message: 'Error updating reimbursements: ' + (error as Error).message });
@@ -126,6 +114,13 @@ router.post('/', async (req: Request, res: Response) => {
         await ExpenseModel.updateMany(
             { _id: { $in: expenseIds } },
             { reimbursedID: reimbursement._id }
+        );
+
+        await ProjectModel.findByIdAndUpdate(
+                projectId,
+                {
+                    $inc: { [`project_head_expenses.${projectHead}`]: totalAmount }
+                }
         );
 
         await reimbursement.populate('project expenses')

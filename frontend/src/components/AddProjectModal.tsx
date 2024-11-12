@@ -1,4 +1,4 @@
-import { Button, Label, Modal, TextInput, FileInput, Radio, Textarea } from "flowbite-react";
+import { Button, Label, Modal, TextInput, FileInput, Radio, Textarea, Checkbox } from "flowbite-react";
 import { Dispatch, FormEventHandler, FunctionComponent, SetStateAction, useEffect, useState } from "react";
 import { toastError, toastSuccess, toastWarn } from "../toasts";
 import { Member } from "../types";
@@ -23,6 +23,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
   const [description, setDescription] = useState<string>("");
   const [totalAmount, setTotalAmount] = useState<number | null>(null);
   const [faculties, setFaculties] = useState<Array<Member>>([])
+  const [negativeHeads, setNegativeHeads] = useState<Array<string>>([])
 
   // New states for PIs and Co-PIs
   const [pis, setPIs] = useState<string[]>([]);
@@ -144,37 +145,38 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     formData.append("copis", JSON.stringify(coPIs));
     formData.append("project_heads", JSON.stringify(projectHeads));
     formData.append("project_head_expenses", JSON.stringify(headTotals));
+    formData.append("negative_heads", JSON.stringify(negativeHeads));
 
     if (projectType === "invoice" && numberOfInstallments > 0) {
-        formData.append("installments", JSON.stringify(installmentDates));
+      formData.append("installments", JSON.stringify(installmentDates));
     }
 
     if (sanctionLetter) {
-        formData.append("sanction_letter", sanctionLetter);
+      formData.append("sanction_letter", sanctionLetter);
     }
 
     formData.append("description", description);
 
     try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
-            method: "POST",
-            body: formData,
-            credentials: "include",
-        });
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
 
-        if (res.ok) {
-            toastSuccess("Project added");
-            setOpenModal(false);
-        } else {
-            toastError("Error adding project");
-        }
+      if (res.ok) {
+        toastSuccess("Project added");
+        setOpenModal(false);
+      } else {
+        toastError("Error adding project");
+      }
     } catch (e) {
-        toastError("Error");
-        console.error(e);
+      toastError("Error");
+      console.error(e);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
 
   useEffect(() => {
@@ -334,7 +336,21 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               {Object.keys(projectHeads).map((head) => (
                 <div key={head} className="mt-4 space-y-2">
                   <div className="flex justify-between items-center">
-                    <h4 className="text-lg">{head}</h4>
+                    <div className="flex items-center space-x-2">
+                      <h4 className="text-lg">{head}</h4>
+                      <Checkbox
+                        id={`${head}_neg_checkbox`}
+                        checked={negativeHeads.includes(head)}
+                        onChange={() => {
+                          if (negativeHeads.includes(head)) setNegativeHeads(negativeHeads.filter(negativeHead => negativeHead != head))
+                          else setNegativeHeads([...negativeHeads, head])
+                        }}
+                      />
+                      <Label 
+                        value="Allow Negative Values"
+                        htmlFor={`${head}_neg_checkbox`}
+                      />
+                    </div>
                     <div className="flex justify-end space-x-2">
                       <Button color="green" size="xs" onClick={() => saveProjectHead(head)}>
                         Save

@@ -72,7 +72,7 @@ export interface Project {
     sanction_letter?: File | null;
     sanction_letter_file_id?: string;
     description: string
-    util_cert: File
+    negative_heads : string[]
 }
 
 export interface Account {
