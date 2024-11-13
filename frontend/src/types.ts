@@ -79,7 +79,7 @@ export interface Account {
     _id: string
     amount: number;
     createdAt : Date
-    type: 'Current' | 'Savings' | null;
+    type: 'Current' | 'Savings' | 'PDA' | 'PDF' | null;
     remarks?: string;
     credited: boolean;
     transferable: number;

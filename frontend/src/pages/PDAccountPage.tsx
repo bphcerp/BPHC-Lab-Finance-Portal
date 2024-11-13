@@ -1,15 +1,18 @@
 import { FunctionComponent, useEffect, useState } from 'react';
-import { toastError } from '../toasts';
+import { toastError, toastSuccess } from '../toasts';
 import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
 import { Account } from '../types';
+import { Button } from 'flowbite-react';
+import AddEntryModal from '../components/AddEntryModal';
 
 interface AccountPageProps {
-    type: "Current" | "Savings";
+    type: "PDA" | "PDF";
 }
 
-const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
+const PDAccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
     const [accountData, setAccountData] = useState<Array<Account>>([]);
+    const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false)
 
     const columnHelper = createColumnHelper<Account>();
 
@@ -47,18 +50,6 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
                 })
             }
         }),
-        columnHelper.accessor(row => row.transferable? "Yes" : "No" , {
-            header: 'Transferable',
-            cell: (info) => info.row.original.transferable.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
-            meta : {
-                getSum  : true,
-                sumFormatter : sum => sum.toLocaleString("en-IN", {
-                    style : "currency",
-                    currency : "INR"
-                }),
-                filterType : "dropdown"
-            }
-        })
     ];
 
     const fetchAccountData = async () => {
@@ -74,6 +65,34 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
         }
     };
 
+    const handleAccountEntry = async (formData: any) => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/account/entry`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials : "include",
+                body: JSON.stringify({ type, ...formData }),
+            });
+
+            if (response.ok) {
+                toastSuccess(`Entry added!`)
+                fetchAccountData()
+            }
+            else {
+                toastError((await response.json()).message ?? "Something went wrong")
+                return
+            }
+            console.log("Entry added successfully:");
+        } catch (error) {
+            toastError("Something went wrong")
+            console.error("Error while adding entry:", (error as Error).message);
+        } finally {
+            setIsAddEntryModalOpen(false)
+        }
+    }
+
     useEffect(() => {
         if (type) {
             fetchAccountData();
@@ -82,8 +101,14 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
 
     return (
         <div className="container mx-auto p-4">
+            <AddEntryModal
+                isOpen={isAddEntryModalOpen}
+                onClose={() => setIsAddEntryModalOpen(false)}
+                onSubmit={handleAccountEntry}
+            />
             <div className="flex justify-between mb-4">
                 <h1 className="text-2xl font-bold">{type} Account</h1>
+                <Button color="blue" className='flex justify-center items-center' onClick={() => setIsAddEntryModalOpen(true)}>Add Entry</Button>
             </div>
             {accountData.length ? <TableCustom data={accountData} columns={columns} initialState={{
                 sorting: [
@@ -97,4 +122,4 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
     )
 };
 
-export default AccountPage;
+export default PDAccountPage;

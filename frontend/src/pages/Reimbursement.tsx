@@ -49,16 +49,12 @@ const ReimbursementPage: React.FC = () => {
                     className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${paidStatus ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                         } shadow-sm`}
                 >
-                    {paidStatus ? "Paid" : "Unpaid"}
+                    {info.getValue()}
                 </span>
             },
             meta: {
                 filterType: "dropdown"
             },
-            filterFn: (row, _columnId, filterValue) => {
-                console.log("filterValue")
-                return (filterValue == "Unpaid" && !row.original.paidStatus) || (filterValue == "Paid" && row.original.paidStatus)
-            }
         }),
         columnHelper.accessor('totalAmount', {
             header: 'Amount',

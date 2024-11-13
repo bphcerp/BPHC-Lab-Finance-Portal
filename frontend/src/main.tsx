@@ -19,6 +19,7 @@ import ExpensesLayout from './layouts/ExpenseLayout'
 import ProjectOverview from './pages/ProjectOverview'
 import AdminPage from './pages/AdminPage'
 import AccountPage from './pages/AccountPage.js'
+import PDAccountPage from './pages/PDAccountPage.js'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={import.meta.env.VITE_OAUTH_CID}>
@@ -39,6 +40,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path='/admin' element={<AdminPage />} />
             <Route path="/account/savings" element={<AccountPage type='Savings'/>} />
             <Route path="/account/current" element={<AccountPage type='Current'/>} />
+            <Route path="/pda" element={<PDAccountPage type='PDA'/>} />
+            <Route path="/pdf" element={<PDAccountPage type='PDF'/>} />
           </Route>
           <Route path='/login' element={<LoginPage />} />
         </Routes>

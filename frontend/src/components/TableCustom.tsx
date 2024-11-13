@@ -1,12 +1,32 @@
-import { useReactTable, getCoreRowModel, getFilteredRowModel, getSortedRowModel, getPaginationRowModel, flexRender, Column, getFacetedRowModel, getFacetedUniqueValues, InitialTableState } from "@tanstack/react-table";
+import {
+    useReactTable,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getSortedRowModel,
+    getPaginationRowModel,
+    flexRender,
+    Column,
+    getFacetedRowModel,
+    getFacetedUniqueValues,
+    InitialTableState,
+    RowData
+} from "@tanstack/react-table";
 import { Checkbox, TextInput, Table } from "flowbite-react";
 import { FunctionComponent, useEffect, useMemo } from "react";
+
+declare module '@tanstack/react-table' {
+    interface ColumnMeta<TData extends RowData, TValue> {
+        getSum?: boolean;
+        sumFormatter?: (sum: number) => string;
+        filterType? : "dropdown"
+    }
+}
 
 interface TableCustomProps {
     data: Array<any>
     columns: Array<any>
-    setSelected? : (selected : Array<any>) => void
-    initialState? : InitialTableState
+    setSelected?: (selected: Array<any>) => void
+    initialState?: InitialTableState
 }
 
 const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSelected, initialState }) => {
@@ -21,15 +41,23 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
         )
     }
 
+    columns = useMemo(() =>
+        columns.map(column =>
+            column.meta?.filterType === "dropdown"
+                ? { ...column, filterFn: "equalsString" }
+                : column
+        ),
+        [columns]
+    )
 
     const table = useReactTable({
         data,
         columns,
         initialState,
-        enableMultiRowSelection : true,
+        enableMultiRowSelection: true,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
-        getFacetedRowModel: getFacetedRowModel(), // client-side faceting
+        getFacetedRowModel: getFacetedRowModel(),
         getFacetedUniqueValues: getFacetedUniqueValues(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
@@ -37,7 +65,22 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
 
     useEffect(() => {
         if (setSelected) setSelected(Object.keys(table.getState().rowSelection).map(row => table.getRow(row).original))
-    },[table.getState().rowSelection])
+    }, [table.getState().rowSelection])
+
+    // Calculate column sums for columns with getSum: true
+    const columnSums = useMemo(() => {
+        const sums: Record<string, number> = {};
+        table.getAllColumns().forEach(column => {
+            if (column.columnDef.meta?.getSum) {
+                sums[column.id] = table.getRowModel().rows.reduce((sum, row) => {
+                    const value = column.columnDef.meta?.filterType? row.original[column.id.toLowerCase()]  : row.getValue(column.id);
+                    return sum + (typeof value === "number" ? value : 0);
+                }, 0);
+            }
+        });
+        console.log(sums)
+        return sums;
+    }, [table.getRowModel().rows]);
 
     return (
         <>
@@ -70,7 +113,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                                 }[header.column.getIsSorted() as string] ?? null}
                                             </div>
                                             {header.column.getCanFilter() ? <div className="mt-2">
-                                                {header.column.columnDef.meta && (header.column.columnDef.meta as any).filterType === "dropdown" ?
+                                                {header.column.columnDef.meta && header.column.columnDef.meta.filterType === "dropdown" ?
                                                     <select
                                                         onChange={e => header.column.setFilterValue(e.target.value)}
                                                         value={(header.column.getFilterValue() ?? "") as string}
@@ -115,9 +158,20 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                 ))}
                             </Table.Row>
                         ))}
+                        {Object.values(columnSums).some(sum => sum !== undefined) && (
+                            <Table.Row className="bg-gray-200 text-black font-bold text-lg">
+                                <Table.Cell className="px-4 py-2.5">Total</Table.Cell>
+                                {table.getAllColumns().map(column => (
+                                    <Table.Cell key={column.id} className="px-0 py-2.5">
+                                        {column.columnDef.meta?.getSum ? column.columnDef.meta?.sumFormatter?.(columnSums[column.id]) ?? columnSums[column.id].toLocaleString() : null}
+                                    </Table.Cell>
+                                ))}
+                            </Table.Row>
+                        )}
                     </Table.Body>
                 </Table>
             </div>
+
             <div className="flex justify-center items-center space-x-2 my-4">
                 <button
                     className="border rounded p-1"
