@@ -56,6 +56,8 @@ export interface Installment {
 export interface Project {
     _id?: string;
     project_name: string;
+    project_id : string
+    project_title : string
     start_date: Date | null;
     end_date: Date | null;
     project_heads: {
@@ -83,6 +85,7 @@ export interface Account {
     remarks?: string;
     credited: boolean;
     transferable: number;
+    transfer : string
 }
 
 

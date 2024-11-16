@@ -61,11 +61,22 @@ const ProjectList: FunctionComponent = () => {
     const [description, setDescription] = useState("")
     const columnHelper = createColumnHelper<Project>()
     const columns = [
-        columnHelper.accessor('project_name', {
+        columnHelper.accessor("project_id", {
+            header: "Project ID",
+            enableColumnFilter: true,
+        }),
+        columnHelper.accessor("project_name", {
             header: "Project Name",
-            cell: info => <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
-                {info.getValue()}
-            </Link>,
+            cell: (info) => (
+                <Link className="hover:underline text-blue-600" to={`/project/${info.row.original.project_id}`}>
+                    {info.getValue()}
+                </Link>
+            ),
+            enableColumnFilter: true,
+        }),
+        columnHelper.accessor("project_title", {
+            header: "Project Title",
+            enableColumnFilter: true,
         }),
         columnHelper.accessor(row => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1), {
             header: "Project Type",

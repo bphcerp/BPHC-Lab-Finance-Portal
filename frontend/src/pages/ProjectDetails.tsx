@@ -100,9 +100,20 @@ const ProjectDetails = () => {
         <>
             {projectData && (
                 <div className="flex flex-col space-y-4 w-full mx-10">
-                    <h1 className="text-4xl font-bold text-center mt-5 text-gray-800">
+                    <span className="text-4xl font-bold text-center mt-5 text-gray-800">
                         {projectData.project_name}
-                    </h1>
+                    </span>
+
+                    <div className="flex justify-center">
+                        <div className="flex justify-between w-1/3">
+                            <span className="text-lg text-center mt-5 text-gray-800">
+                                Project ID : {projectData.project_id}
+                            </span>
+                            <span className="text-lg text-center mt-5 text-gray-800">
+                                Project Title : {projectData.project_title}
+                            </span>
+                        </div>
+                    </div>
 
                     <h2 className="text-2xl font-semibold text-gray-70">Project Data</h2>
 
@@ -126,8 +137,8 @@ const ProjectDetails = () => {
                                                 className={`py-3 px-6 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
                                             >
                                                 <div className="flex flex-col">
-                                                    {projectData.project_type === "invoice"? "Installment" :"Year"} {i + 1}
-                                                    {projectData.project_type === "invoice"? <span>{formatDate(projectData.installments![i].start_date)} - {formatDate(projectData.installments![i].end_date)}</span> :<></>}
+                                                    {projectData.project_type === "invoice" ? "Installment" : "Year"} {i + 1}
+                                                    {projectData.project_type === "invoice" ? <span>{formatDate(projectData.installments![i].start_date)} - {formatDate(projectData.installments![i].end_date)}</span> : <></>}
                                                 </div>
                                             </th>
                                         ))}
@@ -148,10 +159,7 @@ const ProjectDetails = () => {
                                                         key={i}
                                                         className={`py-3 px-6 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
                                                     >
-                                                        {amount.toLocaleString("en-IN", {
-                                                            style: "currency",
-                                                            currency: "INR",
-                                                        })}
+                                                        {formatCurrency(amount)}
                                                     </td>
                                                 ))}
                                                 {allocations.length <
@@ -195,10 +203,7 @@ const ProjectDetails = () => {
                                 <div className="bg-blue-100 p-6 rounded-lg shadow-md text-center">
                                     <p className="text-md font-semibold">Total Amount</p>
                                     <p className="text-2xl font-bold mt-2 text-blue-800">
-                                        {projectData.total_amount.toLocaleString("en-IN", {
-                                            style: "currency",
-                                            currency: "INR",
-                                        })}
+                                        {formatCurrency(projectData.total_amount)}
                                     </p>
                                 </div>
 
@@ -269,10 +274,7 @@ const ProjectDetails = () => {
                                             {head}
                                         </td>
                                         <td className="py-3 px-6 text-center text-gray-600">
-                                            {allocations[currentYear].toLocaleString("en-IN", {
-                                                style: "currency",
-                                                currency: "INR",
-                                            })}
+                                            {formatCurrency(allocations[currentYear])}
                                         </td>
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             {expenseData ? expenseData[head] ?? 0 : "Loading"}

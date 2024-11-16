@@ -45,13 +45,21 @@ const ProjectList: FunctionComponent = () => {
 
     const columnHelper = createColumnHelper<Project>();
     const columns = [
+        columnHelper.accessor("project_id", {
+            header: "Project ID",
+            enableColumnFilter: true,
+        }),
         columnHelper.accessor("project_name", {
             header: "Project Name",
             cell: (info) => (
-                <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
+                <Link className="hover:underline text-blue-600" to={`/project/${info.row.original.project_id}`}>
                     {info.getValue()}
                 </Link>
             ),
+            enableColumnFilter: true,
+        }),
+        columnHelper.accessor("project_title", {
+            header: "Project Title",
             enableColumnFilter: true,
         }),
         columnHelper.accessor(

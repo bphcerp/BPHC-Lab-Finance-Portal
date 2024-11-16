@@ -44,4 +44,34 @@ router.post('/', async (req: Request, res: Response) => {
     }
 });
 
+router.put('/:id', async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { name, institute_id, type } = req.body;
+
+    if (!name || !type || !institute_id) {
+        res.status(400).json({ message: 'Some fields are missing' });
+        return
+    }
+
+    try {
+        const member = await MemberModel.findById(id);
+
+        if (!member) {
+            res.status(404).json({ message: 'Member not found' });
+            return
+        }
+
+        member.name = name || member.name;
+        member.institute_id = institute_id || member.institute_id;
+        member.type = type || member.type;
+
+        await member.save();
+
+        res.status(200).json(member);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating member', error: (error as Error).message });
+    }
+});
+
+
 export default router;

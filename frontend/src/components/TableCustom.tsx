@@ -78,7 +78,6 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                 }, 0);
             }
         });
-        console.log(sums)
         return sums;
     }, [table.getRowModel().rows]);
 

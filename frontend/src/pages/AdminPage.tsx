@@ -7,13 +7,16 @@ import { Inputs } from "../types";
 import AddAdminEntryModal from "../components/AddAdminEntryModal";
 import DeleteAdminEntryModal from "../components/DeleteAdminEntryModal";
 import { toastError, toastSuccess } from "../toasts";
+import EditMemberModal from "../components/EditMemberModal";
 
 const AdminPage: React.FC = () => {
     const [columns, setColumns] = useState<ColumnDef<any, any>[] | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [itemToDelete, setItemToDelete] = useState<any | null>(null);
+    const [itemtoEdit, setItemToEdit] = useState<any | null>(null);
 
     const { register, handleSubmit, watch } = useForm<Inputs>();
 
@@ -107,13 +110,36 @@ const AdminPage: React.FC = () => {
     };
 
     const handleEdit = (rowData: any) => {
-        console.log("Editing row:", rowData);
+        setItemToEdit(rowData);
+        setIsEditModalOpen(true);
     };
 
     const handleDelete = (rowData: any) => {
-        setItemToDelete(rowData); // Set the item to delete
-        setIsDeleteModalOpen(true); // Open the delete confirmation modal
+        setItemToDelete(rowData);
+        setIsDeleteModalOpen(true);
     };
+
+    const handleEditConfirm = async (formData: any) => {
+        const selectedConfig = watch("selectedConfig");
+      
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/member/${itemtoEdit._id}`, {
+          method: "PUT",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({...formData,type : selectedConfig.toLowerCase()}),
+        });
+      
+        if (res.ok) {
+          toastSuccess(`${selectedConfig} updated!`);
+          handleSubmit(onSubmit)();
+        } else {
+          toastError((await res.json()).message ?? "Something went wrong");
+        }
+
+        setIsEditModalOpen(false)
+      }
 
     const handleDeleteConfirm = async () => {
         const selectedConfig = watch("selectedConfig");
@@ -155,6 +181,13 @@ const AdminPage: React.FC = () => {
                 onClose={() => setIsDeleteModalOpen(false)}
                 onDelete={handleDeleteConfirm}
                 itemName={watch("selectedConfig")}
+            />
+            <EditMemberModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                onSubmit={handleEditConfirm}
+                selectedConfig={watch("selectedConfig")}
+                member={itemtoEdit}
             />
             <span className="text-2xl font-bold">Admin Configuration</span>
             <div className="flex justify-between">

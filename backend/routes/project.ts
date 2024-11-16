@@ -80,20 +80,20 @@ router.get('/grandtotal', async (req: Request, res: Response) => {
 
 router.get('/:id/total-expenses', async (req, res) => {
     try {
-        const { id } = req.params;
-
-        const project = await ProjectModel.findById(id);
+        // Use findOne to fetch a single project based on project_id
+        const project = await ProjectModel.findOne({ project_id: req.params.id });
 
         if (!project) {
             res.status(404).json({ message: 'Project not found.' });
-            return
+            return;
         }
 
+        // Access the project_head_expenses
         const projectHeadExpenses = project.project_head_expenses;
 
-        if (!projectHeadExpenses) {
+        if (!projectHeadExpenses || Object.keys(projectHeadExpenses).length === 0) {
             res.status(200).json({ message: 'No expenses found for this project.' });
-            return
+            return;
         }
 
         res.status(200).json(projectHeadExpenses);
@@ -104,15 +104,17 @@ router.get('/:id/total-expenses', async (req, res) => {
 
 router.post('/', upload.single('sanction_letter'), async (req: Request, res: Response) => {
     try {
-        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description, installments, project_type, negative_heads } = req.body;
+        const data = req.body;
 
-        const startDate = start_date ? new Date(start_date) : null;
-        const endDate = end_date ? new Date(end_date) : null;
-        const projectHeads = JSON.parse(project_heads) as number[];
+        const startDate = data.start_date ? new Date(data.start_date) : null;
+        const endDate = data.end_date ? new Date(data.end_date) : null;
+        const projectHeads = data.project_heads ? JSON.parse(data.project_heads) as number[] : [];
+        const parsedPis = data.pis ? JSON.parse(data.pis) : [];
+        const parsedCopis = data.copis ? JSON.parse(data.copis) : [];
+        const parsedInstallments = data.installments ? JSON.parse(data.installments) : [];
 
         let sanctionLetterFileId: mongoose.Types.ObjectId | null = null;
 
-        // Handle file upload if provided
         if (req.file) {
             const readableStream = new Readable();
             readableStream.push(req.file.buffer);
@@ -126,35 +128,33 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
                 readableStream.pipe(uploadStream)
                     .on("error", (err) => reject(err))
                     .on("finish", () => {
-                        sanctionLetterFileId = uploadStream.id; // Save the file ID
+                        sanctionLetterFileId = uploadStream.id;
                         resolve();
                     });
             });
         }
 
-        // Parse installments if provided
-        const parsedInstallments = installments ? JSON.parse(installments) : [];
-
-        // Create and save new project
         const newProject = new ProjectModel({
-            project_name,
-            project_type,
+            project_id: data.project_id,
+            project_title: data.project_title,
+            project_name: data.project_name,
+            project_type: data.project_type,
             start_date: startDate,
             end_date: endDate,
             project_heads: projectHeads,
-            total_amount: Number(total_amount),
-            pis: JSON.parse(pis),
-            copis: JSON.parse(copis),
+            total_amount: Number(data.total_amount),
+            pis: parsedPis,
+            copis: parsedCopis,
             sanction_letter_file_id: sanctionLetterFileId,
-            description,
+            description: data.description,
             installments: parsedInstallments,
-            negative_heads
+            negative_heads: data.negative_heads
         });
 
         const savedProject = await newProject.save();
         res.status(201).json(savedProject);
     } catch (error) {
-        console.log(error)
+        console.log(error);
         res.status(500).json({ message: 'Error creating project', error: (error as Error).message });
     }
 });
@@ -162,24 +162,26 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
 // Route to update a project by ID
 router.put('/:id', async (req: Request, res: Response) => {
     try {
-        const { project_name, start_date, end_date, project_heads, total_amount, pis, copis, description, installments, negative_heads } = req.body;
+        const data = req.body;
 
         // Parse installments if provided
-        const parsedInstallments = (installments as Array<any>).length ? JSON.parse(installments) : [];
+        const parsedInstallments = data.installments && Array.isArray(data.installments) && data.installments.length
+            ? JSON.parse(data.installments)
+            : [];
 
         const updatedProject = await ProjectModel.findByIdAndUpdate(
             req.params.id,
             {
-                project_name,
-                start_date,
-                end_date,
-                project_heads,
-                total_amount,
-                pis,
-                copis,
-                description,
+                project_name: data.project_name,
+                start_date: data.start_date,
+                end_date: data.end_date,
+                project_heads: data.project_heads,
+                total_amount: data.total_amount,
+                pis: JSON.parse(data.pis),
+                copis: JSON.parse(data.copis),
+                description: data.description,
                 installments: parsedInstallments,
-                negative_heads
+                negative_heads: data.negative_heads
             },
             { new: true }
         );
@@ -190,15 +192,15 @@ router.put('/:id', async (req: Request, res: Response) => {
             res.json(updatedProject);
         }
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ message: 'Error updating project', error : (error as Error).message });
+        console.log(error);
+        res.status(500).json({ message: 'Error updating project', error: (error as Error).message });
     }
 });
 
 // Route to get a single project by ID (including installments)
 router.get('/:id', async (req: Request, res: Response) => {
     try {
-        const project = await ProjectModel.findById(req.params.id);
+        const project = await ProjectModel.findOne({project_id : req.params.id});
 
         if (!project) {
             res.status(404).json({ message: 'Project not found' });

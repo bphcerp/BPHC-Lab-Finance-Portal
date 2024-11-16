@@ -23,8 +23,6 @@ const SignInUpPane = () => {
                     toastWarn((await res.text()));
                 } else if (res.status === 200) {
                     navigate("/dashboard");
-                } else if (res.status === 404) {
-                    toastError("User not found");
                 } else {
                     toastError("Something went wrong");
                 }

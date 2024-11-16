@@ -24,6 +24,9 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
   const [totalAmount, setTotalAmount] = useState<number | null>(null);
   const [faculties, setFaculties] = useState<Array<Member>>([])
   const [negativeHeads, setNegativeHeads] = useState<Array<string>>([])
+  const [projectID, setProjectID] = useState<string>("");
+  const [projectTitle, setProjectTitle] = useState<string>("");
+
 
   // New states for PIs and Co-PIs
   const [pis, setPIs] = useState<string[]>([]);
@@ -205,15 +208,39 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
         </Modal.Header>
         <Modal.Body>
           <form onSubmit={handleAddProject} className="space-y-4">
-            <div>
-              <Label htmlFor="project_name" value="Project Name" />
-              <TextInput
-                id="project_name"
-                placeholder="Enter project name"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                required
-              />
+            <div className="grid grid-cols-3 gap-x-4">
+              <div>
+                <Label htmlFor="projectID" value="Project ID" />
+                <TextInput
+                  id="projectID"
+                  type="text"
+                  placeholder="Enter Project ID"
+                  required
+                  value={projectID}
+                  onChange={(e) => setProjectID(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="project_name" value="Project Name" />
+                <TextInput
+                  id="project_name"
+                  placeholder="Enter project name"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="project_title" value="Project Title" />
+                <TextInput
+                  id="project_title"
+                  type="text"
+                  placeholder="Enter Project Title (optional)"
+                  value={projectTitle}
+                  onChange={(e) => setProjectTitle(e.target.value)}
+                />
+              </div>
+
             </div>
             <div>
               <Label value="Project Type" />
@@ -346,7 +373,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                           else setNegativeHeads([...negativeHeads, head])
                         }}
                       />
-                      <Label 
+                      <Label
                         value="Allow Negative Values"
                         htmlFor={`${head}_neg_checkbox`}
                       />
