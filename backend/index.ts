@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from 'express';
+import express, {Request, Response } from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors';

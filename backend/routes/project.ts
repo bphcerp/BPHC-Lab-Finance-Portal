@@ -23,7 +23,7 @@ conn.once("open", () => {
 
 // Set up Multer storage for GridFS
 const storage = multer.memoryStorage();
-export const upload = multer({ storage });
+const upload = multer({ storage });
 
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 
