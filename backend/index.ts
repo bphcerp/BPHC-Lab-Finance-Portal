@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser'
-
+import multer from "multer";
 import userRoutes from './routes/user';
 import projectRoutes from './routes/project';
 import expenseRoutes from './routes/expense';
@@ -17,6 +17,10 @@ dotenv.config();
 
 const app = express()
 const PORT = process.env.PORT!
+
+// Set up Multer storage for GridFS
+const storage = multer.memoryStorage();
+export const upload = multer({ storage });
 
 mongoose.connect(process.env.DB_URI!)
   .then(() => console.log('MongoDB connected'))

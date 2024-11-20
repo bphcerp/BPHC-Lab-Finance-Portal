@@ -1,11 +1,11 @@
 import { Router, Response, Request } from "express";
 import { ProjectModel } from "../models/project";
-import multer from "multer";
 import mongoose from "mongoose";
 import { Readable } from "stream";
 import { authenticateToken } from "../middleware/authenticateToken";
 import { ReimbursementModel } from "../models/reimburse";
 import wkhtmltopdf from "wkhtmltopdf";
+import { upload } from "..";
 
 
 const router: Router = Router();
@@ -20,10 +20,6 @@ conn.once("open", () => {
         bucketName: "uploads"
     });
 });
-
-// Set up Multer storage for GridFS
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
 
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 
