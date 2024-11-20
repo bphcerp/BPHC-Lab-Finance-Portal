@@ -46,6 +46,7 @@ export interface Reimbursement {
     projectHead: string;
     paidStatus: boolean;
     description: string
+    reference_id : string
 }
 
 export interface Installment {
@@ -69,8 +70,8 @@ export interface Project {
     project_type: string;
     installments?: Installment[];
     total_amount: number;
-    pis: string[];
-    copis: string[];
+    pis: Member[];
+    copis: Member[];
     sanction_letter?: File | null;
     sanction_letter_file_id?: string;
     description: string

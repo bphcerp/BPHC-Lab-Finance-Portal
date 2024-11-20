@@ -84,7 +84,7 @@ const ProjectDetails = () => {
     const fetchReimbursements = async (head: string) => {
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/reimburse/${id}/${head}`,
+                `${import.meta.env.VITE_BACKEND_URL}/reimburse/${projectData!._id}/${head}`,
                 { credentials: "include" }
             );
             const data = await response.json();
@@ -236,13 +236,18 @@ const ProjectDetails = () => {
                             <div className="piDetails flex flex-col space-y-3 p-4 font-semibold w-full bg-gray-100 rounded-md shadow-md">
                                 <div className="flex items-center">
                                     <span className="inline-block w-20 text-gray-700">PIs:</span>
-                                    <span className="text-gray-900">{projectData.pis.join(", ")}</span>
+                                    <span className="text-gray-900">
+                                        {projectData.pis.map(pi => pi.name).join(", ")}
+                                    </span>
                                 </div>
 
                                 <div className="flex items-center">
                                     <span className="inline-block w-20 text-gray-700">Co-PIs:</span>
-                                    <span className="text-gray-900">{projectData.copis.join(", ")}</span>
+                                    <span className="text-gray-900">
+                                        {projectData.copis.map(coPi => coPi.name).join(", ")}
+                                    </span>
                                 </div>
+
                             </div>
 
                         </div>

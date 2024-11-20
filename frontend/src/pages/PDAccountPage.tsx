@@ -17,14 +17,14 @@ const PDAccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
     const columnHelper = createColumnHelper<Account>();
 
     const columns = [
-        columnHelper.accessor('remarks', {
-            header: 'Remarks',
-            cell: (info) => info.getValue() ?? "-",
-        }),
         columnHelper.accessor('createdAt', {
             header: 'Date',
             cell: (info) => new Date(info.getValue()).toLocaleDateString('en-IN'),
             enableColumnFilter: false,
+        }),
+        columnHelper.accessor('remarks', {
+            header: 'Remarks',
+            cell: (info) => info.getValue() ?? "-",
         }),
         columnHelper.accessor(row => row.credited ? row.amount : 0, {
             header: 'Credited',
@@ -50,6 +50,22 @@ const PDAccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
                 })
             }
         }),
+        columnHelper.accessor(
+            (row) => (row.credited ? row.amount : 0) - (!row.credited ? row.amount : 0),
+            {
+                header: 'Balance',
+                cell: (info) =>
+                    info
+                        .getValue()
+                        .toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+                enableColumnFilter: false,
+                meta: {
+                    getSum: true,
+                    sumFormatter: (sum: number) =>
+                        sum.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+                },
+            }
+        )
     ];
 
     const fetchAccountData = async () => {

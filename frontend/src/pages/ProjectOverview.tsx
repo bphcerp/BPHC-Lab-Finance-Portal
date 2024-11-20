@@ -78,6 +78,16 @@ const ProjectList: FunctionComponent = () => {
             header: "Project Title",
             enableColumnFilter: true,
         }),
+        columnHelper.accessor('start_date', {
+            header: "Start Date",
+            cell: info => info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
+            enableColumnFilter: false
+        }),
+        columnHelper.accessor('end_date', {
+            header: "End Date",
+            cell: info => info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
+            enableColumnFilter: false
+        }),
         columnHelper.accessor(row => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1), {
             header: "Project Type",
             meta : {
@@ -90,16 +100,6 @@ const ProjectList: FunctionComponent = () => {
                 style: "currency",
                 currency: "INR",
             }),
-            enableColumnFilter: false
-        }),
-        columnHelper.accessor('start_date', {
-            header: "Start Date",
-            cell: info => info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
-            enableColumnFilter: false
-        }),
-        columnHelper.accessor('end_date', {
-            header: "End Date",
-            cell: info => info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
             enableColumnFilter: false
         }),
         columnHelper.group({

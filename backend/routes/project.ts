@@ -30,7 +30,7 @@ type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<in
 const calculateCurrentYear = (data: Project) => {
     const curr = new Date();
 
-    if (curr > new Date(data.end_date!)){
+    if (curr > new Date(data.end_date!)) {
         return -1
     }
 
@@ -200,7 +200,9 @@ router.put('/:id', async (req: Request, res: Response) => {
 // Route to get a single project by ID (including installments)
 router.get('/:id', async (req: Request, res: Response) => {
     try {
-        const project = await ProjectModel.findOne({project_id : req.params.id});
+        const project = await ProjectModel.findOne({ project_id: req.params.id })
+            .populate({ path: "pis", select: "name" })
+            .populate({ path: "copis", select: "name" })
 
         if (!project) {
             res.status(404).json({ message: 'Project not found' });
@@ -209,7 +211,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
         res.json(project);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching project', error : (error as Error).message });
+        res.status(500).json({ message: 'Error fetching project', error: (error as Error).message });
     }
 });
 
@@ -276,9 +278,11 @@ router.get('/:id/sanction_letter', async (req: Request, res: Response) => {
         // Create a download stream from GridFS
         const downloadStream = gfs.openDownloadStream(fileId);
 
+        const filename = `${project.project_name}_sanction_letter.pdf`.replace(/\s/g, '_')
+
         // Set the correct headers for the file download
         res.set('Content-Type', 'application/pdf');
-        res.set('Content-Disposition', `inline; filename=${fileId}`);
+        res.set('Content-Disposition', `inline; filename=${filename}`);
 
         // Handle potential errors while streaming the file
         downloadStream.on('error', (error) => {
@@ -405,11 +409,12 @@ router.get('/:id/util_cert', async (req, res) => {
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename="Utilization_Certificate_${project.project_name}.pdf"`)
-        wkhtmltopdf(html, {orientation: 'Landscape', pageSize : "A4",
-            marginBottom : "0",
-            marginTop : "0",
-            marginLeft : "0",
-            marginRight : "0"            
+        wkhtmltopdf(html, {
+            orientation: 'Landscape', pageSize: "A4",
+            marginBottom: "0",
+            marginTop: "0",
+            marginLeft: "0",
+            marginRight: "0"
         }).pipe(res)
 
     } catch (error) {
@@ -425,12 +430,12 @@ router.delete('/:id', async (req: Request, res: Response) => {
         if (!toBeDeletedProject) {
             res.status(404).json({ message: 'Project not found' });
         } else {
-            const projectReimbursements = await ReimbursementModel.findOne({project : toBeDeletedProject!._id})
-            if (projectReimbursements) res.status(409).send({ message : "Cannot delete, project has reimbursements filed against. Please delete them and try again."})
+            const projectReimbursements = await ReimbursementModel.findOne({ project: toBeDeletedProject!._id })
+            if (projectReimbursements) res.status(409).send({ message: "Cannot delete, project has reimbursements filed against. Please delete them and try again." })
             else res.status(204).send();
         }
     } catch (error) {
-        res.status(500).json({ message: 'Error deleting project', error : (error as Error).message });
+        res.status(500).json({ message: 'Error deleting project', error: (error as Error).message });
     }
 });
 

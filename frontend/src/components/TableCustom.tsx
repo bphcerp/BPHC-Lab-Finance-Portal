@@ -11,22 +11,22 @@ import {
     InitialTableState,
     RowData
 } from "@tanstack/react-table";
-import { Checkbox, TextInput, Table } from "flowbite-react";
+import { Checkbox, TextInput, Select, Table } from "flowbite-react";
 import { FunctionComponent, useEffect, useMemo } from "react";
 
 declare module '@tanstack/react-table' {
     interface ColumnMeta<TData extends RowData, TValue> {
         getSum?: boolean;
         sumFormatter?: (sum: number) => string;
-        filterType? : "dropdown"
+        filterType?: "dropdown";
     }
 }
 
 interface TableCustomProps {
-    data: Array<any>
-    columns: Array<any>
-    setSelected?: (selected: Array<any>) => void
-    initialState?: InitialTableState
+    data: Array<any>;
+    columns: Array<any>;
+    setSelected?: (selected: Array<any>) => void;
+    initialState?: InitialTableState;
 }
 
 const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSelected, initialState }) => {
@@ -38,7 +38,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                     .sort()
                     .slice(0, 5000),
             [column.getFacetedUniqueValues()]
-        )
+        );
     }
 
     columns = useMemo(() =>
@@ -73,7 +73,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
         table.getAllColumns().forEach(column => {
             if (column.columnDef.meta?.getSum) {
                 sums[column.id] = table.getRowModel().rows.reduce((sum, row) => {
-                    const value = column.columnDef.meta?.filterType? row.original[column.id.toLowerCase()]  : row.getValue(column.id);
+                    const value = column.columnDef.meta?.filterType ? row.original[column.id.toLowerCase()] : row.getValue(column.id);
                     return sum + (typeof value === "number" ? value : 0);
                 }, 0);
             }
@@ -106,32 +106,32 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                                 }}
                                             >
                                                 {flexRender(header.column.columnDef.header, header.getContext())}
-                                                {{
-                                                    asc: ' 🔼',
-                                                    desc: ' 🔽',
-                                                }[header.column.getIsSorted() as string] ?? null}
+                                                {header.column.getIsSorted() === "asc" ? ' 🔼' : header.column.getIsSorted() === "desc" ? ' 🔽' : null}
                                             </div>
-                                            {header.column.getCanFilter() ? <div className="mt-2">
-                                                {header.column.columnDef.meta && header.column.columnDef.meta.filterType === "dropdown" ?
-                                                    <select
-                                                        onChange={e => header.column.setFilterValue(e.target.value)}
-                                                        value={(header.column.getFilterValue() ?? "") as string}
-                                                    >
-                                                        <option value="">All</option>
-                                                        {getSortedUniqueValues(header.column).map(value => (
-                                                            <option value={value} key={value}>{value}</option>
-                                                        ))}
-                                                    </select>
-                                                    :
-                                                    <TextInput
-                                                        className="w-36"
-                                                        color="blue"
-                                                        onChange={e => header.column.setFilterValue(e.target.value)}
-                                                        placeholder="Search..."
-                                                        type="text"
-                                                        value={(header.column.getFilterValue() ?? '') as string}
-                                                    />}
-                                            </div> : null}
+                                            {header.column.getCanFilter() ? (
+                                                <div className="mt-2 flex flex-col gap-2">
+                                                    {header.column.columnDef.meta && header.column.columnDef.meta.filterType === "dropdown" ? (
+                                                        <Select
+                                                            onChange={e => header.column.setFilterValue(e.target.value)}
+                                                            value={(header.column.getFilterValue() ?? "") as string}
+                                                            className="w-fit bg-white border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                                                        >
+                                                            <option value="">All</option>
+                                                            {getSortedUniqueValues(header.column).map(value => (
+                                                                <option value={value} key={value}>{value}</option>
+                                                            ))}
+                                                        </Select>
+                                                    ) : (
+                                                        <TextInput
+                                                            className="w-fit bg-white border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                                                            onChange={e => header.column.setFilterValue(e.target.value)}
+                                                            placeholder="Search..."
+                                                            type="text"
+                                                            value={(header.column.getFilterValue() ?? '') as string}
+                                                        />
+                                                    )}
+                                                </div>
+                                            ) : null}
                                         </>
                                     )}
                                 </Table.HeadCell>

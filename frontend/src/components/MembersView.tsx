@@ -9,6 +9,7 @@ const MembersView: React.FC = () => {
     const [membersExpenses, setMembersExpenses] = useState<Array<MemberExpense>>([]);
     const [selectedMember, setSelectedMember] = useState<MemberExpense | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [totals, setTotals] = useState<Array<{ _id: String, totalCredited: number; totalDebited: number; balance: number }> | null>(null);
 
     const fetchMembersExpenses = async () => {
         try {
@@ -23,11 +24,25 @@ const MembersView: React.FC = () => {
         }
     };
 
+    const fetchTotals = async () => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/account/totals`, {
+                credentials: "include",
+            });
+            const data = await response.json();
+            setTotals(data);
+        } catch (error) {
+            toastError("Error fetching totals");
+            console.error('Error fetching totals:', error);
+        }
+    };
+
     useEffect(() => {
         fetchMembersExpenses();
+        fetchTotals(); // Fetch totals when the component loads
     }, []);
 
-    const handleSettle = async (settlementType: string, remarks : string) => {
+    const handleSettle = async (settlementType: string, remarks: string) => {
         if (selectedMember) {
             try {
                 const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/settle/${selectedMember.memberId}`, {
@@ -35,11 +50,12 @@ const MembersView: React.FC = () => {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ settlementType, remarks, amount : selectedMember.totalDue }),
+                    body: JSON.stringify({ settlementType, remarks, amount: selectedMember.totalDue }),
                     credentials: 'include'
                 });
                 if (response.ok) {
-                    fetchMembersExpenses()
+                    fetchMembersExpenses();
+                    fetchTotals(); // Update totals after settlement
                     toastSuccess(`Successfully settled member: ${selectedMember.memberName} from ${settlementType}`);
                     setSelectedMember(null); // Clear selection after settling
                     setIsModalOpen(false); // Close modal
@@ -75,7 +91,29 @@ const MembersView: React.FC = () => {
 
     return (
         <div className="container mx-auto p-4">
-            <div className='flex justify-between items-center'>
+            <div>
+                {totals ? (
+                    <div className="grid grid-flow-col grid-rows-1 overflow-x-auto p-4 mb-4 bg-gray-100 rounded shadow">
+                        {totals.map((account, idx) => (
+                            <div key={idx}>
+                                <h2 className="text-xl font-bold">{account._id}</h2>
+                                <p>
+                                    <strong>Total Credited:</strong> {account.totalCredited.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
+                                </p>
+                                <p>
+                                    <strong>Total Debited:</strong> {account.totalDebited.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
+                                </p>
+                                <p>
+                                    <strong>Balance:</strong> {account.balance.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p>Loading totals...</p>
+                )}
+            </div>
+            <div className='flex items-center'>
                 <h1 className="text-2xl font-bold mb-4">Members Expenses Overview</h1>
                 <div className="flex justify-between mb-4">
                     {selectedMember && (

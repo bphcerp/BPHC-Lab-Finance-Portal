@@ -29,10 +29,6 @@ const ExpensesPage: React.FC = () => {
     const columnHelper = createColumnHelper<Expense>();
 
     const columns = [
-        columnHelper.accessor('expenseReason', {
-            header: 'Reason',
-            cell: info => info.getValue(),
-        }),
         columnHelper.accessor('createdAt', {
             header: 'Created At',
             cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
@@ -42,6 +38,10 @@ const ExpensesPage: React.FC = () => {
             header: 'Updated At',
             cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
             enableColumnFilter: false
+        }),
+        columnHelper.accessor('expenseReason', {
+            header: 'Reason',
+            cell: info => info.getValue(),
         }),
         columnHelper.accessor('category.name', {
             header: 'Category',
@@ -76,7 +76,7 @@ const ExpensesPage: React.FC = () => {
                 filterType: "dropdown"
             }
         }),
-        columnHelper.accessor(row => row.reimbursedID ? row.reimbursedID.paidStatus? "Filed and Reimbursed" : "Only Filed" : "Not Filed", {
+        columnHelper.accessor(row => row.reimbursedID ? row.reimbursedID.paidStatus ? "Filed and Reimbursed" : "Only Filed" : "Not Filed", {
             header: 'Reimbursement',
             cell: info => {
                 const reimbursedID = info.row.original.reimbursedID;
@@ -99,7 +99,7 @@ const ExpensesPage: React.FC = () => {
             "No"
         ), {
             header: "Appropriation",
-            cell : ({getValue}) => (
+            cell: ({ getValue }) => (
                 <span
                     className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${(getValue() == "Yes") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                         } shadow-sm`}
@@ -184,30 +184,42 @@ const ExpensesPage: React.FC = () => {
         setIsEditModalOpen(true);
     };
 
-    const handleFileReimbursement = async (expenseIds: string[], projectId: string, projectHead: string, totalAmount: number, title: string, description: string) => {
+    const handleFileReimbursement = async (formData: any) => {
         try {
+            const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceDocument } = formData;
+
+            const data = new FormData();
+            data.append('expenseIds', expenseIds); 
+            data.append('projectId', selectedProject);
+            data.append('projectHead', selectedProjectHead);
+            data.append('totalAmount', totalAmount.toString());
+            data.append('title', reimbursementTitle);
+            data.append('description', description);
+
+            if (referenceDocument) {
+                data.append('referenceDocument', referenceDocument); 
+            }
+
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse`, {
                 method: 'POST',
-                credentials: "include",
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ expenseIds, projectId, projectHead, totalAmount, title, description }),
+                credentials: 'include',
+                body: data, 
             });
 
             if (!response.ok) {
                 throw new Error('Failed to file reimbursement');
             }
 
-            fetchExpenses();
             toastSuccess('Reimbursement filed successfully');
+            fetchExpenses(); 
         } catch (error) {
             toastError('Error filing reimbursement');
             console.error('Error filing reimbursement:', error);
         }
     };
 
-    const handleSettleExpenses = async (ids: string[], type: 'Current' | 'Savings', remarks : string, amount : number) => {
+
+    const handleSettleExpenses = async (ids: string[], type: 'Current' | 'Savings', remarks: string, amount: number) => {
         try {
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/settle`, {
                 method: 'PATCH',
@@ -215,7 +227,7 @@ const ExpensesPage: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ ids, type,remarks, amount }),
+                body: JSON.stringify({ ids, type, remarks, amount }),
             });
 
             if (!response.ok) {
@@ -365,17 +377,17 @@ const ExpensesPage: React.FC = () => {
                                     if (eligibleExpenses.length === 0) {
                                         toastWarn('No eligible expenses for settling');
                                         return
-                                    } 
-                                    setIsSettleModalOpen(true) 
-                                    }}>{"Settle Expense" + (selectedExpenses.size > 1 ? "s" : "")}</Button>
+                                    }
+                                    setIsSettleModalOpen(true)
+                                }}>{"Settle Expense" + (selectedExpenses.size > 1 ? "s" : "")}</Button>
                                 <Button color="gray" size="md" className='rounded-md' onClick={() => {
                                     const eligibleExpenses = expenses.filter(expense => selectedExpenses.has(expense._id)).filter((expense) => (!expense.reimbursedID));
                                     if (eligibleExpenses.length === 0) {
                                         toastWarn('No eligible expenses for filing');
                                         return
-                                    } 
-                                    setIsFileReimbursementModalOpen(true) 
-                                    }}>File for Reimbursement</Button>
+                                    }
+                                    setIsFileReimbursementModalOpen(true)
+                                }}>File for Reimbursement</Button>
                             </div> : <></>
                         }
                     </div>

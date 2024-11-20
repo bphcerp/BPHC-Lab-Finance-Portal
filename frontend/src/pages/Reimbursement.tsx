@@ -76,6 +76,23 @@ const ReimbursementPage: React.FC = () => {
             enableColumnFilter: false,
             enableSorting: false
         }),
+        columnHelper.accessor("reference_id", {
+            header: "Reference",
+            cell: ({ row }) =>
+                row.original.reference_id ? (
+                    <Link
+                        to={`${import.meta.env.VITE_BACKEND_URL}/reimburse/${row.original._id}/reference`}
+                        target="_blank"
+                        className="text-blue-600 hover:underline"
+                    >
+                        View
+                    </Link>
+                ) : (
+                    "-"
+                ),
+            enableColumnFilter: false,
+            enableSorting: false,
+        }),
     ];
 
     const fetchReimbursements = async () => {

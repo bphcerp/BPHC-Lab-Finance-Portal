@@ -10,7 +10,7 @@ interface AddProjectProps {
 
 export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal, setOpenModal }) => {
   const [projectName, setProjectName] = useState<string>("");
-  const [projectType, setProjectType] = useState<string>("yearly");  // Default to 'yearly'
+  const [projectType, setProjectType] = useState<string>("yearly");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [projectHeads, setProjectHeads] = useState<{ [key: string]: number[] }>({});
@@ -21,20 +21,20 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
   const [loading, setLoading] = useState<boolean>(false);
   const [sanctionLetter, setSanctionLetter] = useState<File | null>(null);
   const [description, setDescription] = useState<string>("");
-  const [totalAmount, setTotalAmount] = useState<number | null>(null);
   const [faculties, setFaculties] = useState<Array<Member>>([])
   const [negativeHeads, setNegativeHeads] = useState<Array<string>>([])
   const [projectID, setProjectID] = useState<string>("");
   const [projectTitle, setProjectTitle] = useState<string>("");
+  const [editMode, setEditMode] = useState<Record<string, boolean>>({});
 
 
-  // New states for PIs and Co-PIs
+
   const [pis, setPIs] = useState<string[]>([]);
   const [newPI, setNewPI] = useState<string>("");
   const [coPIs, setCoPIs] = useState<string[]>([]);
   const [newCoPI, setNewCoPI] = useState<string>("");
 
-  // New state for installment dates
+
   const [installmentDates, setInstallmentDates] = useState<{ start_date: string; end_date: string }[]>([]);
 
   const fetchFaculties = async () => {
@@ -55,7 +55,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
       const start = new Date(startDate);
       const end = new Date(endDate);
 
-      // Get the financial year start for the start and end dates
+
       const startYear = start.getMonth() < 3 ? start.getFullYear() - 1 : start.getFullYear();
       const endYear = end.getMonth() < 3 ? end.getFullYear() - 1 : end.getFullYear();
 
@@ -66,21 +66,21 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
   useEffect(calculateNumberOfYears, [startDate, endDate]);
 
   const addProjectHead = () => {
-    // Check if the newHeadName is empty or if the project type and associated values are invalid
+
     if (!newHeadName || (projectType === "yearly" && numberOfYears <= 0) || (projectType === "invoice" && numberOfInstallments <= 0)) {
       return;
     }
 
-    // Determine the count based on the project type
+
     const count = projectType === "yearly" ? numberOfYears : numberOfInstallments;
 
-    // Update the projectHeads state
+
     setProjectHeads((prevHeads) => ({
       ...prevHeads,
       [newHeadName]: Array(count).fill(0),
     }));
 
-    // Reset the newHeadName
+
     setNewHeadName("");
   };
 
@@ -93,14 +93,18 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
 
   const saveProjectHead = (headName: string) => {
     const headTotal = projectHeads[headName].reduce((acc, val) => acc + val, 0);
-    setHeadTotals((prevTotals) => ({ ...prevTotals, [headName]: headTotal }));
+
+    setHeadTotals((prevTotals) => ({
+      ...prevTotals,
+      [headName]: headTotal,
+    }));
+
+    setEditMode((prevEditMode) => ({
+      ...prevEditMode,
+      [headName]: false,
+    }));
   };
 
-  const editProjectHead = (headName: string) => {
-    const updatedHeadTotals = { ...headTotals };
-    delete updatedHeadTotals[headName];
-    setHeadTotals(updatedHeadTotals);
-  };
 
   const deleteProjectHead = (headName: string) => {
     const updatedHeads = { ...projectHeads };
@@ -111,7 +115,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     setHeadTotals(updatedHeadTotals);
   };
 
-  // Functions for managing PIs and Co-PIs
+
   const addPI = () => {
     if (newPI) {
       setPIs((prevPIs) => [...prevPIs, newPI]);
@@ -138,8 +142,12 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     e.preventDefault();
     setLoading(true);
 
+    const totalAmount = Object.values(headTotals).reduce((sum, value) => sum + value, 0)
+
     const formData = new FormData();
     formData.append("project_name", projectName);
+    formData.append("project_id", projectID);
+    formData.append("project_title", projectTitle);
     formData.append("start_date", startDate ? new Date(startDate).toISOString() : "");
     formData.append("end_date", endDate ? new Date(endDate).toISOString() : "");
     formData.append("total_amount", totalAmount!.toString());
@@ -184,7 +192,6 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
 
   useEffect(() => {
     if (!openModal) {
-      fetchFaculties()
       setProjectName("");
       setStartDate("");
       setEndDate("");
@@ -192,12 +199,12 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
       setHeadTotals({});
       setNumberOfYears(0);
       setNumberOfInstallments(0);
-      setTotalAmount(null);
       setPIs([]);
       setCoPIs([]);
       setSanctionLetter(null);
       setInstallmentDates([]);
     }
+    else fetchFaculties()
   }, [openModal]);
 
   return (
@@ -309,6 +316,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                           <TextInput
                             id={`installment_start_${index}`}
                             type="date"
+                            min={index ? installmentDates[index - 1]?.end_date ?? startDate ?? "" : startDate ?? ""}
                             value={installmentDates[index]?.start_date || ""}
                             onChange={(e) => {
                               const updatedDates = [...installmentDates];
@@ -327,6 +335,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                             id={`installment_end_${index}`}
                             type="date"
                             value={installmentDates[index]?.end_date || ""}
+                            max={index === (numberOfInstallments - 1) ? endDate ?? "" : ""}
                             onChange={(e) => {
                               const updatedDates = [...installmentDates];
                               updatedDates[index] = {
@@ -369,62 +378,81 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                         id={`${head}_neg_checkbox`}
                         checked={negativeHeads.includes(head)}
                         onChange={() => {
-                          if (negativeHeads.includes(head)) setNegativeHeads(negativeHeads.filter(negativeHead => negativeHead != head))
-                          else setNegativeHeads([...negativeHeads, head])
+                          if (negativeHeads.includes(head)) {
+                            setNegativeHeads(negativeHeads.filter((negativeHead) => negativeHead !== head));
+                          } else {
+                            setNegativeHeads([...negativeHeads, head]);
+                          }
                         }}
                       />
-                      <Label
-                        value="Allow Negative Values"
-                        htmlFor={`${head}_neg_checkbox`}
-                      />
+                      <Label value="Allow Negative Values" htmlFor={`${head}_neg_checkbox`} />
                     </div>
                     <div className="flex justify-end space-x-2">
                       <Button color="green" size="xs" onClick={() => saveProjectHead(head)}>
                         Save
                       </Button>
-                      <Button color="yellow" size="xs" onClick={() => editProjectHead(head)}>
+                      <Button
+                        color="yellow"
+                        size="xs"
+                        onClick={() => {
+                          setEditMode((prev) => ({ ...prev, [head]: true }));
+                        }}
+                      >
                         Edit
                       </Button>
                       <Button color="red" size="xs" onClick={() => deleteProjectHead(head)}>
                         Remove
                       </Button>
-
                     </div>
                   </div>
-                  {projectHeads[head].map((_, idx) => (
-                    <div key={idx} className="mt-2">
-
-                      <TextInput
-                        type="number"
-                        value={projectHeads[head][idx]}
-                        onChange={(e) => handleProjectHeadYearChange(head, idx, Number(e.target.value))}
-                        required
-                      />
+                  <div className="flex flex-wrap gap-x-3">
+                    {projectHeads[head].map((value, idx) => (
+                      editMode[head] ? <div key={idx} className="mt-2 space-y-2">
+                        <Label htmlFor={`${head}_${idx}`} value={`Year ${idx + 1}`} />
+                        <TextInput
+                          id={`${head}_${idx}`}
+                          type="number"
+                          value={value}
+                          onChange={(e) =>
+                            handleProjectHeadYearChange(head, idx, Number(e.target.value))
+                          }
+                          required
+                        />
+                      </div> :
+                        <div className="flex flex-col">
+                          <span className="font-semibold">Year {idx + 1}</span>
+                          <span>{value}</span>
+                        </div>
+                    ))}
+                    <div className="flex flex-col">
+                      <span className="font-bold">Total</span>
+                      <span>{headTotals[head]}</span>
                     </div>
-                  ))}
+                  </div>
                 </div>
               ))}
             </div>
 
+
             {/* PIs and Co-PIs */}
             <div className="flex justify-between">
               <div className="space-y-2">
-                <datalist
-                  id="pi_list">
-                  {faculties.map(faculty => (
-                    <option value={faculty.name} key={faculty._id}></option>
-                  ))}
-                </datalist>
                 <Label htmlFor="pi" value="Add Principal Investigators (PIs)" />
                 <div className="flex items-center space-x-3">
-                  <TextInput
+                  <select
                     id="pi"
                     value={newPI}
                     onChange={(e) => setNewPI(e.target.value)}
-                    placeholder="Enter PI name"
-                    list="pi_list"
-                  />
-                  <Button color="blue" onClick={addPI}>Add PI</Button>
+                    className="border p-2 rounded"
+                  >
+                    <option value="">Select PI</option>
+                    {faculties.map((faculty) => (
+                      <option value={faculty.name} key={faculty._id}>
+                        {faculty.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button color="blue" onClick={addPI} disabled={!newPI}>Add PI</Button>
                 </div>
                 {pis.length > 0 && (
                   <div className="mt-4">
@@ -433,7 +461,14 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                       {pis.map((pi, idx) => (
                         <li key={idx} className="flex justify-between">
                           <span>{pi}</span>
-                          <Button color="blue" onClick={() => deletePI(idx)} type="button" size="xs">Delete</Button>
+                          <Button
+                            color="blue"
+                            onClick={() => deletePI(idx)}
+                            type="button"
+                            size="xs"
+                          >
+                            Delete
+                          </Button>
                         </li>
                       ))}
                     </ul>
@@ -442,21 +477,21 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               </div>
 
               <div className="space-y-2">
-                <datalist
-                  id="co_pi_list">
-                  {faculties.map(faculty => (
-                    <option value={faculty.name} key={faculty._id}></option>
-                  ))}
-                </datalist>
                 <Label value="Add Co-Principal Investigators (Co-PIs)" />
                 <div className="flex items-center space-x-3">
-                  <TextInput
+                  <select
                     value={newCoPI}
                     onChange={(e) => setNewCoPI(e.target.value)}
-                    placeholder="Enter Co-PI name"
-                    list="co_pi_list"
-                  />
-                  <Button color="blue" onClick={addCoPI}>Add Co-PI</Button>
+                    className="border p-2 rounded"
+                  >
+                    <option value="">Select Co-PI</option>
+                    {faculties.map((faculty) => (
+                      <option value={faculty.name} key={faculty._id}>
+                        {faculty.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button color="blue" onClick={addCoPI} disabled={!newCoPI}>Add Co-PI</Button>
                 </div>
                 {coPIs.length > 0 && (
                   <div className="mt-4">
@@ -465,7 +500,14 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                       {coPIs.map((coPI, idx) => (
                         <li key={idx} className="flex justify-between">
                           <span>{coPI}</span>
-                          <Button color="blue" onClick={() => deleteCoPI(idx)} type="button" size="xs">Delete</Button>
+                          <Button
+                            color="blue"
+                            onClick={() => deleteCoPI(idx)}
+                            type="button"
+                            size="xs"
+                          >
+                            Delete
+                          </Button>
                         </li>
                       ))}
                     </ul>
@@ -474,6 +516,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               </div>
             </div>
 
+
             <div className="space-y-2">
               {/* Add other fields like Total Amount, Description, etc */}
               <div>
@@ -481,9 +524,8 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                 <TextInput
                   id="total_amount"
                   type="number"
-                  value={totalAmount ?? ""}
-                  onChange={(e) => setTotalAmount(Number(e.target.value))}
-                  required
+                  readOnly
+                  value={Object.values(headTotals).reduce((sum, value) => sum + value, 0) ?? ""}
                 />
               </div>
 

@@ -26,6 +26,7 @@ app.use(express.json());
 app.use(cookieParser())
 app.use(cors({
   origin: process.env.FRONTEND_URL!,
+  exposedHeaders: ['Content-Disposition'],
   credentials: true // Allow cookies to be sent
 }))
 

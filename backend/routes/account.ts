@@ -6,6 +6,50 @@ const router = express.Router();
 
 router.use(authenticateToken);
 
+router.get('/totals', async (req, res) => {
+    try {
+        const totals = await AccountModel.aggregate([
+            {
+                $group: {
+                    _id: "$type", 
+                    totalCredited: {
+                        $sum: {
+                            $cond: [{ $eq: ["$credited", true] }, "$amount", 0]
+                        }
+                    },
+                    totalDebited: {
+                        $sum: {
+                            $cond: [{ $eq: ["$credited", false] }, "$amount", 0]
+                        }
+                    },
+                    balance: { $sum: "$amount" } 
+                }
+            },
+            {
+                $addFields: {
+                    order: {
+                        $indexOfArray: [
+                            ["Savings", "Current", "PDA", "PDF"], "$_id"
+                        ]
+                    }
+                }
+            },
+            {
+                $sort: { order: 1 } 
+            },
+            {
+                $project: { order: 0 } 
+            }
+        ]);
+
+        res.status(200).json(totals.length > 0 ? totals : []);
+    } catch (error) {
+        console.error('Error fetching totals:', error);
+        res.status(500).json({ error: 'An error occurred while fetching totals.' });
+    }
+});
+
+
 router.get('/:type', async (req: Request, res: Response) => {
 
     const { type } = req.params
@@ -45,7 +89,7 @@ router.post('/transfer', async (req: Request, res: Response) => {
     try {
         const { amount } = req.body
 
-        try {      
+        try {
             const savingsEntry = new AccountModel({
                 type: 'Savings',
                 amount,
@@ -59,21 +103,21 @@ router.post('/transfer', async (req: Request, res: Response) => {
                 credited: false,
                 remarks: `Transferred ${amount} to Savings`,
                 transferable: -amount,
-                transfer : savingsEntry._id
+                transfer: savingsEntry._id
             });
-        
+
             const [savedCurrentEntry, savedSavingsEntry] = await Promise.all([currentEntry.save(), savingsEntry.save()]);
-        
+
             res.status(200).json({
                 currentEntry: savedCurrentEntry,
                 savingsEntry: savedSavingsEntry
             });
-        
+
         } catch (error) {
             console.error('Error processing transaction:', error);
             res.status(500).json({ error: 'An error occurred while processing the transaction.' });
         }
-        
+
     } catch (error) {
         res.status(500).json({ message: 'Error fetching account: ' + (error as Error).message });
     }
@@ -93,7 +137,7 @@ router.delete('/:id', async (req, res) => {
         if (account.transferable < 0) {
             const deletedAccount = await AccountModel.findByIdAndDelete(id);
             await AccountModel.findByIdAndDelete(deletedAccount!.transfer);
-            res.status(200).json({ message: 'Account deleted successfully'});
+            res.status(200).json({ message: 'Account deleted successfully' });
             return
         }
 

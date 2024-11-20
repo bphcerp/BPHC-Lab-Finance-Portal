@@ -22,69 +22,105 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
     const columnHelper = createColumnHelper<Account>();
 
     // Define base columns
-    const baseColumns = useMemo(() => [
-        columnHelper.accessor('remarks', {
-            header: 'Remarks',
-            cell: (info) => info.getValue() ?? '-',
-        }),
-        columnHelper.accessor('createdAt', {
-            header: 'Date',
-            cell: (info) => new Date(info.getValue()).toLocaleDateString('en-IN'),
-            enableColumnFilter: false,
-        }),
-        columnHelper.accessor((row) => (row.credited ? row.amount : 0), {
-            header: 'Credited',
-            cell: (info) =>
-                info.getValue().toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
-            enableColumnFilter: false,
-            meta: {
-                getSum: true,
-                sumFormatter: (sum: number) =>
-                    sum.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
-            },
-        }),
-        columnHelper.accessor((row) => (!row.credited ? row.amount : 0), {
-            header: 'Debited',
-            cell: (info) =>
-                info.getValue().toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
-            enableColumnFilter: false,
-            meta: {
-                getSum: true,
-                sumFormatter: (sum: number) =>
-                    sum.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
-            },
-        }),
-    ], []);
+    const baseColumns = useMemo(
+        () => [
+            columnHelper.accessor('createdAt', {
+                header: 'Date',
+                cell: (info) => new Date(info.getValue()).toLocaleDateString('en-IN'),
+                enableColumnFilter: false,
+            }),
+            columnHelper.accessor('remarks', {
+                header: 'Remarks',
+                cell: (info) => info.getValue() ?? '-',
+            }),
+            columnHelper.accessor((row) => (row.credited ? row.amount : 0), {
+                header: 'Credited',
+                cell: (info) =>
+                    info.getValue().toLocaleString('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                    }),
+                enableColumnFilter: false,
+                meta: {
+                    getSum: true,
+                    sumFormatter: (sum: number) =>
+                        sum.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+                },
+            }),
+            columnHelper.accessor((row) => (!row.credited ? row.amount : 0), {
+                header: 'Debited',
+                cell: (info) =>
+                    info.getValue().toLocaleString('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                    }),
+                enableColumnFilter: false,
+                meta: {
+                    getSum: true,
+                    sumFormatter: (sum: number) =>
+                        sum.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+                },
+            }),
+            columnHelper.accessor(
+                (row) => (row.credited ? row.amount : 0) - (!row.credited ? row.amount : 0),
+                {
+                    header: 'Balance',
+                    cell: (info) =>
+                        info
+                            .getValue()
+                            .toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+                    enableColumnFilter: false,
+                    meta: {
+                        getSum: true,
+                        sumFormatter: (sum: number) =>
+                            sum.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+                    },
+                }
+            ),
+        ],
+        []
+    );
 
     // Define additional columns for "Current" accounts
-    const currentColumns = useMemo(() => [
-        columnHelper.accessor((row) => (row.transferable ? 'Yes' : 'No'), {
-            header: 'Transferable',
-            cell: (info) =>
-                (info.row.original.transferable || 0).toLocaleString('en-IN', {
-                    style: 'currency',
-                    currency: 'INR',
-                }),
-            enableColumnFilter : false
-        }),
-        columnHelper.accessor('_id', {
-            header: 'Actions',
-            cell: ({ row }) =>
-                row.original.transferable < 0 ? (
-                    <button
-                        className="w-10 flex justify-center hover:cursor-pointer"
-                        onClick={() => {
-                            setEntryToDelete(row.original);
-                            setIsDeleteModalOpen(true);
-                        }}
-                        aria-label="Delete Transfer"
-                    >
-                        <RiDeleteBin6Line color="red" />
-                    </button>
-                ) : "NA",
-            enableColumnFilter : false
-        }),
-    ], []);
+    const currentColumns = useMemo(
+        () => [
+            columnHelper.accessor((row) => (row.transferable ? 'Yes' : 'No'), {
+                header: 'Transferable',
+                cell: (info) =>
+                    (info.row.original.transferable || 0).toLocaleString('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                    }),
+                enableColumnFilter: false,
+                meta: {
+                    filterType : "dropdown",
+                    getSum: true,
+                    sumFormatter: (sum: number) =>
+                        sum.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+                },
+            }),
+            columnHelper.accessor('_id', {
+                header: 'Actions',
+                cell: ({ row }) =>
+                    row.original.transferable < 0 ? (
+                        <button
+                            className="w-10 flex justify-center hover:cursor-pointer"
+                            onClick={() => {
+                                setEntryToDelete(row.original);
+                                setIsDeleteModalOpen(true);
+                            }}
+                            aria-label="Delete Transfer"
+                        >
+                            <RiDeleteBin6Line color="red" />
+                        </button>
+                    ) : (
+                        'NA'
+                    ),
+                enableColumnFilter: false,
+            }),
+        ],
+        []
+    );
 
     // Fetch account data
     const fetchAccountData = async () => {
@@ -146,13 +182,10 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
 
     // Update columns when the account type changes
     useEffect(() => {
-        setColumns(type === 'Current' ? [...baseColumns, ...currentColumns] : baseColumns);
+        fetchAccountData().then(
+        () => setColumns(type === 'Current' ? [...baseColumns, ...currentColumns] : baseColumns)
+        )
     }, [type, baseColumns, currentColumns]);
-
-    // Fetch account data on component mount and type change
-    useEffect(() => {
-        fetchAccountData();
-    }, [type]);
 
     return (
         <div className="container mx-auto p-4">
