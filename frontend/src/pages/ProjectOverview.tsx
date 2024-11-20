@@ -131,12 +131,7 @@ const ProjectList: FunctionComponent = () => {
             enableSorting: false
         })
     ];
-
-    const openDeleteModal = (project: Project) => {
-        setProjectToDelete(project);
-        setIsDeleteModalOpen(true);
-    };
-
+    
     const handleDeleteProject = async () => {
         if (!projectToDelete) return;
         try {

@@ -21,6 +21,20 @@ import AdminPage from './pages/AdminPage'
 import AccountPage from './pages/AccountPage.js'
 import PDAccountPage from './pages/PDAccountPage.js'
 
+const interval = 30000;
+
+function keepAlive() {
+  fetch(import.meta.env.VITE_BACKEND_URL!)
+    .then((response) => {
+      console.log(`Pinged at ${new Date().toISOString()}: Status Code ${response.status}`);
+    })
+    .catch((error) => {
+      console.error(`Error pinging at ${new Date().toISOString()}:, ${error.message}`);
+    });
+}
+
+setInterval(keepAlive, interval)
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={import.meta.env.VITE_OAUTH_CID}>
     <ToastContainer />
