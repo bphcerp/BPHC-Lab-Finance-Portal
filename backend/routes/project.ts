@@ -172,16 +172,8 @@ router.put('/:id', async (req: Request, res: Response) => {
         const updatedProject = await ProjectModel.findByIdAndUpdate(
             req.params.id,
             {
-                project_name: data.project_name,
-                start_date: data.start_date,
-                end_date: data.end_date,
-                project_heads: data.project_heads,
-                total_amount: data.total_amount,
-                pis: JSON.parse(data.pis),
-                copis: JSON.parse(data.copis),
-                description: data.description,
+                ...data,
                 installments: parsedInstallments,
-                negative_heads: data.negative_heads
             },
             { new: true }
         );
@@ -219,7 +211,10 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.get('/', async (req: Request, res: Response) => {
     try {
         const { past, balance } = req.query;
-        const projects = await ProjectModel.find();
+        const projects = await ProjectModel.find()
+            .populate({ path: "pis", select: "name" })
+            .populate({ path: "copis", select: "name" })
+
 
         const filteredProjects = past
             ? projects

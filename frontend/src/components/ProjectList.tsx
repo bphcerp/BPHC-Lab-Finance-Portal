@@ -199,7 +199,7 @@ const ProjectList: FunctionComponent = () => {
         }
     };
 
-    const handleSaveProject = async (updatedProject: Project) => {
+    const handleSaveProject = async (updatedProject : any) => {
         try {
             const response = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/project/${updatedProject._id}`,

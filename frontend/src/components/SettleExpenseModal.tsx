@@ -1,7 +1,7 @@
 import { Button, Modal, Label, Radio } from 'flowbite-react';
 import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { toastError, toastWarn } from '../toasts';
+import { toastError } from '../toasts';
 import { Expense } from '../types';
 
 interface SettleExpenseModalProps {

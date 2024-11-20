@@ -1,6 +1,5 @@
 import { FunctionComponent, useEffect, useState } from "react";
-import { toastError, toastSuccess } from "../toasts";
-import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import { toastError } from "../toasts";
 import { MdOutlineDescription } from "react-icons/md";
 import DescriptionModal from "../components/DescriptionModal";
 
@@ -55,9 +54,7 @@ const ProjectList: FunctionComponent = () => {
 
     const [uniqueHeads, setUniqueHeads] = useState<Array<string>>([])
     const [projectData, setProjectData] = useState<Array<Project>>([]);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDescModalOpen, setIsDescModalOpen] = useState(false);
-    const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
     const [description, setDescription] = useState("")
     const columnHelper = createColumnHelper<Project>()
     const columns = [
@@ -132,37 +129,10 @@ const ProjectList: FunctionComponent = () => {
         })
     ];
     
-    const handleDeleteProject = async () => {
-        if (!projectToDelete) return;
-        try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectToDelete._id}`, {
-                credentials: "include",
-                method: 'DELETE',
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to delete project');
-            }
-
-            setProjectData(projectData!.filter(project => project._id !== projectToDelete._id));
-            toastSuccess('Project deleted successfully');
-        } catch (error) {
-            toastError('Error deleting project');
-            console.error('Error deleting project:', error);
-        } finally {
-            setIsDeleteModalOpen(false);
-        }
-    };
 
     return projectData ? (
         <div className="container mx-auto p-4">
             <h1 className="text-2xl font-bold mb-4">Projects Overview</h1>
-            <DeleteConfirmationModal
-                isOpen={isDeleteModalOpen}
-                onClose={() => setIsDeleteModalOpen(false)}
-                onDelete={handleDeleteProject}
-                item={projectToDelete?.project_name || ""}
-            />
             <DescriptionModal
                 isOpen={isDescModalOpen}
                 onClose={() => setIsDescModalOpen(false)}
