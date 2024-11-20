@@ -6,7 +6,7 @@ import { Readable } from "stream";
 import mongoose from 'mongoose';
 import { ProjectModel } from '../models/project';
 import { AccountModel } from '../models/account';
-import { upload } from '..';
+import multer from 'multer';
 
 const router = express.Router();
 const conn = mongoose.connection;
@@ -19,6 +19,9 @@ conn.once("open", () => {
         bucketName: "references"
     });
 });
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 router.get('/:id/reference', async (req: Request, res: Response) => {
     try {
