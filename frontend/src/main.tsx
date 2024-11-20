@@ -18,8 +18,9 @@ import MembersView from './components/MembersView'
 import ExpensesLayout from './layouts/ExpenseLayout'
 import ProjectOverview from './pages/ProjectOverview'
 import AdminPage from './pages/AdminPage'
-import AccountPage from './pages/AccountPage.js'
-import PDAccountPage from './pages/PDAccountPage.js'
+import AccountPage from './pages/AccountPage'
+import PDAccountPage from './pages/PDAccountPage'
+import NotFound from './components/NotFound'
 
 const interval = 30000;
 
@@ -58,6 +59,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/pdf" element={<PDAccountPage type='PDF'/>} />
           </Route>
           <Route path='/login' element={<LoginPage />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </React.StrictMode>
