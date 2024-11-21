@@ -17,6 +17,8 @@ export const calculateCurrentYear = (data: Project) => {
     if (curr.getMonth() > 3) currentYear++ //should be +2, but 0 indexing makes it +1
     if (start.getMonth() > 3) currentYear--;
 
+    console.log(currentYear)
+
     return (currentYear >= 0 ? currentYear : 0);
 };
 
@@ -29,9 +31,12 @@ export const getCurrentInstallmentIndex = (project: Project): number => {
         const endDate = new Date(installment.end_date);
 
         if (currentDate >= startDate && currentDate <= endDate) {
+            console.log(i)
             return i;
         }
     }
+
+    console.log("0")
 
     return 0; // Return null if no active installment is found
 }
@@ -99,7 +104,7 @@ const ProjectDetails = () => {
     return (
         <>
             {projectData && (
-                <div className="flex flex-col space-y-4 w-full mx-10">
+                <div className="flex flex-col space-y-4 w-full mx-10 p-2">
                     <span className="text-4xl font-bold text-center mt-5 text-gray-800">
                         {projectData.project_name}
                     </span>
@@ -254,7 +259,7 @@ const ProjectDetails = () => {
                     </div>
 
                     <h2 className="text-2xl font-semibold text-gray-700 mt-6">Current Financial Year</h2>
-                    <div className="flex overflow-x-auto">
+                    <div className="flex">
                         {!isProjectOver ? <table className="min-w-full bg-white shadow-md rounded-lg mt-2">
                             <thead className="bg-gray-200">
                                 <tr>
