@@ -137,7 +137,7 @@ router.post('/paid', async (req: Request, res: Response) => {
         await new AccountModel({
             amount,
             type: "Current",
-            remarks: "Reimbursement money",
+            remarks: `Reimbursement money for ${reimbursements.map(item => item.title).join(",")}`,
             credited: true,
             transferable: totalTransferableAmount
         }).save();

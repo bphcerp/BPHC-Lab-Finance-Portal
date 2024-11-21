@@ -19,8 +19,8 @@ const ProjectList: FunctionComponent = () => {
     const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
     const [description, setDescription] = useState("");
 
-    const fetchProjectData = (page: number = 1) => {
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/?page=${page}`, {
+    const fetchProjectData = () => {
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/?past=true`, {
             credentials: "include",
         })
             .then((res) =>

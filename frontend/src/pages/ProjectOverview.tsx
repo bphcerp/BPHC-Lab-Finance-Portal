@@ -23,8 +23,8 @@ const ProjectList: FunctionComponent = () => {
         return Array.from(headsSet);
     };
 
-    const fetchProjectData = (page: number = 1) => {
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/?page=${page}`, {
+    const fetchProjectData = () => {
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/?past=true`, {
             credentials: "include",
         })
             .then((res) =>
