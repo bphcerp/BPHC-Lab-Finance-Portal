@@ -18,7 +18,7 @@ dotenv.config();
 const interval = 30000;
 
 function keepAlive() {
-  fetch(process.env.FRONTEND_URL!)
+  fetch(process.env.BASE_URL!)
     .then((response) => {
       console.log(`Pinged at ${new Date().toISOString()}: Status Code ${response.status}`);
     })
