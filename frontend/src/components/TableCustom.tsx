@@ -12,13 +12,13 @@ import {
     RowData
 } from "@tanstack/react-table";
 import { Checkbox, TextInput, Select, Table } from "flowbite-react";
-import { FunctionComponent, useEffect, useMemo } from "react";
+import { FunctionComponent, ReactNode, useEffect, useMemo } from "react";
 import ColumnVisibilityMenu from "./ColumnVisibilityMenu";
 
 declare module '@tanstack/react-table' {
     interface ColumnMeta<TData extends RowData, TValue> {
         getSum?: boolean;
-        sumFormatter?: (sum: number) => string;
+        sumFormatter?: (sum: number) => ReactNode;
         filterType?: "dropdown";
     }
 }
@@ -149,7 +149,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                     />
                                 </Table.Cell>
                                 {row.getVisibleCells().map(cell => (
-                                    <Table.Cell className="text-gray-700 px-0 py-2.5" key={cell.id}>
+                                    <Table.Cell className="text-gray-700 px-6  py-2.5" key={cell.id}>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </Table.Cell>
                                 ))}

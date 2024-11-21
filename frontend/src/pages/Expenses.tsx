@@ -113,16 +113,18 @@ const ExpensesPage: React.FC = () => {
         }),
         columnHelper.accessor('description', {
             header: "Description",
-            cell: ({ row }) => row.original.description ? (
-                <MdOutlineDescription
-                    size="1.75em"
-                    onClick={() => {
-                        setDescription(row.original.description);
-                        setIsDescModalOpen(true);
-                    }}
-                    className="hover:text-gray-700 cursor-pointer"
-                />
-            ) : "-",
+            cell: ({ row }) => <div className='flex justify-center'>
+                {row.original.description ? (
+                    <MdOutlineDescription
+                        size="1.75em"
+                        onClick={() => {
+                            setDescription(row.original.description);
+                            setIsDescModalOpen(true);
+                        }}
+                        className="hover:text-gray-700 cursor-pointer"
+                    />
+                ) : "-"}
+            </div>,
             enableColumnFilter: false,
             enableSorting: false
         }),
@@ -189,7 +191,7 @@ const ExpensesPage: React.FC = () => {
             const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceDocument } = formData;
 
             const data = new FormData();
-            data.append('expenseIds', expenseIds); 
+            data.append('expenseIds', expenseIds);
             data.append('projectId', selectedProject);
             data.append('projectHead', selectedProjectHead);
             data.append('totalAmount', totalAmount.toString());
@@ -197,13 +199,13 @@ const ExpensesPage: React.FC = () => {
             data.append('description', description);
 
             if (referenceDocument) {
-                data.append('referenceDocument', referenceDocument); 
+                data.append('referenceDocument', referenceDocument);
             }
 
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse`, {
                 method: 'POST',
                 credentials: 'include',
-                body: data, 
+                body: data,
             });
 
             if (!response.ok) {
@@ -211,7 +213,7 @@ const ExpensesPage: React.FC = () => {
             }
 
             toastSuccess('Reimbursement filed successfully');
-            fetchExpenses(); 
+            fetchExpenses();
         } catch (error) {
             toastError('Error filing reimbursement');
             console.error('Error filing reimbursement:', error);
@@ -295,7 +297,7 @@ const ExpensesPage: React.FC = () => {
                 throw new Error('Failed to delete expense');
             }
 
-            setExpenses(expenses.filter(exp => exp._id !== expenseToDelete._id));
+            fetchExpenses()
             toastSuccess('Expense deleted successfully');
         } catch (error) {
             toastError('Error deleting expense');

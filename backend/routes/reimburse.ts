@@ -41,23 +41,23 @@ router.get('/:id/reference', async (req: Request, res: Response) => {
 
         const fileId = reimbursement.reference_id;
 
-        // Create a download stream from GridFS
+        
         const downloadStream = gfs.openDownloadStream(fileId);
 
         const filename = `reference_${reimbursement.title}`.replace(/\s/g, '_')
 
-        // Set the correct headers for the file download
+        
         res.set('Content-Type', 'application/pdf');
         res.set('Content-Disposition', `inline; filename=${filename}`);
 
-        // Handle potential errors while streaming the file
+        
         downloadStream.on('error', (error) => {
             console.error(`Error fetching file: ${error.message}`);
             res.status(404).send('File not found');
             return;
         });
 
-        // Pipe the download stream to the response
+        
         downloadStream.pipe(res).on('finish', () => {
             console.log('File streamed successfully.');
         });
@@ -109,7 +109,7 @@ router.post('/paid', async (req: Request, res: Response) => {
         }
 
         const reimbursements = await ReimbursementModel.find({ _id: { $in: reimbursementIds } })
-            .populate<{ expenses : {amount : number, settled : { type : String }}[] }>({
+            .populate<{ expenses: { amount: number, settled: { type: String } }[] }>({
                 path: 'expenses',
                 populate: {
                     path: 'settled',
@@ -161,7 +161,7 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
 
         let referenceId: mongoose.Types.ObjectId | null = null
 
-        
+
         if (req.file) {
             const readableStream = new Readable();
             readableStream.push(req.file.buffer);
@@ -181,7 +181,7 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
             });
         }
 
-        
+
         const reimbursement = new ReimbursementModel({
             project: projectId,
             expenses: expenseIds,
@@ -190,18 +190,18 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
             title,
             description,
             submittedAt: new Date(),
-            reference_id: referenceId, 
+            reference_id: referenceId,
         });
 
         await reimbursement.save();
 
-        
+
         await ExpenseModel.updateMany(
             { _id: { $in: expenseIds } },
             { reimbursedID: reimbursement._id }
         );
 
-        
+
         await ProjectModel.findByIdAndUpdate(
             projectId,
             {
@@ -209,7 +209,7 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
             }
         );
 
-        
+
         await reimbursement.populate('project expenses');
 
         res.status(201).json(reimbursement);
@@ -218,5 +218,25 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
         res.status(400).json({ message: 'Error creating reimbursement: ' + (error as Error).message });
     }
 });
+
+router.delete('/:id', async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        const deletedReimbursement = await ReimbursementModel.findByIdAndDelete(id);
+
+        if (!deletedReimbursement) {
+            res.status(404).json({ message: 'Reimbursement not found' });
+            return;
+        }
+
+        await ExpenseModel.updateMany({ reimbursedID: id }, { reimbursedID: null });
+        res.status(204).send();
+    } catch (error) {
+        console.error('Error deleting reimbursement:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
 
 export default router;

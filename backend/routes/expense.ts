@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import { ExpenseModel } from '../models/expense';
 import { CategoryModel } from '../models/category';
 import { authenticateToken } from '../middleware/authenticateToken';
@@ -11,24 +11,18 @@ interface ExpenseRequest {
   category: ObjectId;
   amount: number;
   description: string;
-  paidBy: ObjectId
+  paidBy: ObjectId;
   reimbursedID?: ObjectId;
   settled?: 'Current' | 'Savings' | null;
 }
 
 interface MemberExpenseSummary {
-  memberId: ObjectId
+  memberId: ObjectId;
   memberName: string;
   totalPaid: number;
   totalSettled: number;
   totalDue: number;
 }
-
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-};
 
 router.use(authenticateToken);
 
@@ -39,121 +33,144 @@ const validateCategory = async (categoryId: Schema.Types.ObjectId): Promise<bool
   return !!categoryExists;
 };
 
-router.post('/', asyncHandler(async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   const expenseData = req.body as ExpenseRequest;
 
-  if (!await validateCategory(expenseData.category)) {
-    return res.status(400).json({ message: 'Invalid category ID' });
+  try {
+    if (!await validateCategory(expenseData.category)) {
+      res.status(400).json({ message: 'Invalid category ID' });
+      return;
+    }
+
+    const expense = new ExpenseModel({
+      ...expenseData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await expense.save();
+    await expense.populate('category paidBy');
+    res.status(201).json(expense);
+  } catch (error) {
+    console.error('Error creating expense:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
+});
 
-  const expense = new ExpenseModel({
-    ...expenseData,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const expensesData = await ExpenseModel.find()
+      .populate<{ reimbursedID: { _id: ObjectId; title: string; paidStatus: boolean } }>({ path: 'reimbursedID', select: 'title paidStatus' })
+      .populate<{ settled: { _id: Schema.Types.ObjectId, type: string } }>('settled')
+      .populate('category paidBy')
+      .lean();
 
-  await expense.save();
-  await expense.populate('category paidBy');
-  return res.status(201).json(expense);
-}));
+    const expenses = expensesData.sort((a, b) => {
+      const aPaidStatus = a.reimbursedID?.paidStatus ?? false;
+      const bPaidStatus = b.reimbursedID?.paidStatus ?? false;
 
-router.get('/', asyncHandler(async (req: Request, res: Response) => {
+      const reimbursementSort = (a.reimbursedID === null ? 0 : 1) - (b.reimbursedID === null ? 0 : 1) ||
+        (aPaidStatus ? 1 : 0) - (bPaidStatus ? 1 : 0);
 
-  const expensesData = await ExpenseModel.find()
-    .populate<{ reimbursedID: { _id: ObjectId; title: string; paidStatus: boolean } }>({ path: 'reimbursedID', select: 'title paidStatus' })
-    .populate<{ settled: { _id: Schema.Types.ObjectId, type: string } }>('settled')
-    .populate('category paidBy')
-    .lean();
+      if (reimbursementSort !== 0) return reimbursementSort;
 
-  const expenses = expensesData.sort((a, b) => {
-    const aPaidStatus = a.reimbursedID?.paidStatus ?? false;
-    const bPaidStatus = b.reimbursedID?.paidStatus ?? false;
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
 
-    const reimbursementSort = (a.reimbursedID === null ? 0 : 1) - (b.reimbursedID === null ? 0 : 1) ||
-      (aPaidStatus ? 1 : 0) - (bPaidStatus ? 1 : 0);
-    
-    if (reimbursementSort !== 0) return reimbursementSort;
+    res.status(200).send(expenses);
+  } catch (error) {
+    console.error('Error fetching expenses:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
-    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-  });
+router.get('/passbook', async (req: Request, res: Response) => {
+  const { type } = req.query;
 
-  return res.status(200).send(expenses);
-}));
+  try {
+    const expenses = await ExpenseModel.find({ settled: type })
+      .populate<{ reimbursedID: { _id: ObjectId; title: string; paidStatus: boolean } }>({ path: 'reimbursedID', select: 'title paidStatus' })
+      .populate('category paidBy')
+      .lean();
 
-router.get('/passbook', asyncHandler(async (req: Request, res: Response) => {
+    res.status(200).send(expenses);
+  } catch (error) {
+    console.error('Error fetching passbook:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
-  const { type } = req.query
+router.get('/totaldue', async (req: Request, res: Response) => {
+  try {
+    const [result] = await ExpenseModel.aggregate([
+      { $match: { reimbursedID: null } },
+      { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
+    ]);
 
-  const expenses = await ExpenseModel.find({settled : type})
-    .populate<{ reimbursedID: { _id: ObjectId; title: string; paidStatus: boolean } }>({ path: 'reimbursedID', select: 'title paidStatus' })
-    .populate('category paidBy')
-    .lean();
+    res.status(200).json({
+      total_due: result?.totalAmount || 0,
+    });
+  } catch (error) {
+    console.error('Error calculating total due:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
-  return res.status(200).send(expenses);
-}));
+router.get('/unsettled', async (req: Request, res: Response) => {
+  try {
+    const [result] = await ExpenseModel.aggregate([
+      { $match: { settled: null } },
+      { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
+    ]);
 
-router.get('/totaldue', asyncHandler(async (req: Request, res: Response) => {
-  const [result] = await ExpenseModel.aggregate([
-    { $match: { reimbursedID: null } },
-    { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
-  ]);
+    res.status(200).json({
+      total_unsettled: result?.totalAmount || 0,
+    });
+  } catch (error) {
+    console.error('Error calculating unsettled total:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
-  return res.status(200).json({
-    total_due: result?.totalAmount || 0
-  });
-}));
-
-router.get('/unsettled', asyncHandler(async (req: Request, res: Response) => {
-  const [result] = await ExpenseModel.aggregate([
-    { $match: { settled: null } },
-    { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
-  ]);
-
-  return res.status(200).json({
-    total_unsettled: result?.totalAmount || 0
-  });
-}));
-
-router.patch('/settle', asyncHandler(async (req: Request, res: Response) => {
+router.patch('/settle', async (req: Request, res: Response) => {
   try {
     const { ids, type, amount, remarks } = req.body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'Invalid or empty ids array' });
+      res.status(400).json({ message: 'Invalid or empty ids array' });
+      return;
     }
 
     if (!VALID_SETTLED_STATUS.includes(type)) {
-      return res.status(400).json({
+      res.status(400).json({
         message: `Invalid settled status. Must be one of: ${VALID_SETTLED_STATUS.join(', ')}`,
       });
+      return;
     }
 
     const accountEntry = await new AccountModel({
       amount,
       type,
-      remarks : remarks ?? "Settled Expenses",
+      remarks: remarks ?? 'Settled Expenses',
       credited: false,
     }).save();
 
-    console.log(accountEntry)
-
     const result = await ExpenseModel.updateMany(
       { _id: { $in: ids } },
-      { settled: accountEntry._id}
+      { settled: accountEntry._id }
     );
 
-    return res.status(200).json({
+    res.status(200).json({
       message: 'Expenses settled successfully',
       updatedCount: result.modifiedCount,
     });
   } catch (error) {
     console.error('Error settling expenses:', error);
-    return res.status(500).json({ message: 'An error occurred while settling expenses' });
+    res.status(500).json({ message: 'Internal server error' });
   }
-}));
+});
 
-
-router.post('/settle/:memberId', async (req, res) => {
+router.post('/settle/:memberId', async (req: Request, res: Response) => {
   const { memberId } = req.params;
   const { settlementType, remarks, amount } = req.body;
 
@@ -164,7 +181,7 @@ router.post('/settle/:memberId', async (req, res) => {
     }
 
     const accountEntry = new AccountModel({
-      amount: amount,
+      amount,
       type: settlementType,
       remarks,
       credited: false,
@@ -178,23 +195,22 @@ router.post('/settle/:memberId', async (req, res) => {
     );
 
     if (result.modifiedCount > 0) {
-      res.status(200).json({ message: `Settled expenses for member` });
+      res.status(200).json({ message: 'Settled expenses for member' });
     } else {
-      res.status(404).json({ message: `No unsettled expenses found for member` });
+      res.status(404).json({ message: 'No unsettled expenses found for member' });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error settling expenses', error });
+    console.error('Error settling member expenses:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// Get member-wise expenses
 router.get('/member-expenses', async (req: Request, res: Response) => {
   try {
     const expenses = await ExpenseModel.find()
-    .populate<{ paidBy: { _id: Schema.Types.ObjectId, name: string } }>('paidBy')
-    .populate<{ settled: { _id: Schema.Types.ObjectId, type: string } }>('settled')
-    .lean();
+      .populate<{ paidBy: { _id: Schema.Types.ObjectId, name: string } }>('paidBy')
+      .populate<{ settled: { _id: Schema.Types.ObjectId, type: string } }>('settled')
+      .lean();
 
     const memberExpenses: Record<string, MemberExpenseSummary> = {};
 
@@ -220,7 +236,6 @@ router.get('/member-expenses', async (req: Request, res: Response) => {
       }
     });
 
-    // Convert the memberExpenses object to an array for response
     const result: MemberExpenseSummary[] = Object.values(memberExpenses);
 
     res.json(result);
@@ -230,38 +245,37 @@ router.get('/member-expenses', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.patch('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const expenseData = req.body as ExpenseRequest;
 
-  if (!await validateCategory(expenseData.category)) {
-    return res.status(400).json({ message: 'Invalid category ID' });
+  try {
+    if (!await validateCategory(expenseData.category)) {
+      res.status(400).json({ message: 'Invalid category ID' });
+      return;
+    }
+
+    const updatedExpense = await ExpenseModel.findByIdAndUpdate(
+      id,
+      {
+        ...expenseData,
+        updatedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!updatedExpense) {
+      res.status(404).json({ message: 'Expense not found' });
+      return;
+    }
+
+    await updatedExpense.populate('category paidBy');
+
+    res.status(200).json(updatedExpense);
+  } catch (error) {
+    console.error('Error updating expense:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  const updatedExpense = await ExpenseModel.findByIdAndUpdate(
-    id,
-    {
-      ...expenseData,
-      updatedAt: new Date()
-    },
-    { new: true }
-  ).populate('category');
-
-  if (!updatedExpense) {
-    return res.status(404).json({ message: 'Expense not found' });
-  }
-
-  return res.status(200).json(updatedExpense);
-}));
-
-router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
-  const deletedExpense = await ExpenseModel.findByIdAndDelete(req.params.id);
-
-  if (!deletedExpense) {
-    return res.status(404).json({ message: 'Expense not found' });
-  }
-
-  return res.status(204).send();
-}));
+});
 
 export default router;

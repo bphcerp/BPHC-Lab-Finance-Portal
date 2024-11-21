@@ -96,7 +96,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
                     filterType : "dropdown",
                     getSum: true,
                     sumFormatter: (sum: number) =>
-                        sum.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+                        <span className={sum<0?"text-green-400":"text-red-600"}>{sum.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>,
                 },
             }),
             columnHelper.accessor('_id', {

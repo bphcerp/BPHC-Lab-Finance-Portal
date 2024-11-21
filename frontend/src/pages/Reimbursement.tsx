@@ -7,6 +7,8 @@ import DescriptionModal from '../components/DescriptionModal';
 import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
 import { Reimbursement } from '../types';
+import { RiEdit2Line, RiDeleteBin6Line } from 'react-icons/ri';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
 const ReimbursementPage: React.FC = () => {
     const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
@@ -14,6 +16,10 @@ const ReimbursementPage: React.FC = () => {
     const [selectedReimbursements, setSelectedReimbursements] = useState<Set<string>>(new Set());
     const [description, setDescription] = useState("")
     const [isDescModalOpen, setIsDescModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [reimbursementToDelete, setReimbursementToDelete] = useState<Reimbursement | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedReimbursement, setSelectedReimbursement] = useState<Reimbursement | null>(null);
 
     const columnHelper = createColumnHelper<Reimbursement>();
 
@@ -63,16 +69,18 @@ const ReimbursementPage: React.FC = () => {
         }),
         columnHelper.accessor('description', {
             header: "Description",
-            cell: ({ row }) => row.original.description ? (
-                <MdOutlineDescription
-                    size="1.75em"
-                    onClick={() => {
-                        setDescription(row.original.description);
-                        setIsDescModalOpen(true);
-                    }}
-                    className="hover:text-gray-700 cursor-pointer"
-                />
-            ) : "-",
+            cell: ({ row }) => <div className='flex justify-center'>
+                {row.original.description ? (
+                    <MdOutlineDescription
+                        size="1.75em"
+                        onClick={() => {
+                            setDescription(row.original.description);
+                            setIsDescModalOpen(true);
+                        }}
+                        className="hover:text-gray-700 cursor-pointer"
+                    />
+                ) : "NA"}
+            </div>,
             enableColumnFilter: false,
             enableSorting: false
         }),
@@ -88,12 +96,66 @@ const ReimbursementPage: React.FC = () => {
                         View
                     </Link>
                 ) : (
-                    "-"
+                    "None Attached"
                 ),
             enableColumnFilter: false,
             enableSorting: false,
         }),
+        columnHelper.accessor(() => "Actions", {
+            header: "Actions",
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    {row.original.paidStatus ? "NA" : <div className='flex divide-x-2'>
+                        <button
+                            className="w-10 flex justify-center hover:cursor-pointer"
+                            onClick={() => openEditModal(row.original)}
+                        >
+                            <RiEdit2Line color="blue" />
+                        </button>
+                        <button
+                            className="w-10 flex justify-center hover:cursor-pointer"
+                            onClick={() => openDeleteModal(row.original)}
+                        >
+                            <RiDeleteBin6Line color="red" />
+                        </button></div>}
+                </div>
+            ),
+            enableColumnFilter: false,
+            enableSorting: false
+        })
     ];
+
+    const handleDeleteReimbursement = async () => {
+        if (!reimbursementToDelete) return;
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse/${reimbursementToDelete._id}`, {
+                credentials: "include",
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete reimbursement');
+            }
+
+            fetchReimbursements()
+            toastSuccess('Reimbursement deleted successfully');
+        } catch (error) {
+            toastError('Error deleting reimbursement');
+            console.error('Error deleting reimbursement:', error);
+        } finally {
+            setIsDeleteModalOpen(false);
+        }
+    };
+
+    const openEditModal = (reimbursement: Reimbursement) => {
+        setSelectedReimbursement(reimbursement);
+        setIsEditModalOpen(true);
+    };
+
+    const openDeleteModal = (reimbursement: Reimbursement) => {
+        setReimbursementToDelete(reimbursement);
+        setIsDeleteModalOpen(true);
+    };
 
     const fetchReimbursements = async () => {
         try {
@@ -148,12 +210,18 @@ const ReimbursementPage: React.FC = () => {
     }
 
     return (
-        <div className= "flex flex-col w-full p-4">
+        <div className="flex flex-col w-full p-4">
             <DescriptionModal
                 isOpen={isDescModalOpen}
                 onClose={() => setIsDescModalOpen(false)}
                 type='reimbursement'
                 description={description}
+            />
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onDelete={handleDeleteReimbursement}
+                item={reimbursementToDelete?.title ?? ""}
             />
             <h1 className="text-2xl font-bold mb-4">List of Reimbursements</h1>
 
@@ -167,9 +235,11 @@ const ReimbursementPage: React.FC = () => {
                 </button>
             </div>
 
-            <TableCustom data={reimbursements} columns={columns} setSelected={(selectedReimbursements : Array<Reimbursement>) => {
-                setSelectedReimbursements(new Set(selectedReimbursements.map(reimbursement => reimbursement._id)))
-            }} />
+            <div className='py-2'>
+                <TableCustom data={reimbursements} columns={columns} setSelected={(selectedReimbursements: Array<Reimbursement>) => {
+                    setSelectedReimbursements(new Set(selectedReimbursements.map(reimbursement => reimbursement._id)))
+                }} />
+            </div>
         </div>
     );
 };
