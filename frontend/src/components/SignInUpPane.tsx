@@ -1,7 +1,7 @@
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import { FormEvent, FormEventHandler, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toastError, toastWarn } from "../toasts";
+import { toastError } from "../toasts";
 import PasswordLoginPane from "./PasswordLoginPane";
 
 const SignInUpPane = () => {
@@ -19,12 +19,10 @@ const SignInUpPane = () => {
             body: JSON.stringify(credentials),
         })
             .then(async (res) => {
-                if (res.status === 401) {
-                    toastWarn((await res.text()));
-                } else if (res.status === 200) {
-                    navigate("/dashboard");
+                if (!res.ok) {
+                    toastError((await res.json()).message);
                 } else {
-                    toastError("Something went wrong");
+                    navigate("/dashboard");
                 }
             })
             .catch((e) => {
@@ -58,15 +56,11 @@ const SignInUpPane = () => {
             },
             body: JSON.stringify({ email, pwd }),
         })
-            .then((res) => {
-                if (res.status === 401) {
-                    toastWarn("Wrong Credentials");
-                } else if (res.status === 200) {
-                    navigate("/dashboard");
-                } else if (res.status === 404) {
-                    toastError("User not found");
+            .then(async (res) => {
+                if (!res.ok) {
+                    toastError((await res.json()).message);
                 } else {
-                    toastError("Something went wrong");
+                    navigate("/dashboard");
                 }
             })
             .catch((e) => {

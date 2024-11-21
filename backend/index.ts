@@ -15,6 +15,20 @@ import { authenticateToken } from './middleware/authenticateToken';
 
 dotenv.config();
 
+const interval = 30000;
+
+function keepAlive() {
+  fetch(process.env.FRONTEND_URL!)
+    .then((response) => {
+      console.log(`Pinged at ${new Date().toISOString()}: Status Code ${response.status}`);
+    })
+    .catch((error) => {
+      console.error(`Error pinging at ${new Date().toISOString()}:, ${error.message}`);
+    });
+}
+
+setInterval(keepAlive, interval)
+
 const app = express()
 const PORT = process.env.PORT!
 
@@ -40,7 +54,7 @@ app.use('/api/account', accountRoutes);
 
 app.use(express.static("public"))
 
-app.get('/', (req: Request, res: Response) => {
+app.get('/api', (req: Request, res: Response) => {
   res.send('Welcome to LAMBDA LAB ERP API')
 });
 

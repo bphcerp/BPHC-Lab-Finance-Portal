@@ -21,6 +21,7 @@ import AdminPage from './pages/AdminPage'
 import AccountPage from './pages/AccountPage'
 import PDAccountPage from './pages/PDAccountPage'
 import NotFound from './components/NotFound'
+import DeveloperPage from './pages/DeveloperPage'
 
 const interval = 30000;
 
@@ -57,6 +58,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/account/current" element={<AccountPage type='Current'/>} />
             <Route path="/pda" element={<PDAccountPage type='PDA'/>} />
             <Route path="/pdf" element={<PDAccountPage type='PDF'/>} />
+            <Route path='/developers' element={<DeveloperPage />} />
           </Route>
           <Route path='/login' element={<LoginPage />} />
           <Route path="*" element={<NotFound />} />

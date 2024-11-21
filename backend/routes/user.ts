@@ -62,7 +62,7 @@ router.post('/login', async (req: Request, res: Response) => {
 		let user = await UserModel.findOne({ email });
 
 		if (!user) {
-			res.status(401).send("You are not allowed to login to this portal. Please contact LAMBDA Lab.")
+			res.status(401).send({message : "You are not allowed to login to this portal. Please contact LAMBDA Lab."})
 			return
 		}
 
@@ -76,10 +76,10 @@ router.post('/login', async (req: Request, res: Response) => {
 			httpOnly: true,
 			sameSite: process.env.DEPLOYED_STATUS === "true" ? "none" : "lax"
 		});
-		res.send("Login Successful");
+		res.send({message : "Login Successful"});
 	} catch (error) {
 		console.error(error);
-		res.status(403).send("Invalid Credentials");
+		res.status(403).send({message : "Invalid Credentials"});
 	}
 });
 
@@ -87,7 +87,7 @@ router.post('/passlogin', async (req: Request, res: Response) => {
 	const { email, pwd } = req.body
 	const result = await UserModel.findOne({ email }).lean()
 	if (!result) {
-		res.status(404).send(`No user found`)
+		res.status(404).send({message: `No user found`})
 		return
 	}
 
@@ -103,9 +103,9 @@ router.post('/passlogin', async (req: Request, res: Response) => {
 			secure: process.env.DEPLOYED_STATUS === "true",
 			sameSite: process.env.DEPLOYED_STATUS === "true" ? "none" : "lax"
 		})
-		res.send("Login Successful")
+		res.send({message : "Login Successful"})
 	}
-	else res.status(401).send(`Wrong Credentials`)
+	else res.status(401).send({message : `Wrong Credentials`})
 })
 
 router.put('/:id', authenticateToken, async (req: Request, res: Response) => {

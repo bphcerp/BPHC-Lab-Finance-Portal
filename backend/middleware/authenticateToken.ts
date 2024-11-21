@@ -8,7 +8,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
   const token = req.cookies.token;
 
   if (!token) {
-    res.status(401).json({ authenticated: false, message: 'No token found' });
+    res.status(440).json({ authenticated: false, message: 'No token found' });
     return;
   }
 

@@ -2,7 +2,7 @@ import { HiChartPie } from "react-icons/hi";
 import { IoCashOutline, IoSettingsOutline } from "react-icons/io5";
 import { MdCallReceived, MdWorkOutline, MdAccountCircle, MdOutlineSavings } from "react-icons/md";
 import { RiGovernmentLine } from "react-icons/ri";
-import { FaBuildingColumns } from "react-icons/fa6";
+import { FaBuildingColumns, FaCode } from "react-icons/fa6";
 import { BsSafe } from "react-icons/bs";
 import { FaDonate } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
@@ -103,6 +103,10 @@ const SidebarComponent: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         <Link to="/admin" className="flex items-center px-4 py-3 hover:bg-gray-200 rounded-lg mx-3 mb-2 transition">
           <IoSettingsOutline size="24" className="mr-3" />
           <span className="text-lg font-semibold">Admin</span>
+        </Link>
+        <Link to="/developers" className="flex items-center px-4 py-3 hover:bg-gray-200 rounded-lg mx-3 mb-2 transition">
+          <FaCode size="24" className="mr-3" />
+          <span className="text-lg font-semibold">Developer Info</span>
         </Link>
       </nav>
       <div className="px-4 py-3 border-t border-gray-300">
