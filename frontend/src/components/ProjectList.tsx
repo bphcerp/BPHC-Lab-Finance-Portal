@@ -141,8 +141,8 @@ const ProjectList: FunctionComponent = () => {
             enableColumnFilter: false,
             enableSorting: false,
         }),
-        columnHelper.accessor("_id", {
-            header: () => <div className="w-full text-center">Actions</div>,
+        columnHelper.accessor(() => "Actions", {
+            header: "Actions",
             cell: ({ row }) => (
                 <div className="flex justify-center divide-x-2">
                     <button

@@ -81,7 +81,7 @@ const AdminPage: React.FC = () => {
     const generateColumns = <T extends object>(data: T): ColumnDef<T, any>[] => {
         return [
             ...Object.keys(data)
-                .filter((key) => key !== "_id" && key !== "type")
+                .filter((key) => key !== "_id" && key !== "type" && key != "__v")
                 .map((key) => ({
                     id: key,
                     accessorKey: key as keyof T,

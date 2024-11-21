@@ -99,7 +99,7 @@ const ProjectDetails = () => {
     return (
         <>
             {projectData && (
-                <div className="relative flex flex-col space-y-4 w-full mx-5">
+                <div className="relative flex flex-col space-y-4 w-full p-4">
                     <span className="text-4xl font-bold text-center mt-5 text-gray-800">
                         {projectData.project_name}
                     </span>
@@ -117,7 +117,7 @@ const ProjectDetails = () => {
 
                     <h2 className="text-2xl font-semibold text-gray-70">Project Data</h2>
 
-                    <div className="flex flex-col md:flex-row md:space-x-10">
+                    <div className="flex flex-row space-x-5">
                         <div className="flex-1 overflow-x-auto">
                             <table className="min-w-full bg-white shadow-md rounded-lg">
                                 <thead className="bg-gray-200">
@@ -198,7 +198,7 @@ const ProjectDetails = () => {
                             </table>
                         </div>
 
-                        <div className="flex flex-col space-y-4 mt-6 md:mt-0 md:w-1/3">
+                        <div className="flex flex-col space-y-4">
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="bg-blue-100 p-6 rounded-lg shadow-md text-center">
                                     <p className="text-md font-semibold">Total Amount</p>
@@ -254,7 +254,7 @@ const ProjectDetails = () => {
                     </div>
 
                     <h2 className="text-2xl font-semibold text-gray-700 mt-6">Current Financial Year</h2>
-                    <div className="flex">
+                    <div className="flex p-5">
                         {!isProjectOver ? <table className="min-w-full bg-white shadow-md rounded-lg mt-2">
                             <thead className="bg-gray-200">
                                 <tr>

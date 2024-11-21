@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-table";
 import { Checkbox, TextInput, Select, Table } from "flowbite-react";
 import { FunctionComponent, useEffect, useMemo } from "react";
+import ColumnVisibilityMenu from "./ColumnVisibilityMenu";
 
 declare module '@tanstack/react-table' {
     interface ColumnMeta<TData extends RowData, TValue> {
@@ -32,13 +33,9 @@ interface TableCustomProps {
 const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSelected, initialState }) => {
 
     const getSortedUniqueValues = (column: Column<any, unknown>) => {
-        return useMemo(
-            () =>
-                Array.from(column.getFacetedUniqueValues().keys())
-                    .sort()
-                    .slice(0, 5000),
-            [column.getFacetedUniqueValues()]
-        );
+        return Array.from(column.getFacetedUniqueValues().keys())
+            .sort()
+            .slice(0, 5000)
     }
 
     columns = useMemo(() =>
@@ -83,15 +80,16 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
 
     return (
         <>
-            <div className="flex flex-col w-full bg-white shadow-md rounded-lg">
+            <div className="flex flex-col w-full space-y-2">
+                <ColumnVisibilityMenu table={table} />
                 <Table>
                     {table.getHeaderGroups().map(headerGroup => (
                         <Table.Head className="bg-gray-200" key={headerGroup.id}>
                             <Table.HeadCell className="bg-inherit px-4 py-2.5">
                                 {table.getHeaderGroups().length > 1 && !headerGroup.depth ? null : <Checkbox
                                     {...{
-                                        checked: table.getIsAllRowsSelected(),
-                                        onChange: table.getToggleAllRowsSelectedHandler(),
+                                        checked: table.getIsAllPageRowsSelected(),
+                                        onChange: table.getToggleAllPageRowsSelectedHandler(),
                                     }}
                                 />}
                             </Table.HeadCell>
@@ -160,7 +158,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                         {Object.values(columnSums).some(sum => sum !== undefined) && (
                             <Table.Row className="bg-gray-200 text-black font-bold text-lg">
                                 <Table.Cell className="px-4 py-2.5">Total</Table.Cell>
-                                {table.getAllColumns().map(column => (
+                                {table.getVisibleLeafColumns().map(column => (
                                     <Table.Cell key={column.id} className="px-0 py-2.5">
                                         {column.columnDef.meta?.getSum ? column.columnDef.meta?.sumFormatter?.(columnSums[column.id]) ?? columnSums[column.id].toLocaleString() : null}
                                     </Table.Cell>
@@ -226,7 +224,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                         table.setPageSize(Number(e.target.value));
                     }}
                 >
-                    {[5, 10, 20, 30, 40, 50].map(pageSize => (
+                    {[5, 10, 20, 30, 40, 50, 100].map(pageSize => (
                         <option key={pageSize} value={pageSize}>
                             Show {pageSize}
                         </option>

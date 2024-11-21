@@ -24,10 +24,10 @@ const ReimbursementPage: React.FC = () => {
         columnHelper.accessor('project.project_name', {
             header: 'Project Name',
             cell: info => <Link className='hover:underline text-blue-600'
-                to={`/project/${info.row.original.project._id}`}
+                to={`/project/${info.row.original.project.project_id}`}
                 target="_blank"
                 rel="noopener noreferrer">
-                {info.row.original.project.project_name}
+                {info.row.original.project.project_name}-{info.row.original.project.project_title}
             </Link>
         }),
         columnHelper.accessor('projectHead', {
@@ -148,7 +148,7 @@ const ReimbursementPage: React.FC = () => {
     }
 
     return (
-        <div className= "container mx-auto p-4">
+        <div className= "flex flex-col w-full p-4">
             <DescriptionModal
                 isOpen={isDescModalOpen}
                 onClose={() => setIsDescModalOpen(false)}

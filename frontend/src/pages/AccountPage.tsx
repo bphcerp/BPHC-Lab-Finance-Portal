@@ -188,7 +188,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
     }, [type, baseColumns, currentColumns]);
 
     return (
-        <div className="container mx-auto p-4">
+        <div className="flex flex-col w-full p-4">
             {/* Modals */}
             <TransferModal
                 isOpen={isTransferModalOpen}

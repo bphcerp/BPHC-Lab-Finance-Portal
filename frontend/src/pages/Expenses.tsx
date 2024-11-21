@@ -126,8 +126,8 @@ const ExpensesPage: React.FC = () => {
             enableColumnFilter: false,
             enableSorting: false
         }),
-        columnHelper.accessor('_id', {
-            header: () => <div className='w-full text-center'>Actions</div>,
+        columnHelper.accessor(() => "Actions", {
+            header: "Actions",
             cell: ({ row }) => row.original.reimbursedID ? <div className='w-full text-center'>NA</div> : (
                 <div className="flex justify-center divide-x-2">
                     <button
@@ -311,7 +311,7 @@ const ExpensesPage: React.FC = () => {
     };
 
     return expenses ? (
-        <div className="container mx-auto p-4">
+        <div className="flex flex-col">
             <AddExpenseModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}

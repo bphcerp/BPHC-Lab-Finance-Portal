@@ -90,7 +90,7 @@ const MembersView: React.FC = () => {
     ];
 
     return (
-        <div className="container mx-auto p-4">
+        <div className="flex flex-col w-full p-4">
             <div>
                 {totals ? (
                     <div className="grid grid-flow-col grid-rows-1 overflow-x-auto p-4 mb-4 bg-gray-100 rounded shadow">

@@ -116,7 +116,7 @@ const PDAccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
     }, [type]);
 
     return (
-        <div className="container mx-auto p-4">
+        <div className="flex flex-col w-full p-4">
             <AddEntryModal
                 isOpen={isAddEntryModalOpen}
                 onClose={() => setIsAddEntryModalOpen(false)}
