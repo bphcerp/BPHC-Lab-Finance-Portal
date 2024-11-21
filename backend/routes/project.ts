@@ -427,7 +427,16 @@ router.delete('/:id', async (req: Request, res: Response) => {
         } else {
             const projectReimbursements = await ReimbursementModel.findOne({ project: toBeDeletedProject!._id })
             if (projectReimbursements) res.status(409).send({ message: "Cannot delete, project has reimbursements filed against. Please delete them and try again." })
-            else res.status(204).send();
+            else {
+                const sanction_letter_file_id = toBeDeletedProject.sanction_letter_file_id;
+
+                if (sanction_letter_file_id) {
+                    await gfs.delete(sanction_letter_file_id);
+                }
+
+                await ProjectModel.deleteOne(toBeDeletedProject)
+                res.status(204).send()
+            };
         }
     } catch (error) {
         res.status(500).json({ message: 'Error deleting project', error: (error as Error).message });

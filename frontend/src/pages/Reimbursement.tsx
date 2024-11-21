@@ -7,19 +7,22 @@ import DescriptionModal from '../components/DescriptionModal';
 import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
 import { Reimbursement } from '../types';
-import { RiEdit2Line, RiDeleteBin6Line } from 'react-icons/ri';
+import { RiDeleteBin6Line } from 'react-icons/ri';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import { Button } from 'flowbite-react';
+import AddReferenceModal from '../components/AddReferenceModal';
 
 const ReimbursementPage: React.FC = () => {
     const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedReimbursements, setSelectedReimbursements] = useState<Set<string>>(new Set());
+    const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false)
     const [description, setDescription] = useState("")
     const [isDescModalOpen, setIsDescModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [reimbursementToDelete, setReimbursementToDelete] = useState<Reimbursement | null>(null);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [selectedReimbursement, setSelectedReimbursement] = useState<Reimbursement | null>(null);
+    const [reimbursementToDelete, setReimbursementToDelete] = useState<Reimbursement>();
+    const [reimbursementIdToAddRefTo,setReimbursementIdToAddRefTo] = useState<string>()
+    
 
     const columnHelper = createColumnHelper<Reimbursement>();
 
@@ -96,7 +99,10 @@ const ReimbursementPage: React.FC = () => {
                         View
                     </Link>
                 ) : (
-                    "None Attached"
+                    <Button size="xs" color="red" onClick={() => {
+                        setReimbursementIdToAddRefTo(row.original._id)
+                        setIsReferenceModalOpen(true)
+                    }}>Add Reference</Button>
                 ),
             enableColumnFilter: false,
             enableSorting: false,
@@ -106,12 +112,6 @@ const ReimbursementPage: React.FC = () => {
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     {row.original.paidStatus ? "NA" : <div className='flex divide-x-2'>
-                        <button
-                            className="w-10 flex justify-center hover:cursor-pointer"
-                            onClick={() => openEditModal(row.original)}
-                        >
-                            <RiEdit2Line color="blue" />
-                        </button>
                         <button
                             className="w-10 flex justify-center hover:cursor-pointer"
                             onClick={() => openDeleteModal(row.original)}
@@ -147,11 +147,6 @@ const ReimbursementPage: React.FC = () => {
         }
     };
 
-    const openEditModal = (reimbursement: Reimbursement) => {
-        setSelectedReimbursement(reimbursement);
-        setIsEditModalOpen(true);
-    };
-
     const openDeleteModal = (reimbursement: Reimbursement) => {
         setReimbursementToDelete(reimbursement);
         setIsDeleteModalOpen(true);
@@ -179,7 +174,32 @@ const ReimbursementPage: React.FC = () => {
         fetchReimbursements();
     }, []);
 
+    const handleReferenceSubmit = async (file : File) => {
 
+        const formData = new FormData()
+        formData.append("referenceDocument",file)
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse/${reimbursementIdToAddRefTo}/reference`, {
+                method: 'POST',
+                credentials: "include",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to upload reference');
+            }
+
+            toastSuccess('Added the reference!');
+            fetchReimbursements();
+        } catch (error) {
+            toastError('Error uploading reference');
+            console.error('Error uploading reference', error);
+        }
+        finally{
+            setReimbursementIdToAddRefTo(undefined)
+            setIsReferenceModalOpen(false)
+        }
+    }
 
     const handleMarkAsPaid = async () => {
         try {
@@ -197,8 +217,8 @@ const ReimbursementPage: React.FC = () => {
             }
 
             toastSuccess('Selected reimbursements marked as paid.');
-            fetchReimbursements(); // Refresh the list after updating
-            setSelectedReimbursements(new Set()); // Clear selection
+            fetchReimbursements(); 
+            setSelectedReimbursements(new Set()); 
         } catch (error) {
             toastError('Error marking reimbursements as paid');
             console.error('Error marking reimbursements as paid:', error);
@@ -222,6 +242,11 @@ const ReimbursementPage: React.FC = () => {
                 onClose={() => setIsDeleteModalOpen(false)}
                 onDelete={handleDeleteReimbursement}
                 item={reimbursementToDelete?.title ?? ""}
+            />
+            <AddReferenceModal
+                isOpen={isReferenceModalOpen}
+                onClose={() => setIsReferenceModalOpen(false)}
+                onSubmit={handleReferenceSubmit} 
             />
             <h1 className="text-2xl font-bold mb-4">List of Reimbursements</h1>
 

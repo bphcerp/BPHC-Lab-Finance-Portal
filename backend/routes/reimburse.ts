@@ -41,23 +41,23 @@ router.get('/:id/reference', async (req: Request, res: Response) => {
 
         const fileId = reimbursement.reference_id;
 
-        
+
         const downloadStream = gfs.openDownloadStream(fileId);
 
         const filename = `reference_${reimbursement.title}`.replace(/\s/g, '_')
 
-        
+
         res.set('Content-Type', 'application/pdf');
         res.set('Content-Disposition', `inline; filename=${filename}`);
 
-        
+
         downloadStream.on('error', (error) => {
             console.error(`Error fetching file: ${error.message}`);
             res.status(404).send('File not found');
             return;
         });
 
-        
+
         downloadStream.pipe(res).on('finish', () => {
             console.log('File streamed successfully.');
         });
@@ -219,6 +219,51 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
     }
 });
 
+router.post('/:id/reference', upload.single('referenceDocument'), async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params
+
+        if (!req.file) {
+            res.status(400).send({ message: "Please upload a file!" })
+            return
+        }
+
+        const reimbursement = await ReimbursementModel.findById(id)
+
+        if (!reimbursement) {
+            res.status(404).send({ message: "Reimbursement not found!" })
+            return
+        }
+
+        let referenceId: mongoose.Types.ObjectId | null = null
+
+        const readableStream = new Readable();
+        readableStream.push(req.file.buffer);
+        readableStream.push(null);
+
+        const uploadStream = gfs.openUploadStream(req.file.originalname, {
+            contentType: req.file.mimetype || 'application/octet-stream'
+        });
+
+        await new Promise<void>((resolve, reject) => {
+            readableStream.pipe(uploadStream)
+                .on("error", (err) => reject(err))
+                .on("finish", () => {
+                    referenceId = uploadStream.id;
+                    resolve();
+                });
+        });
+
+        reimbursement.reference_id = referenceId
+        await reimbursement.save()
+        res.send({message : "Reference upload sucessful!"})
+    }
+    catch(err){
+        console.log(err)
+        res.status(500).send({message : `Error Occured : ${(err as Error).message}`})
+    }
+})
+
 router.delete('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -228,6 +273,12 @@ router.delete('/:id', async (req: Request, res: Response) => {
         if (!deletedReimbursement) {
             res.status(404).json({ message: 'Reimbursement not found' });
             return;
+        }
+
+        const referenceId = deletedReimbursement.reference_id;
+
+        if (referenceId) {
+            await gfs.delete(referenceId);
         }
 
         await ExpenseModel.updateMany({ reimbursedID: id }, { reimbursedID: null });

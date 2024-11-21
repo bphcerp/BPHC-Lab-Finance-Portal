@@ -80,6 +80,8 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
       [newHeadName]: Array(count).fill(0),
     }));
 
+    setEditMode((prev) => ({ ...prev, [newHeadName]: true }))
+
 
     setNewHeadName("");
   };
@@ -249,6 +251,89 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               </div>
 
             </div>
+
+            {/* PIs and Co-PIs */}
+            <div className="flex justify-between">
+              <div className="space-y-2">
+                <Label htmlFor="pi" value="Add Principal Investigators (PIs)" />
+                <div className="flex items-center space-x-3">
+                  <select
+                    id="pi"
+                    value={newPI}
+                    onChange={(e) => setNewPI(e.target.value)}
+                    className="border p-2 rounded"
+                  >
+                    <option value="">Select PI</option>
+                    {faculties.map((faculty) => (
+                      <option value={faculty._id} key={faculty._id}>
+                        {faculty.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button color="blue" onClick={addPI} disabled={!newPI}>Add PI</Button>
+                </div>
+                {pis.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-bold">PIs:</h4>
+                    <ul>
+                      {pis.map((pi, idx) => (
+                        <li key={idx} className="flex justify-between">
+                          <span>{faculties.find(faculty => faculty._id === pi)?.name}</span>
+                          <Button
+                            color="blue"
+                            onClick={() => deletePI(idx)}
+                            type="button"
+                            size="xs"
+                          >
+                            Delete
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label value="Add Co-Principal Investigators (Co-PIs)" />
+                <div className="flex items-center space-x-3">
+                  <select
+                    value={newCoPI}
+                    onChange={(e) => setNewCoPI(e.target.value)}
+                    className="border p-2 rounded"
+                  >
+                    <option value="">Select Co-PI</option>
+                    {faculties.map((faculty) => (
+                      <option value={faculty._id} key={faculty._id}>
+                        {faculty.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button color="blue" onClick={addCoPI} disabled={!newCoPI}>Add Co-PI</Button>
+                </div>
+                {coPIs.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-bold">Co-PIs:</h4>
+                    <ul>
+                      {coPIs.map((coPI, idx) => (
+                        <li key={idx} className="flex justify-between">
+                          <span>{faculties.find(faculty => faculty._id === coPI)?.name}</span>
+                          <Button
+                            color="blue"
+                            onClick={() => deleteCoPI(idx)}
+                            type="button"
+                            size="xs"
+                          >
+                            Delete
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+            
             <div>
               <Label value="Project Type" />
               <div className="flex space-x-4">
@@ -433,90 +518,6 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
               ))}
             </div>
 
-
-            {/* PIs and Co-PIs */}
-            <div className="flex justify-between">
-              <div className="space-y-2">
-                <Label htmlFor="pi" value="Add Principal Investigators (PIs)" />
-                <div className="flex items-center space-x-3">
-                  <select
-                    id="pi"
-                    value={newPI}
-                    onChange={(e) => setNewPI(e.target.value)}
-                    className="border p-2 rounded"
-                  >
-                    <option value="">Select PI</option>
-                    {faculties.map((faculty) => (
-                      <option value={faculty.name} key={faculty._id}>
-                        {faculty.name}
-                      </option>
-                    ))}
-                  </select>
-                  <Button color="blue" onClick={addPI} disabled={!newPI}>Add PI</Button>
-                </div>
-                {pis.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="font-bold">PIs:</h4>
-                    <ul>
-                      {pis.map((pi, idx) => (
-                        <li key={idx} className="flex justify-between">
-                          <span>{pi}</span>
-                          <Button
-                            color="blue"
-                            onClick={() => deletePI(idx)}
-                            type="button"
-                            size="xs"
-                          >
-                            Delete
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label value="Add Co-Principal Investigators (Co-PIs)" />
-                <div className="flex items-center space-x-3">
-                  <select
-                    value={newCoPI}
-                    onChange={(e) => setNewCoPI(e.target.value)}
-                    className="border p-2 rounded"
-                  >
-                    <option value="">Select Co-PI</option>
-                    {faculties.map((faculty) => (
-                      <option value={faculty.name} key={faculty._id}>
-                        {faculty.name}
-                      </option>
-                    ))}
-                  </select>
-                  <Button color="blue" onClick={addCoPI} disabled={!newCoPI}>Add Co-PI</Button>
-                </div>
-                {coPIs.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="font-bold">Co-PIs:</h4>
-                    <ul>
-                      {coPIs.map((coPI, idx) => (
-                        <li key={idx} className="flex justify-between">
-                          <span>{coPI}</span>
-                          <Button
-                            color="blue"
-                            onClick={() => deleteCoPI(idx)}
-                            type="button"
-                            size="xs"
-                          >
-                            Delete
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-
-
             <div className="space-y-2">
               {/* Add other fields like Total Amount, Description, etc */}
               <div>
@@ -564,6 +565,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                     setSanctionLetter(e.target.files ? e.target.files[0] : null)
                   }}
                   accept="application/pdf"
+                  required
                 />
               </div>
             </div>
