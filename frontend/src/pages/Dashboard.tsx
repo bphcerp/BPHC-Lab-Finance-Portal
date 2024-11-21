@@ -57,7 +57,7 @@ const DashBoard: FunctionComponent = () => {
     }, [openModal]);
 
     return (
-        <div className="flex flex-col p-4 space-y-4 w-full mx-auto overflow-hidden h-full">
+        <div className="flex flex-col p-4 space-y-4 w-full mx-auto h-full">
             <AddProjectModal openModal={openModal} setOpenModal={setOpenModal} />
 
             <div className="grid grid-cols-2 gap-4">

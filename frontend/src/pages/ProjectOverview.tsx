@@ -24,7 +24,7 @@ const ProjectList: FunctionComponent = () => {
     };
 
     const fetchProjectData = () => {
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/?past=true`, {
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
             credentials: "include",
         })
             .then((res) =>
@@ -131,7 +131,7 @@ const ProjectList: FunctionComponent = () => {
     
 
     return projectData ? (
-        <div className="container mx-auto p-4">
+        <div className="flex flex-col w-full p-4">
             <h1 className="text-2xl font-bold mb-4">Projects Overview</h1>
             <DescriptionModal
                 isOpen={isDescModalOpen}

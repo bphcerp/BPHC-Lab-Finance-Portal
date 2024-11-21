@@ -14,7 +14,11 @@ const developers: Developer[] = [
 const DeveloperPage: FunctionComponent = () => {
     return (
         <div className="flex flex-col items-center w-full h-full p-5">
-            <h1 className="text-3xl font-bold text-gray-800 text-center mb-8">Developers</h1>
+            <h1 className="text-3xl font-bold text-gray-800 text-center mb-4">Developers</h1>
+            <p className="text-lg text-gray-700 text-center max-w-2xl mb-8">
+                We are the developers behind this platform. If you have any questions, suggestions, 
+                or need support, feel free to reach out to us. Your feedback is appreciated.
+            </p>
 
             <div className="flex flex-wrap justify-center gap-6">
                 {developers.map((developer) => (
@@ -35,7 +39,6 @@ const DeveloperPage: FunctionComponent = () => {
                                 {developer.email}
                             </a>
                         </p>
-
                     </div>
                 ))}
             </div>

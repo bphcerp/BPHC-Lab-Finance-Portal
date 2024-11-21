@@ -53,7 +53,7 @@ const Layout: FunctionComponent = () => {
           </button>
         </div>
       </div>
-      <div className="flex w-full grow overflow-y-auto p-2">
+      <div className="flex w-screen grow overflow-y-auto p-2">
         <Outlet />
       </div>
     </div>

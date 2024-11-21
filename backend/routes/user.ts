@@ -42,7 +42,7 @@ router.post('/logout', authenticateToken, async (req: Request, res: Response) =>
 	res.clearCookie('token', {
 		secure : process.env.DEPLOYED_STATUS === "true",
 		httpOnly: true,
-		sameSite: 'none',
+		sameSite: process.env.DEPLOYED_STATUS === "true" ? "none" : "lax",
 	});
 
 	res.status(200).json({ message: 'Logged out successfully' });
@@ -75,7 +75,7 @@ router.post('/login', async (req: Request, res: Response) => {
 		res.cookie("token", credentialResponse.credential, {
 			secure: process.env.DEPLOYED_STATUS === "true",
 			httpOnly: true,
-			sameSite: "none"
+			sameSite: process.env.DEPLOYED_STATUS === "true" ? "none" : "lax"
 		});
 		res.send({message : "Login Successful"});
 	} catch (error) {

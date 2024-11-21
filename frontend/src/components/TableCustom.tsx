@@ -96,7 +96,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                 />}
                             </Table.HeadCell>
                             {headerGroup.headers.map(header => (
-                                <Table.HeadCell className={`bg-inherit px-0 py-2.5 ${table.getHeaderGroups().length > 1 && !headerGroup.depth ? 'text-center' : ""}`} key={header.id} colSpan={header.colSpan}>
+                                <Table.HeadCell className={`bg-inherit whitespace-nowrap py-2.5 ${table.getHeaderGroups().length > 1 && !headerGroup.depth ? 'text-center' : ""}`} key={header.id} colSpan={header.colSpan}>
                                     {header.isPlaceholder ? null : (
                                         <>
                                             <div
