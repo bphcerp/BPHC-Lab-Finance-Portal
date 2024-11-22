@@ -189,9 +189,9 @@ const ExpensesPage: React.FC = () => {
     const handleFileReimbursement = async (formData: any) => {
         try {
             const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceDocument } = formData;
-
+            
             const data = new FormData();
-            data.append('expenseIds', expenseIds);
+            data.append('expenseIds', JSON.stringify(expenseIds));
             data.append('projectId', selectedProject);
             data.append('projectHead', selectedProjectHead);
             data.append('totalAmount', totalAmount.toString());

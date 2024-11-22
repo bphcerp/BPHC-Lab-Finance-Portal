@@ -5,11 +5,16 @@ const installmentSchema = new Schema({
     end_date: { type: Date, required: true },
 }, { _id: false });
 
+const overrideSchema = new Schema({
+    type : { type  : String, enum : ["yearly", "invoice"], required: true },
+    index : { type : Number , required : true}
+})
+
 const projectSchema = new Schema({
     project_id: { type: String, required: true, unique: true },
     project_title: { type: String, default: null },
     project_name: { type: String, required: true },
-    project_type: { type: String, default: 'yearly' },
+    project_type: { type: String, enum : ["yearly", "invoice"], default: 'yearly' },
     start_date: { type: Date },
     end_date: { type: Date },
     total_amount: { type: Number, required: true },
@@ -21,7 +26,8 @@ const projectSchema = new Schema({
     description: { type: String, default: null },
     installments: { type: [installmentSchema], default: [] },
     updated_at: { type: Date },
-    negative_heads: { type: [String], default: [] }
+    negative_heads: { type: [String], default: [] },
+    override : { type : overrideSchema, default : null}
 });
 
 projectSchema.pre('save', function (next) {

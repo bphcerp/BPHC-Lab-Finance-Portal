@@ -1,10 +1,26 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { toastError, toastWarn } from "../toasts";
+import { toastError, toastSuccess, toastWarn } from "../toasts";
 import ReimbursementModal from "../components/ReimbursementModal";
-import { Project, Reimbursement } from "../types";
+import { Expense, Project, Reimbursement } from "../types";
+import { Button } from "flowbite-react";
+import OverrideConfirmation from "../components/OverrideConfirmation";
+import ProjectHeadExpenses from "../components/ProjectHeadExpenses";
+
+const calculateNumberOfYears = (start: Date, end: Date) => {
+
+
+    const startYear = start.getMonth() < 3 ? start.getFullYear() - 1 : start.getFullYear();
+    const endYear = end.getMonth() < 3 ? end.getFullYear() - 1 : end.getFullYear();
+
+    const yearsDiff = endYear - startYear + 1;
+    return (yearsDiff >= 1 ? yearsDiff : 0);
+};
 
 export const calculateCurrentYear = (data: Project) => {
+
+    if (data.override) return data.override.index
+
     const curr = new Date();
 
     if (curr > new Date(data.end_date!)) {
@@ -21,6 +37,9 @@ export const calculateCurrentYear = (data: Project) => {
 };
 
 export const getCurrentInstallmentIndex = (project: Project): number => {
+
+    if (project.override) return project.override.index
+
     const currentDate = new Date();
 
     for (let i = 0; i < project.installments!.length; i++) {
@@ -50,8 +69,14 @@ const ProjectDetails = () => {
     const [expenseData, setExpenseData] = useState<{ [key: string]: number }>()
     const [currentYear, setCurrentYear] = useState(0)
     const [isProjectOver, setIsProjectOver] = useState(false)
+    const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false)
+    const [label, setLabel] = useState<string>()
+    const [isHeadExpensesModalOpen, setIsHeadExpensesModalOpen] = useState(false)
+    const [headExpensesLabel, setHeadExpensesLabel] = useState<string>()
+    const [headExpenses, setHeadExpenses] = useState<Array<Expense>>([])
+    const [resetOverride, setResetOverride] = useState(false)
 
-    useEffect(() => {
+    const fetchProjectData = () => {
         fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${id}`, {
             credentials: "include",
         })
@@ -75,19 +100,24 @@ const ProjectDetails = () => {
                 toastError("Something went wrong");
                 console.error(e);
             });
+    }
+
+    useEffect(() => {
+        fetchProjectData()
     }, [id]);
 
     useEffect(() => {
         if (isProjectOver) toastWarn("Project's end date has been crossed!")
     }, [isProjectOver])
 
-    const fetchReimbursements = async (head: string) => {
+    const fetchReimbursements = async ({ head, index, all }: { head?: string, index?: number, all?: boolean }) => {
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/reimburse/${projectData!._id}/${head}`,
+                `${import.meta.env.VITE_BACKEND_URL}/reimburse/${projectData!._id}/${head}?index=${index}&all=${all}`,
                 { credentials: "include" }
             );
             const data = await response.json();
+            setLabel(all ? projectData?.project_name : `${head}${index !== undefined ? ` Year ${index + 1}` : ""}`)
             setReimbursements(data);
             setIsModalOpen(true);
         } catch (error) {
@@ -96,10 +126,101 @@ const ProjectDetails = () => {
         }
     };
 
+    const fetchHeadExpenses = async (head: string) => {
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/reimburse/${projectData!._id}/${head}/expenses`,
+                { credentials: "include" }
+            );
+            const data = await response.json();
+            setHeadExpensesLabel(`Expenses under ${head} for Year ${currentYear}`)
+            setHeadExpenses(data);
+            setIsHeadExpensesModalOpen(true);
+        } catch (error) {
+            toastError("Error fetching expenses");
+            console.error(error);
+        }
+    };
+
+    const handleOverride = async (selectedIndex?: number) => {
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/project/${projectData!._id}/override`,
+                {
+                    credentials: "include",
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ selectedIndex })
+                }
+            );
+
+            if (response.ok) {
+                fetchProjectData()
+                toastSuccess("Override Set Sucessfully!")
+            }
+            else {
+                const message = (await response.json()).message
+                toastError(message ?? "Something went wrong!")
+                console.error(message)
+                return
+            }
+
+            setIsOverrideModalOpen(false)
+        } catch (error) {
+            toastError("Something went wrong");
+            console.error(error);
+        }
+    };
+
+    const handleOverrideReset = async () => {
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/project/${projectData!._id}/override`,
+                {
+                    credentials: "include",
+                    method: "DELETE",
+                }
+            );
+
+            if (response.ok) {
+                fetchProjectData()
+                toastSuccess("Override Reset Sucessfully!")
+            }
+            else {
+                const message = (await response.json()).message
+                toastError(message ?? "Something went wrong!")
+                console.error(message)
+            }
+
+            setResetOverride(false)
+            setIsOverrideModalOpen(false)
+        } catch (error) {
+            toastError("Something went wrong");
+            console.error(error);
+        }
+    };
+
     return (
         <>
             {projectData && (
-                <div className="relative flex flex-col space-y-4 w-full p-4">
+                <div className="relative flex flex-col space-y-4 w-full mx-4">
+                    <OverrideConfirmation
+                        isOpen={isOverrideModalOpen}
+                        label={projectData.project_type === "yearly" ? "year" : "invoice"}
+                        reset={resetOverride}
+                        max={projectData.project_type === "yearly" ? calculateNumberOfYears(new Date(projectData.start_date!), new Date(projectData.end_date!)) : projectData.installments?.length!}
+                        onClose={() => {
+                            setIsOverrideModalOpen(false)
+                            setResetOverride(false)
+                        }}
+                        onConfirm={!resetOverride ? handleOverride : handleOverrideReset}
+                    />
+                    {!projectData.override ? <Button color="failure" onClick={() => setIsOverrideModalOpen(true)} className="absolute top-5 right-0">Override Current {projectData.project_type === "invoice" ? "Installment" : "Year"}</Button> : <Button color="failure" onClick={() => {
+                        setIsOverrideModalOpen(true)
+                        setResetOverride(true)
+                    }} className="absolute top-5 right-0">Revert Override</Button>}
                     <span className="text-4xl font-bold text-center mt-5 text-gray-800">
                         {projectData.project_name}
                     </span>
@@ -115,11 +236,21 @@ const ProjectDetails = () => {
                         </div>
                     </div>
 
-                    <h2 className="text-2xl font-semibold text-gray-70">Project Data</h2>
 
-                    <div className="flex flex-row space-x-5">
-                        <div className="flex-1 overflow-x-auto">
-                            <table className="min-w-full bg-white shadow-md rounded-lg">
+                    <div className="flex space-x-5 w-full h-fit">
+                        <div className="flex-1">
+                            <div className="flex justify-between mb-2">
+                                <div className="flex space-x-2 items-center w-fit">
+                                    <span className="text-2xl font-semibold text-gray-70">Project Data</span>
+                                    <span className="">(Click on the amount to view the reimbursements)</span>
+                                </div>
+                                <button
+                                    className="text-blue-600 text-lg hover:underline"
+                                    onClick={() => fetchReimbursements({ all: true })}>
+                                    View All Reimbursements
+                                </button>
+                            </div>
+                            {Object.keys(projectData.project_heads).length ? <table className="min-w-full bg-white shadow-md rounded-lg">
                                 <thead className="bg-gray-200">
                                     <tr>
                                         <th className="py-3 px-6 text-center text-gray-800 font-semibold">
@@ -142,9 +273,6 @@ const ProjectDetails = () => {
                                                 </div>
                                             </th>
                                         ))}
-                                        <th className="py-3 px-6 text-center text-gray-800 font-semibold">
-                                            Reimbursements
-                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -152,14 +280,22 @@ const ProjectDetails = () => {
                                         ([head, allocations], index) => (
                                             <tr key={index} className="border-t">
                                                 <td className="py-3 px-6 text-gray-800 text-center font-medium">
-                                                    {head}
+                                                    <button
+                                                        className="text-blue-600 hover:underline"
+                                                        onClick={() => fetchReimbursements({ head })}>
+                                                        {head}
+                                                    </button>
                                                 </td>
                                                 {allocations.map((amount, i) => (
                                                     <td
                                                         key={i}
-                                                        className={`py-3 px-6 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
+                                                        className={`py-3 px-6 text-center ${!isProjectOver && currentYear === i ? "text-red-600" : "text-blue-600"}`}
                                                     >
-                                                        {formatCurrency(amount)}
+                                                        <button
+                                                            className="hover:underline"
+                                                            onClick={() => fetchReimbursements({ head, index: i })}>
+                                                            {formatCurrency(amount)}
+                                                        </button>
                                                     </td>
                                                 ))}
                                                 {allocations.length <
@@ -183,19 +319,13 @@ const ProjectDetails = () => {
                                                             N/A
                                                         </td>
                                                     ))}
-                                                <td className="py-3 px-6 text-center">
-                                                    <button
-                                                        className="text-blue-600 hover:underline"
-                                                        onClick={() => fetchReimbursements(head)}
-                                                    >
-                                                        View
-                                                    </button>
-                                                </td>
                                             </tr>
                                         )
                                     )}
                                 </tbody>
-                            </table>
+                            </table> : <div className="flex items-center justify-center text-2xl bg-gray-200 w-full h-56 rounded-lg ">
+                                <span>No project heads added yet.</span>
+                            </div>}
                         </div>
 
                         <div className="flex flex-col space-y-4">
@@ -253,6 +383,7 @@ const ProjectDetails = () => {
                         </div>
                     </div>
 
+
                     <h2 className="text-2xl font-semibold text-gray-700 mt-6">Current Financial Year</h2>
                     <div className="flex p-5">
                         {!isProjectOver ? <table className="min-w-full bg-white shadow-md rounded-lg mt-2">
@@ -282,27 +413,31 @@ const ProjectDetails = () => {
                                             {formatCurrency(allocations[currentYear])}
                                         </td>
                                         <td className="py-3 px-6 text-center text-gray-600">
-                                            {expenseData ? expenseData[head] ?? 0 : "Loading"}
+                                            <button
+                                                className="text-blue-600 hover:underline"
+                                                onClick={() => fetchHeadExpenses(head)}>
+                                                {expenseData ? formatCurrency(expenseData[head] ?? 0) : "Loading"}
+                                            </button>
                                         </td>
                                         <td className="py-3 px-6 text-center text-gray-600">
-                                            {expenseData ? allocations[currentYear] - (expenseData[head] ?? 0) : "Loading"}
+                                            {expenseData ? formatCurrency(allocations[currentYear] - (expenseData[head] ?? 0)) : "Loading"}
                                         </td>
                                     </tr>
                                 })}
                                 <tr className="border-t bg-gray-100 font-semibold">
                                     <td className="py-3 px-6 text-gray-800 text-center">Total</td>
                                     <td className="py-3 px-6 text-center">
-                                        {Object.values(projectData.project_heads).map(arr => arr[currentYear] || 0).reduce((sum, value) => sum + value, 0)}
+                                        {formatCurrency(Object.values(projectData.project_heads).map(arr => arr[currentYear] || 0).reduce((sum, value) => sum + value, 0))}
                                     </td>
                                     <td className="py-3 px-6 text-center">
-                                        {expenseData ? Object.values(expenseData).reduce((acc, value) => acc + value, 0) : "Loading"}
+                                        {expenseData ? formatCurrency(Object.values(expenseData).reduce((acc, value) => acc + value, 0)) : "Loading"}
                                     </td>
                                     <td className="py-3 px-6 text-center">
-                                        {expenseData ? Object.values(projectData.project_heads).map(arr => arr[currentYear] || 0).reduce((sum, value) => sum + value, 0) - Object.values(expenseData).reduce((acc, value) => acc + value, 0) : "Loading"}
+                                        {expenseData ? formatCurrency(Object.values(projectData.project_heads).map(arr => arr[currentYear] || 0).reduce((sum, value) => sum + value, 0) - Object.values(expenseData).reduce((acc, value) => acc + value, 0)) : "Loading"}
                                     </td>
                                 </tr>
                             </tbody>
-                        </table> : <div>
+                        </table> : <div className="flex items-center justify-center text-2xl bg-gray-200 w-full h-56 rounded-lg ">
                             <span>Project's end date has been crossed.</span>
                         </div>}
                     </div>
@@ -312,7 +447,14 @@ const ProjectDetails = () => {
             <ReimbursementModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
+                label={label!}
                 reimbursements={reimbursements}
+            />
+            <ProjectHeadExpenses
+                isOpen={isHeadExpensesModalOpen}
+                onClose={() => setIsHeadExpensesModalOpen(false)}
+                label={headExpensesLabel!}
+                expenses={headExpenses}
             />
         </>
     );

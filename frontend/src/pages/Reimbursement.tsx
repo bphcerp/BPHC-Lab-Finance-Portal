@@ -33,7 +33,7 @@ const ReimbursementPage: React.FC = () => {
         columnHelper.accessor('project.project_name', {
             header: 'Project Name',
             cell: info => <Link className='hover:underline text-blue-600'
-                to={`/project/${info.row.original.project.project_id}`}
+                to={`/project/${info.row.original.project._id}`}
                 target="_blank"
                 rel="noopener noreferrer">
                 {info.row.original.project.project_name}-{info.row.original.project.project_title}

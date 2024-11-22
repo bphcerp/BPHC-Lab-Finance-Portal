@@ -6,7 +6,6 @@ import DescriptionModal from "../components/DescriptionModal";
 import { createColumnHelper } from '@tanstack/react-table'
 import TableCustom from "../components/TableCustom";
 import { Link } from "react-router-dom";
-import { calculateCurrentYear, getCurrentInstallmentIndex } from "./ProjectDetails";
 import { Project } from "../types";
 
 
@@ -24,7 +23,7 @@ const ProjectList: FunctionComponent = () => {
     };
 
     const fetchProjectData = () => {
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/`, {
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/project?past=true&balance=true`, {
             credentials: "include",
         })
             .then((res) =>
@@ -65,7 +64,7 @@ const ProjectList: FunctionComponent = () => {
         columnHelper.accessor("project_name", {
             header: "Project Name",
             cell: (info) => (
-                <Link className="hover:underline text-blue-600" to={`/project/${info.row.original.project_id}`}>
+                <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
                     {info.getValue()}
                 </Link>
             ),
@@ -104,7 +103,7 @@ const ProjectList: FunctionComponent = () => {
             columns: uniqueHeads.map(head => (
                 columnHelper.accessor(row => `${row.project_name}_${head}`, {
                     header: head,
-                    cell: info => (info.row.original.project_heads[head] ? (info.row.original.project_heads[head][info.row.original.project_type === "invoice"?getCurrentInstallmentIndex(info.row.original):calculateCurrentYear(info.row.original)] - (info.row.original.project_head_expenses[head] ?? 0) ) : 0).toLocaleString("en-IN", {
+                    cell: info => (info.row.original.project_heads[head] ?? 0).toLocaleString("en-IN", {
                         style: "currency",
                         currency: "INR",
                     }),

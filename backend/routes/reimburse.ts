@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 import { ProjectModel } from '../models/project';
 import { AccountModel } from '../models/account';
 import multer from 'multer';
+import { getCurrentInstallmentIndex, calculateCurrentYear } from './project';
 
 const router = express.Router();
 const conn = mongoose.connection;
@@ -91,13 +92,25 @@ router.get('/:projectId', async (req, res) => {
 
 router.get('/:projectId/:head', async (req, res) => {
     try {
-        const { projectId, head } = req.params;
-        const reimbursements = await ReimbursementModel.find({ project: projectId, projectHead: head }).populate('expenses');
+        const { projectId, head } = req.params
+        const { index, all } = req.query
+        console.log({ project: projectId, ...(all === "undefined" ? {projectHead: head} : {}), ...(index !== "undefined" ? { year_or_installment : index } : {}) })
+        const reimbursements = await ReimbursementModel.find({ project: projectId, ...(all === "undefined" ? {projectHead: head} : {}), ...(index !== "undefined" ? { year_or_installment : index } : {}) }).populate('expenses');
         res.status(200).json(reimbursements);
     } catch (error) {
         res.status(400).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
     }
 });
+
+router.get('/:projectId/:head/expenses', async (req, res) => {
+    try {
+        const { projectId, head } = req.params
+        const reimbursements = await ReimbursementModel.find({ project: projectId, projectHead : head }).populate('expenses');
+        res.status(200).json(reimbursements.flatMap(reimbursement => reimbursement.expenses));
+    } catch (error) {
+        res.status(400).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
+    }
+})
 
 router.post('/paid', async (req: Request, res: Response) => {
     try {
@@ -157,10 +170,11 @@ router.post('/paid', async (req: Request, res: Response) => {
 
 router.post('/', upload.single('referenceDocument'), async (req: Request, res: Response) => {
     try {
-        const { expenseIds, projectId, projectHead, totalAmount, title, description } = req.body;
+        const { projectId, projectHead, totalAmount, title, description } = req.body;
+
+        const expenseIds = JSON.parse(req.body.expenseIds)
 
         let referenceId: mongoose.Types.ObjectId | null = null
-
 
         if (req.file) {
             const readableStream = new Readable();
@@ -181,6 +195,13 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
             });
         }
 
+        const project = await ProjectModel.findById(projectId)
+
+        if (!project){
+            res.status(404).send("Project ID not found!")
+            return
+        }
+
 
         const reimbursement = new ReimbursementModel({
             project: projectId,
@@ -191,24 +212,15 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
             description,
             submittedAt: new Date(),
             reference_id: referenceId,
+            year_or_installment : project.override?.index ?? (project.project_type==="invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project))
         });
 
         await reimbursement.save();
-
 
         await ExpenseModel.updateMany(
             { _id: { $in: expenseIds } },
             { reimbursedID: reimbursement._id }
         );
-
-
-        await ProjectModel.findByIdAndUpdate(
-            projectId,
-            {
-                $inc: { [`project_head_expenses.${projectHead}`]: totalAmount },
-            }
-        );
-
 
         await reimbursement.populate('project expenses');
 

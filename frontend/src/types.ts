@@ -42,7 +42,7 @@ export interface Reimbursement {
     totalAmount: number;
     createdAt: Date;
     title: string;
-    expenses: { expenseReason: string; amount: number }[];
+    expenses: Expense[];
     projectHead: string;
     paidStatus: boolean;
     description: string
@@ -76,6 +76,7 @@ export interface Project {
     sanction_letter_file_id?: string;
     description: string
     negative_heads : string[]
+    override : { type : string, index : number}
 }
 
 export interface Account {

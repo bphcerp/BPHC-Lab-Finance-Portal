@@ -125,7 +125,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                             onChange={(e) => setSelectedProject(e.target.value)}
                         >
                             <option value="">Select a Project</option>
-                            {projects.filter(project => new Date() <= new Date(project.end_date!)).map((project) => (
+                            {projects.map((project) => (
                                 <option key={project._id} value={project._id}>
                                     {project.project_name}
                                 </option>

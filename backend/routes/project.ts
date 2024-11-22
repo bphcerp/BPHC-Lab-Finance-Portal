@@ -14,20 +14,20 @@ let gfs: mongoose.mongo.GridFSBucket;
 
 router.use(authenticateToken);
 
-// Initialize GridFS when MongoDB connection is open
+
 conn.once("open", () => {
     gfs = new mongoose.mongo.GridFSBucket(conn.db!, {
         bucketName: "uploads"
     });
 });
 
-// Set up Multer storage for GridFS
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 
-const calculateCurrentYear = (data: Project) => {
+export const calculateCurrentYear = (data: Project) => {
     const curr = new Date();
 
     if (curr > new Date(data.end_date!)) {
@@ -35,15 +35,15 @@ const calculateCurrentYear = (data: Project) => {
     }
 
     const start = new Date(data.start_date!);
-    let currentYear = curr.getFullYear() - start.getFullYear(); //should be +1, 0-indexing makes it +0
+    let currentYear = curr.getFullYear() - start.getFullYear();
 
-    if (curr.getMonth() > 3) currentYear++ //should be +2, but 0 indexing makes it +1
+    if (curr.getMonth() > 3) currentYear++
     if (start.getMonth() > 3) currentYear--;
 
     return (currentYear >= 0 ? currentYear : 0);
 }
 
-const getCurrentInstallmentIndex = (project: Project): number => {
+export const getCurrentInstallmentIndex = (project: Project): number => {
     const currentDate = new Date();
 
     for (let i = 0; i < project.installments!.length; i++) {
@@ -59,7 +59,7 @@ const getCurrentInstallmentIndex = (project: Project): number => {
     return 0;
 }
 
-// Route to get the total sum of all project amounts
+
 router.get('/grandtotal', async (req: Request, res: Response) => {
     try {
         const result = await ProjectModel.aggregate([
@@ -78,29 +78,48 @@ router.get('/grandtotal', async (req: Request, res: Response) => {
     }
 });
 
-router.get('/:id/total-expenses', async (req, res) => {
-    try {
-        // Use findOne to fetch a single project based on project_id
-        const project = await ProjectModel.findOne({ project_id: req.params.id });
+router.get('/:id/total-expenses', async (req: Request, res: Response) => {
+    const id = req.params.id; 
 
-        if (!project) {
-            res.status(404).json({ message: 'Project not found.' });
-            return;
-        }
-
-        // Access the project_head_expenses
-        const projectHeadExpenses = project.project_head_expenses;
-
-        if (!projectHeadExpenses || Object.keys(projectHeadExpenses).length === 0) {
-            res.status(200).json({ message: 'No expenses found for this project.' });
-            return;
-        }
-
-        res.status(200).json(projectHeadExpenses);
-    } catch (error) {
-        res.status(400).json({ message: 'Error fetching total expenses: ' + (error as Error).message });
+    if (!id) {
+        res.status(400).send({ message: 'Project ID is required and should be a single value' });
+        return;
     }
-});
+
+    try {
+        
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            res.status(400).send({ message: 'Invalid project ID' });
+            return;
+        }
+
+        
+        const result = await ReimbursementModel.aggregate([
+            {
+                $match: {
+                    project: new mongoose.Types.ObjectId(id), 
+                },
+            },
+            {
+                $group: {
+                    _id: '$projectHead', 
+                    totalAmountSum: { $sum: '$totalAmount' }, 
+                },
+            },
+        ]);
+        
+        const formattedResult = result.reduce((acc, { _id, totalAmountSum }) => {
+            acc[_id] = totalAmountSum; 
+            return acc;
+        }, {});
+
+        res.json(formattedResult);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: `Error occurred: ${(err as Error).message}` });
+    }
+})
+
 
 router.post('/', upload.single('sanction_letter'), async (req: Request, res: Response) => {
     try {
@@ -159,12 +178,55 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
     }
 });
 
-// Route to update a project by ID
+router.post('/:id/override', async (req: Request, res: Response) => {
+    try {
+        const project = await ProjectModel.findById(req.params.id);
+
+        if (!project) {
+            res.status(404).json({ message: 'Project not found.' });
+            return;
+        }
+
+        project.override = {
+            type: project.project_type,
+            index: req.body.selectedIndex
+        }
+        await project.save()
+        res.send({ updatedProject: project })
+    }
+    catch (err) {
+        console.error(err)
+        res.status(500).send({ message: (err as Error).message })
+    }
+})
+
+router.delete('/:id/override', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const project = await ProjectModel.findById(id);
+
+        if (!project) {
+            res.status(404).json({ message: 'Project not found.' });
+            return;
+        }
+
+        await ProjectModel.updateOne({ _id: id }, { $unset: { override: "" }});
+
+        res.send({ message: 'Override field removed successfully.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: (err as Error).message });
+    }
+});
+
+
+
 router.put('/:id', async (req: Request, res: Response) => {
     try {
         const data = req.body;
 
-        // Parse installments if provided
+
         const parsedInstallments = data.installments && Array.isArray(data.installments) && data.installments.length
             ? JSON.parse(data.installments)
             : [];
@@ -189,10 +251,10 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 });
 
-// Route to get a single project by ID (including installments)
+
 router.get('/:id', async (req: Request, res: Response) => {
     try {
-        const project = await ProjectModel.findOne({ project_id: req.params.id })
+        const project = await ProjectModel.findById(req.params.id)
             .populate({ path: "pis", select: "name" })
             .populate({ path: "copis", select: "name" })
 
@@ -221,16 +283,36 @@ router.get('/', async (req: Request, res: Response) => {
             : projects.filter(project => calculateCurrentYear(project) !== -1);
 
         if (balance === 'true') {
-            const updatedProjects = filteredProjects.map(project => {
+            const updatedProjects = await Promise.all(filteredProjects.map(async project => {
                 const isInvoice = project.project_type === "invoice";
-                const curr = isInvoice ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project);
+                const curr = project.override?.index ?? (isInvoice ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project));
 
                 if (curr !== -1) {
                     const projectHeads = project.project_heads;
 
+                    const result = await ReimbursementModel.aggregate([
+                        {
+                            $match: {
+                                project: project._id, 
+                            },
+                        },
+                        {
+                            $group: {
+                                _id: '$projectHead', 
+                                totalAmountSum: { $sum: '$totalAmount' }, 
+                            },
+                        },
+                    ]);
+                    
+                    const project_head_expenses = result.reduce((acc, { _id, totalAmountSum }) => {
+                        acc[_id] = totalAmountSum; 
+                        return acc;
+                    }, {});
+
+                    
                     projectHeads.forEach((allocations, head) => {
                         const allocation = allocations[curr];
-                        const headExpense = project.project_head_expenses.get(head) || 0;
+                        const headExpense = project_head_expenses[head] || 0;
 
                         allocations[curr] = allocation - headExpense;
                         projectHeads.set(head, [allocations[curr]])
@@ -240,7 +322,7 @@ router.get('/', async (req: Request, res: Response) => {
                 }
 
                 return project;
-            });
+            }));
             res.send(updatedProjects);
             return;
         }
@@ -251,7 +333,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 });
 
-// Route to get the sanction letter by project ID
+
 router.get('/:id/sanction_letter', async (req: Request, res: Response) => {
     try {
         const project = await ProjectModel.findById(req.params.id);
@@ -270,23 +352,23 @@ router.get('/:id/sanction_letter', async (req: Request, res: Response) => {
 
         const fileId = project.sanction_letter_file_id;
 
-        // Create a download stream from GridFS
+
         const downloadStream = gfs.openDownloadStream(fileId);
 
         const filename = `${project.project_name}_sanction_letter.pdf`.replace(/\s/g, '_')
 
-        // Set the correct headers for the file download
+
         res.set('Content-Type', 'application/pdf');
         res.set('Content-Disposition', `inline; filename=${filename}`);
 
-        // Handle potential errors while streaming the file
+
         downloadStream.on('error', (error) => {
             console.error(`Error fetching file: ${error.message}`);
             res.status(404).send('File not found');
             return;
         });
 
-        // Pipe the download stream to the response
+
         downloadStream.pipe(res).on('finish', () => {
             console.log('File streamed successfully.');
         });
@@ -303,25 +385,25 @@ router.get('/:id/util_cert', async (req, res) => {
     try {
         const projectId = req.params.id;
 
-        // 1. Fetch the project by its ID
+
         const project = await ProjectModel.findById(projectId);
         if (!project) {
             res.status(404).send('Project not found');
             return;
         }
 
-        // 2. Find all reimbursements related to this project
+
         const reimbursements = await ReimbursementModel.find({ project: projectId });
 
-        // Initialize a map to track expenses per project head
+
         const expenseSummary = new Map();
 
-        // 3. Calculate total expenses per project head
+
         reimbursements.forEach((reimbursement) => {
             const head = reimbursement.projectHead;
             const totalAmount = reimbursement.totalAmount;
 
-            // Sum up the expenses per head
+
             if (expenseSummary.has(head)) {
                 expenseSummary.set(head, expenseSummary.get(head) + totalAmount);
             } else {
@@ -329,7 +411,7 @@ router.get('/:id/util_cert', async (req, res) => {
             }
         });
 
-        // 4. Generate HTML for the utilization certificate
+
         const html = `
         <!DOCTYPE html>
         <html>
@@ -339,7 +421,7 @@ router.get('/:id/util_cert', async (req, res) => {
             <style>
                 body { font-family: Arial, sans-serif; margin: 10px 20px; }
                 .header { display: flex; justify-content: space-between; align-items: center;}
-                .company-info { text-align: center;} /* Center text and add margin */
+                .company-info { text-align: center;}
                 .header img { max-width: 100px; height: auto; }
                 h1 { text-align: center;}
                 h2 { text-decoration: underline; text-align: center; }
@@ -351,7 +433,7 @@ router.get('/:id/util_cert', async (req, res) => {
         </head>
         <body>
             <div class="header">
-                <img src="${req.protocol}://${req.get('host')}/bitslogo.png" alt="BITS Pilani Logo" /> <!-- Logo on the right -->
+                <img src="${req.protocol}:
                 <div class="company-info">
                     <h1>LAMBDA Lab</h1> <!-- Company Name -->
                     <i>BITS Pilani, Hyderabad Campus</i> <!-- Place -->
@@ -418,7 +500,7 @@ router.get('/:id/util_cert', async (req, res) => {
     }
 });
 
-// Route to delete a project by ID
+
 router.delete('/:id', async (req: Request, res: Response) => {
     try {
         const toBeDeletedProject = await ProjectModel.findById(req.params.id).lean();

@@ -52,7 +52,7 @@ const ProjectList: FunctionComponent = () => {
         columnHelper.accessor("project_name", {
             header: "Project Name",
             cell: (info) => (
-                <Link className="hover:underline text-blue-600" to={`/project/${info.row.original.project_id}`}>
+                <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
                     {info.getValue()}
                 </Link>
             ),
