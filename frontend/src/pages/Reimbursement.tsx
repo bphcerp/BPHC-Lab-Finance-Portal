@@ -11,6 +11,7 @@ import { RiDeleteBin6Line } from 'react-icons/ri';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import { Button } from 'flowbite-react';
 import AddReferenceModal from '../components/AddReferenceModal';
+import PDFLink from '../components/PDFLink';
 
 const ReimbursementPage: React.FC = () => {
     const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
@@ -91,13 +92,7 @@ const ReimbursementPage: React.FC = () => {
             header: "Reference",
             cell: ({ row }) =>
                 row.original.reference_id ? (
-                    <Link
-                        to={`${import.meta.env.VITE_BACKEND_URL}/reimburse/${row.original._id}/reference`}
-                        target="_blank"
-                        className="text-blue-600 hover:underline"
-                    >
-                        View
-                    </Link>
+                    <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/reimburse/${row.original._id}/reference`}>View</PDFLink>
                 ) : (
                     <Button size="xs" color="red" onClick={() => {
                         setReimbursementIdToAddRefTo(row.original._id)

@@ -9,6 +9,7 @@ import TableCustom from "./TableCustom";
 import { Project } from "../types";
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import EditProjectModal from "./EditProjectModal";
+import PDFLink from "./PDFLink";
 
 const ProjectList: FunctionComponent = () => {
     const [projectData, setProjectData] = useState<Array<Project>>([]);
@@ -96,13 +97,7 @@ const ProjectList: FunctionComponent = () => {
             header: "Sanction Letter",
             cell: ({ row }) =>
                 row.original.sanction_letter_file_id ? (
-                    <Link
-                        to={`${import.meta.env.VITE_BACKEND_URL}/project/${row.original._id}/sanction_letter`}
-                        target="_blank"
-                        className="text-blue-600 hover:underline"
-                    >
-                        View
-                    </Link>
+                    <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/project/${row.original._id}/sanction_letter`}>View</PDFLink>
                 ) : (
                     "-"
                 ),
@@ -112,13 +107,11 @@ const ProjectList: FunctionComponent = () => {
         columnHelper.accessor(() => "util_cert", {
             header: "Utilization Certificate",
             cell: ({ row }) => (
-                <Link
-                    to={`${import.meta.env.VITE_BACKEND_URL}/project/${row.original._id}/util_cert`}
-                    target="_blank"
-                    className="text-blue-600 hover:underline"
+                <PDFLink
+                    url={`${import.meta.env.VITE_BACKEND_URL}/project/${row.original._id}/util_cert`}
                 >
                     View
-                </Link>
+                </PDFLink>
             ),
             enableColumnFilter: false,
             enableSorting: false,
@@ -161,7 +154,7 @@ const ProjectList: FunctionComponent = () => {
             ),
             enableColumnFilter: false,
             enableSorting: false,
-        })        
+        })
     ];
 
     const openDeleteModal = (project: Project) => {
@@ -199,7 +192,7 @@ const ProjectList: FunctionComponent = () => {
         }
     };
 
-    const handleSaveProject = async (updatedProject : any) => {
+    const handleSaveProject = async (updatedProject: any) => {
         try {
             const response = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/project/${updatedProject._id}`,
