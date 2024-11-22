@@ -94,7 +94,6 @@ router.get('/:projectId/:head', async (req, res) => {
     try {
         const { projectId, head } = req.params
         const { index, all } = req.query
-        console.log({ project: projectId, ...(all === "undefined" ? {projectHead: head} : {}), ...(index !== "undefined" ? { year_or_installment : index } : {}) })
         const reimbursements = await ReimbursementModel.find({ project: projectId, ...(all === "undefined" ? {projectHead: head} : {}), ...(index !== "undefined" ? { year_or_installment : index } : {}) }).populate('expenses');
         res.status(200).json(reimbursements);
     } catch (error) {
