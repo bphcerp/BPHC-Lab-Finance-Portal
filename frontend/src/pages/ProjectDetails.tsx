@@ -133,7 +133,7 @@ const ProjectDetails = () => {
                 { credentials: "include" }
             );
             const data = await response.json();
-            setHeadExpensesLabel(`Expenses under ${head} for Year ${currentYear}`)
+            setHeadExpensesLabel(`Expenses under ${head} for Year ${currentYear+1}`)
             setHeadExpenses(data);
             setIsHeadExpensesModalOpen(true);
         } catch (error) {
@@ -273,6 +273,9 @@ const ProjectDetails = () => {
                                                 </div>
                                             </th>
                                         ))}
+                                        <th className="py-3 px-6 text-center text-gray-800 font-semibold">
+                                            Total
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -319,6 +322,9 @@ const ProjectDetails = () => {
                                                             N/A
                                                         </td>
                                                     ))}
+                                                    <td className="py-3 px-6 text-gray-800 text-center font-medium">
+                                                        {allocations.reduce((acc, allocation) => acc+allocation, 0)}
+                                                    </td>
                                             </tr>
                                         )
                                     )}
@@ -384,8 +390,8 @@ const ProjectDetails = () => {
                     </div>
 
 
-                    <h2 className="text-2xl font-semibold text-gray-700 mt-6">Current Financial Year</h2>
-                    <div className="flex p-5">
+                    <h2 className="text-2xl font-semibold text-gray-700 mt-6">{projectData.project_type === "yearly"?"Year" : "Installment"} {currentYear+1} Expense Sheet</h2>
+                    <div className="flex py-5">
                         {!isProjectOver ? <table className="min-w-full bg-white shadow-md rounded-lg mt-2">
                             <thead className="bg-gray-200">
                                 <tr>

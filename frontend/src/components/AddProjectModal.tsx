@@ -157,7 +157,6 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     formData.append("pis", JSON.stringify(pis));
     formData.append("copis", JSON.stringify(coPIs));
     formData.append("project_heads", JSON.stringify(projectHeads));
-    formData.append("project_head_expenses", JSON.stringify(headTotals));
     formData.append("negative_heads", JSON.stringify(negativeHeads));
 
     if (projectType === "invoice" && numberOfInstallments > 0) {

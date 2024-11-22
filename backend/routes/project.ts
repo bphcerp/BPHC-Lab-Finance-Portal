@@ -392,6 +392,8 @@ router.get('/:id/util_cert', async (req, res) => {
             return;
         }
 
+        const curr = project.override?.index ?? (project.project_type==="invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project))
+
 
         const reimbursements = await ReimbursementModel.find({ project: projectId });
 
@@ -417,7 +419,7 @@ router.get('/:id/util_cert', async (req, res) => {
         <html>
         <head>
             <meta charset="utf-8">
-            <title>Utilization Certificate</title>
+            <title>Utilization Certificate for ${project.project_type==="yearly"?"Year":"Installment"} ${curr+1}</title>
             <style>
                 body { font-family: Arial, sans-serif; margin: 10px 20px; }
                 .header { display: flex; justify-content: space-between; align-items: center;}
@@ -458,7 +460,7 @@ router.get('/:id/util_cert', async (req, res) => {
                 </thead>
                 <tbody>
                     ${Array.from(project.project_heads).map(([head, amounts]) => {
-            const totalAllocated = amounts.reduce((sum, amount) => sum + amount, 0);
+            const totalAllocated = project.project_heads.get(head)![curr];
             const expenses = expenseSummary.get(head) || 0;
             const remaining = totalAllocated - expenses;
 
