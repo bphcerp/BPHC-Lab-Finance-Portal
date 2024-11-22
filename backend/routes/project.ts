@@ -385,9 +385,6 @@ router.get('/:id/util_cert', async (req, res) => {
     try {
         const projectId = req.params.id;
 
-        console.log("haha")
-
-
         const project = await ProjectModel.findById(projectId);
         if (!project) {
             res.status(404).send('Project not found');
