@@ -28,6 +28,7 @@ const upload = multer({ storage });
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 
 export const calculateCurrentYear = (data: Project) => {
+    if (data.override) return data.override.index
     const curr = new Date();
 
     if (curr > new Date(data.end_date!)) {
@@ -44,6 +45,7 @@ export const calculateCurrentYear = (data: Project) => {
 }
 
 export const getCurrentInstallmentIndex = (project: Project): number => {
+    if (project.override) return project.override.index
     const currentDate = new Date();
 
     for (let i = 0; i < project.installments!.length; i++) {
@@ -391,7 +393,7 @@ router.get('/:id/util_cert', async (req, res) => {
             return;
         }
 
-        const curr = project.override?.index ?? (project.project_type==="invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project))
+        const curr = project.project_type==="invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
 
 
         const reimbursements = await ReimbursementModel.find({ project: projectId });

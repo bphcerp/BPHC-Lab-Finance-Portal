@@ -32,7 +32,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
         const fetchProjects = async () => {
             try {
                 const response = await fetch(
-                    `${import.meta.env.VITE_BACKEND_URL}/project?balance=true&past=true`,
+                    `${import.meta.env.VITE_BACKEND_URL}/project?balance=true`,
                     { credentials: 'include' }
                 );
                 const data = await response.json();

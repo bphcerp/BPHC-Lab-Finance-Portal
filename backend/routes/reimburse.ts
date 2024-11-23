@@ -211,7 +211,7 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
             description,
             submittedAt: new Date(),
             reference_id: referenceId,
-            year_or_installment : project.override?.index ?? (project.project_type==="invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project))
+            year_or_installment : project.project_type==="invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
         });
 
         await reimbursement.save();

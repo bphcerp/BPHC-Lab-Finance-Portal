@@ -10,6 +10,7 @@ import { Project } from "../types";
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import EditProjectModal from "./EditProjectModal";
 import PDFLink from "./PDFLink";
+import { getCurrentInstallmentIndex, calculateCurrentYear } from "../pages/ProjectDetails";
 
 const ProjectList: FunctionComponent = () => {
     const [projectData, setProjectData] = useState<Array<Project>>([]);
@@ -106,13 +107,14 @@ const ProjectList: FunctionComponent = () => {
         }),
         columnHelper.accessor(() => "util_cert", {
             header: "Utilization Certificate",
-            cell: ({ row }) => (
-                <PDFLink
+            cell: ({ row }) => {
+                const curr = row.original.project_type === "invoice" ? getCurrentInstallmentIndex(row.original) : calculateCurrentYear(row.original)
+                return (curr >=0 ? <PDFLink
                     url={`${import.meta.env.VITE_BACKEND_URL}/project/${row.original._id}/util_cert`}
                 >
                     View
-                </PDFLink>
-            ),
+                </PDFLink> : "NA")
+            },
             enableColumnFilter: false,
             enableSorting: false,
         }),
