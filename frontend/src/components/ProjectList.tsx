@@ -94,6 +94,20 @@ const ProjectList: FunctionComponent = () => {
                 info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
             enableColumnFilter: false,
         }),
+        columnHelper.accessor(row => (row.project_type === "invoice" ? getCurrentInstallmentIndex(row) : calculateCurrentYear(row)) >= 0 ? "Ongoing" : "Ended", {
+            header: 'Category',
+            cell: info => {
+                return <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${info.getValue() === "Ongoing" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        } shadow-sm`}
+                >
+                    {info.getValue()}
+                </span>
+            },
+            meta: {
+                filterType: "dropdown"
+            },
+        }),
         columnHelper.accessor("sanction_letter_file_id", {
             header: "Sanction Letter",
             cell: ({ row }) =>
@@ -106,7 +120,7 @@ const ProjectList: FunctionComponent = () => {
             enableSorting: false,
         }),
         columnHelper.accessor(() => "util_cert", {
-            header: "Utilization Certificate",
+            header: "UC",
             cell: ({ row }) => {
                 const curr = row.original.project_type === "invoice" ? getCurrentInstallmentIndex(row.original) : calculateCurrentYear(row.original)
                 return (curr >=0 ? <PDFLink

@@ -7,6 +7,7 @@ import { createColumnHelper } from '@tanstack/react-table'
 import TableCustom from "../components/TableCustom";
 import { Link } from "react-router-dom";
 import { Project } from "../types";
+import { getCurrentInstallmentIndex, calculateCurrentYear } from "./ProjectDetails";
 
 
 const ProjectList: FunctionComponent = () => {
@@ -83,6 +84,20 @@ const ProjectList: FunctionComponent = () => {
             header: "End Date",
             cell: info => info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
             enableColumnFilter: false
+        }),
+        columnHelper.accessor(row => (row.project_type === "invoice" ? getCurrentInstallmentIndex(row) : calculateCurrentYear(row)) >= 0 ? "Ongoing" : "Ended", {
+            header: 'Category',
+            cell: info => {
+                return <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${info.getValue() === "Ongoing" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        } shadow-sm`}
+                >
+                    {info.getValue()}
+                </span>
+            },
+            meta: {
+                filterType: "dropdown"
+            },
         }),
         columnHelper.accessor(row => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1), {
             header: "Project Type",

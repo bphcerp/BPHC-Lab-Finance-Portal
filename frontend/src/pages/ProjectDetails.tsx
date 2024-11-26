@@ -85,7 +85,11 @@ const ProjectDetails = () => {
             .then((data) => {
                 setProjectData(data)
                 const curr = data.project_type === "invoice" ? getCurrentInstallmentIndex(data) : calculateCurrentYear(data)
-                curr >= 0 ? setCurrentYear(curr) : setIsProjectOver(true)
+                if (curr >=0) {
+                    setCurrentYear(curr)
+                    setIsProjectOver(false)
+                }
+                else setIsProjectOver(true)
             })
             .catch((e) => {
                 toastError("Something went wrong");
