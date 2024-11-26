@@ -231,7 +231,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
                     }}
                 />
             ) : (
-                <div>Loading data...</div>
+                <div>No data to show</div>
             )}
         </div>
     );

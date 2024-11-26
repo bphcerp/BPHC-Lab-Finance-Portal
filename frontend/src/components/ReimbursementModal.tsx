@@ -6,10 +6,11 @@ interface ReimbursementModalProps {
     isOpen: boolean;
     onClose: () => void;
     label: string
+    showHead? : boolean
     reimbursements: Reimbursement[];
 }
 
-const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen, onClose, label, reimbursements }) => {
+const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen, onClose, label,showHead, reimbursements }) => {
     const totalAmount = reimbursements.reduce((acc, reimbursement) => acc + reimbursement.totalAmount, 0);
 
     return (
@@ -23,6 +24,7 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                 <tr>
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Submitted At</th>
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Title</th>
+                                    {showHead?<th className="py-3 px-6 text-center text-gray-800 font-semibold">Project Head</th>:<></>}
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Total Amount</th>
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Expenses</th>
                                 </tr>
@@ -34,6 +36,7 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                             {new Date(reimbursement.createdAt).toLocaleDateString('en-IN')}
                                         </td>
                                         <td className="py-3 px-6 text-gray-600 text-center">{reimbursement.title}</td>
+                                        {showHead?<td className="py-3 px-6 text-gray-600 text-center">{reimbursement.projectHead}</td>:<></>}
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             {reimbursement.totalAmount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
                                         </td>
@@ -49,6 +52,7 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                 <tr className="border-t bg-gray-100 font-semibold">
                                     <td className="py-3 px-6 text-center">Total Expense Amount</td>
                                     <td className="py-3 px-6 text-center"></td>
+                                    {showHead?<td className="py-3 px-6 text-center"></td>:<></>}
                                     <td className="py-3 px-6 text-center">
                                         {totalAmount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
                                     </td>

@@ -59,23 +59,11 @@ router.post('/', async (req: Request, res: Response) => {
 
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const expensesData = await ExpenseModel.find()
+    const expenses = await ExpenseModel.find()
       .populate<{ reimbursedID: { _id: ObjectId; title: string; paidStatus: boolean } }>({ path: 'reimbursedID', select: 'title paidStatus' })
       .populate<{ settled: { _id: Schema.Types.ObjectId, type: string } }>('settled')
       .populate('category paidBy')
       .lean();
-
-    const expenses = expensesData.sort((a, b) => {
-      const aPaidStatus = a.reimbursedID?.paidStatus ?? false;
-      const bPaidStatus = b.reimbursedID?.paidStatus ?? false;
-
-      const reimbursementSort = (a.reimbursedID === null ? 0 : 1) - (b.reimbursedID === null ? 0 : 1) ||
-        (aPaidStatus ? 1 : 0) - (bPaidStatus ? 1 : 0);
-
-      if (reimbursementSort !== 0) return reimbursementSort;
-
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-    });
 
     res.status(200).send(expenses);
   } catch (error) {

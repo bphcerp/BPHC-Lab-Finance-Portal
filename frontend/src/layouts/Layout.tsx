@@ -25,7 +25,7 @@ const Layout: FunctionComponent = () => {
     <div className="flex flex-col w-screen h-screen">
       <NewFinancialYearModal isOpen={isReset} onClose={() => setIsReset(false)}/>
       <SidebarComponent isOpen={isSideBarOpen} setIsOpen={setISSideBarOpen} />
-      <div className="header relative flex w-full h-14 px-4 bg-gray-100 shadow-lg items-center justify-between">
+      <div className="header relative shrink-0 shadow-lg z-10 flex w-full h-14 px-4 bg-gray-100 items-center justify-between">
         <div className="flex items-center space-x-3">
           {isSideBarOpen ? (
             <RxCross2

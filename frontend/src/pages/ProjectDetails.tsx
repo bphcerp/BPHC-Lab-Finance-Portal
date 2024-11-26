@@ -75,6 +75,7 @@ const ProjectDetails = () => {
     const [headExpensesLabel, setHeadExpensesLabel] = useState<string>()
     const [headExpenses, setHeadExpenses] = useState<Array<Expense>>([])
     const [resetOverride, setResetOverride] = useState(false)
+    const [showHead, setShowHead] = useState(false)
 
     const fetchProjectData = () => {
         fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${id}`, {
@@ -117,7 +118,8 @@ const ProjectDetails = () => {
                 { credentials: "include" }
             );
             const data = await response.json();
-            setLabel(all ? projectData?.project_name : `${head}${index !== undefined ? ` Year ${index + 1}` : ""}`)
+            setLabel(` ${head??""}${all ? projectData?.project_name : ""}${index !== undefined ? ` ${projectData?.project_type === "invoice"? "Installment" :'Year'} ${index + 1}` : ""}`)
+            setShowHead(head ? false : true)
             setReimbursements(data);
             setIsModalOpen(true);
         } catch (error) {
@@ -133,7 +135,7 @@ const ProjectDetails = () => {
                 { credentials: "include" }
             );
             const data = await response.json();
-            setHeadExpensesLabel(`Expenses under ${head} for Year ${currentYear+1}`)
+            setHeadExpensesLabel(`Expenses under ${head} for Year ${currentYear + 1}`)
             setHeadExpenses(data);
             setIsHeadExpensesModalOpen(true);
         } catch (error) {
@@ -268,7 +270,11 @@ const ProjectDetails = () => {
                                                 className={`py-3 px-6 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
                                             >
                                                 <div className="flex flex-col">
-                                                    {projectData.project_type === "invoice" ? "Installment" : "Year"} {i + 1}
+                                                    <button
+                                                        className="text-blue-600 text-lg hover:underline"
+                                                        onClick={() => fetchReimbursements({ index:i, all: true })}>
+                                                        {projectData.project_type === "invoice" ? "Installment" : "Year"} {i + 1}
+                                                    </button>
                                                     {projectData.project_type === "invoice" ? <span>{formatDate(projectData.installments![i].start_date)} - {formatDate(projectData.installments![i].end_date)}</span> : <></>}
                                                 </div>
                                             </th>
@@ -322,9 +328,9 @@ const ProjectDetails = () => {
                                                             N/A
                                                         </td>
                                                     ))}
-                                                    <td className="py-3 px-6 text-gray-800 text-center font-medium">
-                                                        {allocations.reduce((acc, allocation) => acc+allocation, 0)}
-                                                    </td>
+                                                <td className="py-3 px-6 text-gray-800 text-center font-medium">
+                                                    {formatCurrency(allocations.reduce((acc, allocation) => acc + allocation, 0))}
+                                                </td>
                                             </tr>
                                         )
                                     )}
@@ -390,7 +396,7 @@ const ProjectDetails = () => {
                     </div>
 
 
-                    <h2 className="text-2xl font-semibold text-gray-700 mt-6">{projectData.project_type === "yearly"?"Year" : "Installment"} {currentYear+1} Expense Sheet</h2>
+                    <h2 className="text-2xl font-semibold text-gray-700 mt-6">Current ( {projectData.project_type === "yearly" ? "Year" : "Installment"} {currentYear + 1} ) Expense Sheet</h2>
                     <div className="flex py-5">
                         {!isProjectOver ? <table className="min-w-full bg-white shadow-md rounded-lg mt-2">
                             <thead className="bg-gray-200">
@@ -454,6 +460,7 @@ const ProjectDetails = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 label={label!}
+                showHead={showHead}
                 reimbursements={reimbursements}
             />
             <ProjectHeadExpenses

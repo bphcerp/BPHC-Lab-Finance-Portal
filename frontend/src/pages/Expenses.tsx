@@ -30,12 +30,12 @@ const ExpensesPage: React.FC = () => {
 
     const columns = [
         columnHelper.accessor('createdAt', {
-            header: 'Created At',
+            header: 'Created On',
             cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
             enableColumnFilter: false
         }),
         columnHelper.accessor('updatedAt', {
-            header: 'Updated At',
+            header: 'Updated On',
             cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
             enableColumnFilter: false
         }),
@@ -397,6 +397,13 @@ const ExpensesPage: React.FC = () => {
             </div>
             <TableCustom data={expenses} columns={columns} setSelected={(selectedExpenses: Array<Expense>) => {
                 setSelectedExpenses(new Set(selectedExpenses.map(expense => expense._id)))
+            }} initialState={{
+                sorting : [
+                    {
+                        id : 'updatedAt',
+                        desc : true
+                    }
+                ]
             }} />
         </div>
     ) : <div>

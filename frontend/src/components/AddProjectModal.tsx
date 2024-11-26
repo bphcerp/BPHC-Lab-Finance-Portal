@@ -77,10 +77,10 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
 
     setProjectHeads((prevHeads) => ({
       ...prevHeads,
-      [newHeadName]: Array(count).fill(0),
+      [newHeadName.trim()]: Array(count).fill(0),
     }));
 
-    setEditMode((prev) => ({ ...prev, [newHeadName]: true }))
+    setEditMode((prev) => ({ ...prev, [newHeadName.trim()]: true }))
 
 
     setNewHeadName("");

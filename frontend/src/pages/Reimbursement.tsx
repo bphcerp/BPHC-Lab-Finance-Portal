@@ -47,7 +47,7 @@ const ReimbursementPage: React.FC = () => {
             }
         }),
         columnHelper.accessor('createdAt', {
-            header: 'Updated At',
+            header: 'Filed On',
             cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
             enableColumnFilter: false
         }),
@@ -258,7 +258,14 @@ const ReimbursementPage: React.FC = () => {
             <div className='py-2'>
                 <TableCustom data={reimbursements} columns={columns} setSelected={(selectedReimbursements: Array<Reimbursement>) => {
                     setSelectedReimbursements(new Set(selectedReimbursements.map(reimbursement => reimbursement._id)))
-                }} />
+                }} initialState={{
+                    sorting : [
+                        {
+                            id : 'createdAt',
+                            desc : true
+                        }
+                    ]
+                }}/>
             </div>
         </div>
     );
