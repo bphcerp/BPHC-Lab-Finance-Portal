@@ -64,24 +64,6 @@ const ProjectList: FunctionComponent = () => {
             header: "Project Title",
             enableColumnFilter: true,
         }),
-        columnHelper.accessor(
-            (row) => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1),
-            {
-                header: "Project Type",
-                meta: {
-                    filterType: "dropdown",
-                },
-            }
-        ),
-        columnHelper.accessor("total_amount", {
-            header: "Granted Amount",
-            cell: (info) =>
-                info.getValue().toLocaleString("en-IN", {
-                    style: "currency",
-                    currency: "INR",
-                }),
-            enableColumnFilter: false,
-        }),
         columnHelper.accessor("start_date", {
             header: "Start Date",
             cell: (info) =>
@@ -94,8 +76,17 @@ const ProjectList: FunctionComponent = () => {
                 info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
             enableColumnFilter: false,
         }),
+        columnHelper.accessor(
+            (row) => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1),
+            {
+                header: "Project Type",
+                meta: {
+                    filterType: "dropdown",
+                },
+            }
+        ),
         columnHelper.accessor(row => (row.project_type === "invoice" ? getCurrentInstallmentIndex(row) : calculateCurrentYear(row)) >= 0 ? "Ongoing" : "Ended", {
-            header: 'Category',
+            header: 'Status',
             cell: info => {
                 return <span
                     className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${info.getValue() === "Ongoing" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
@@ -107,6 +98,15 @@ const ProjectList: FunctionComponent = () => {
             meta: {
                 filterType: "dropdown"
             },
+        }),
+        columnHelper.accessor("total_amount", {
+            header: "Granted Amount",
+            cell: (info) =>
+                info.getValue().toLocaleString("en-IN", {
+                    style: "currency",
+                    currency: "INR",
+                }),
+            enableColumnFilter: false,
         }),
         columnHelper.accessor("sanction_letter_file_id", {
             header: "Sanction Letter",

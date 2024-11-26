@@ -85,8 +85,14 @@ const ProjectList: FunctionComponent = () => {
             cell: info => info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
             enableColumnFilter: false
         }),
+        columnHelper.accessor(row => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1), {
+            header: "Project Type",
+            meta : {
+                filterType : "dropdown"
+            }
+        }),
         columnHelper.accessor(row => (row.project_type === "invoice" ? getCurrentInstallmentIndex(row) : calculateCurrentYear(row)) >= 0 ? "Ongoing" : "Ended", {
-            header: 'Category',
+            header: 'Status',
             cell: info => {
                 return <span
                     className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${info.getValue() === "Ongoing" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
@@ -98,12 +104,6 @@ const ProjectList: FunctionComponent = () => {
             meta: {
                 filterType: "dropdown"
             },
-        }),
-        columnHelper.accessor(row => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1), {
-            header: "Project Type",
-            meta : {
-                filterType : "dropdown"
-            }
         }),
         columnHelper.accessor('total_amount', {
             header: "Granted Amount",
