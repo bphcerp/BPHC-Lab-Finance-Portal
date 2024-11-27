@@ -52,7 +52,7 @@ export const getCurrentInstallmentIndex = (project: Project): number => {
         }
     }
 
-    return 0; // Return null if no active installment is found
+    return -1
 }
 
 const formatDate = (dateStr?: string) =>

@@ -58,7 +58,7 @@ export const getCurrentInstallmentIndex = (project: Project): number => {
         }
     }
 
-    return 0;
+    return -1;
 }
 
 
