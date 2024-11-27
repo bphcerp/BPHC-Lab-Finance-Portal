@@ -28,6 +28,11 @@ const ReimbursementPage: React.FC = () => {
     const columnHelper = createColumnHelper<Reimbursement>();
 
     const columns = [
+        columnHelper.accessor('createdAt', {
+            header: 'Filed On',
+            cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
+            enableColumnFilter: false
+        }),
         columnHelper.accessor('title', {
             header: 'Title',
         }),
@@ -45,11 +50,6 @@ const ReimbursementPage: React.FC = () => {
             meta: {
                 filterType: "dropdown"
             }
-        }),
-        columnHelper.accessor('createdAt', {
-            header: 'Filed On',
-            cell: info => new Date(info.getValue()).toLocaleDateString('en-IN'),
-            enableColumnFilter: false
         }),
         columnHelper.accessor(row => row.paidStatus ? "Paid" : "Unpaid", {
             header: 'Category',
