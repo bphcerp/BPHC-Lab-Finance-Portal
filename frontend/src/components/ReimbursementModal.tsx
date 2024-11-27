@@ -22,7 +22,7 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                         <table className="min-w-full bg-white rounded-lg">
                             <thead className="bg-gray-200">
                                 <tr>
-                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Submitted At</th>
+                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Submitted On</th>
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Title</th>
                                     {showHead?<th className="py-3 px-6 text-center text-gray-800 font-semibold">Project Head</th>:<></>}
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Total Amount</th>

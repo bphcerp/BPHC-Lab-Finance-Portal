@@ -31,7 +31,7 @@ const PDFLink: FunctionComponent<PDFLinkProps> = ({ url, children }) => {
     };
 
     return (
-        <div>
+        <div className="flex justify-center">
             <button onClick={handleClick} className="text-blue-600 hover:underline">
                 {children}
             </button>

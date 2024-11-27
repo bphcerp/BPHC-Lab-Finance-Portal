@@ -82,19 +82,9 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.get('/:projectId', async (req, res) => {
     try {
-        const { projectId } = req.params;
-        const reimbursements = await ReimbursementModel.find({ project: projectId }).populate('expenses');
-        res.status(200).json(reimbursements);
-    } catch (error) {
-        res.status(400).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
-    }
-});
-
-router.get('/:projectId/:head', async (req, res) => {
-    try {
-        const { projectId, head } = req.params
-        const { index, all } = req.query
-        const reimbursements = await ReimbursementModel.find({ project: projectId, ...(all === "undefined" ? {projectHead: head} : {}), ...(index !== "undefined" ? { year_or_installment : index } : {}) }).populate('expenses');
+        const { projectId } = req.params
+        const { head, index, all } = req.query
+        const reimbursements = await ReimbursementModel.find({ project: projectId, ...(all === "undefined" ? { projectHead: head } : {}), ...(index !== "undefined" ? { year_or_installment: index } : {}) }).populate('expenses');
         res.status(200).json(reimbursements);
     } catch (error) {
         res.status(400).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
@@ -104,7 +94,7 @@ router.get('/:projectId/:head', async (req, res) => {
 router.get('/:projectId/:head/expenses', async (req, res) => {
     try {
         const { projectId, head } = req.params
-        const reimbursements = await ReimbursementModel.find({ project: projectId, projectHead : head }).populate('expenses');
+        const reimbursements = await ReimbursementModel.find({ project: projectId, projectHead: head }).populate('expenses');
         res.status(200).json(reimbursements.flatMap(reimbursement => reimbursement.expenses));
     } catch (error) {
         res.status(400).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
@@ -196,7 +186,7 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
 
         const project = await ProjectModel.findById(projectId)
 
-        if (!project){
+        if (!project) {
             res.status(404).send("Project ID not found!")
             return
         }
@@ -211,7 +201,7 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
             description,
             submittedAt: new Date(),
             reference_id: referenceId,
-            year_or_installment : project.project_type==="invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
+            year_or_installment: project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
         });
 
         await reimbursement.save();
@@ -267,13 +257,64 @@ router.post('/:id/reference', upload.single('referenceDocument'), async (req: Re
 
         reimbursement.reference_id = referenceId
         await reimbursement.save()
-        res.send({message : "Reference upload sucessful!"})
+        res.send({ message: "Reference upload sucessful!" })
     }
-    catch(err){
+    catch (err) {
         console.log(err)
-        res.status(500).send({message : `Error Occured : ${(err as Error).message}`})
+        res.status(500).send({ message: `Error Occured : ${(err as Error).message}` })
     }
 })
+
+router.put('/:id', upload.single('referenceDocument'), async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { project, projectHead, totalAmount, title, description } = req.body;
+
+    const expenses = JSON.parse(req.body.expenses)
+
+    try {
+
+        let reimbursementToBeEdited = await ReimbursementModel.findById(id)
+
+        if (!reimbursementToBeEdited) {
+            res.status(404).json({ message: 'Reimbursement not found' });
+            return;
+        }
+
+        let referenceId: mongoose.Types.ObjectId | null = null
+
+        if (req.file) {
+            const readableStream = new Readable();
+            readableStream.push(req.file.buffer);
+            readableStream.push(null);
+
+            const uploadStream = gfs.openUploadStream(req.file.originalname, {
+                contentType: req.file.mimetype || 'application/octet-stream'
+            });
+
+            await new Promise<void>((resolve, reject) => {
+                readableStream.pipe(uploadStream)
+                    .on("error", (err) => reject(err))
+                    .on("finish", () => {
+                        referenceId = uploadStream.id;
+                        resolve();
+                    });
+            });
+
+            if (reimbursementToBeEdited?.reference_id) {
+                await gfs.delete(reimbursementToBeEdited.reference_id);
+            }
+        }
+
+        await ReimbursementModel.updateOne({_id : id}, {
+            $set : { project,projectHead,title,description,expenses, reference_id : referenceId ?? reimbursementToBeEdited.reference_id }
+        })
+
+        res.status(200).json();
+    } catch (error) {
+        console.error('Error updating reimbursement:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 router.delete('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;

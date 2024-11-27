@@ -118,7 +118,7 @@ const ProjectDetails = () => {
     const fetchReimbursements = async ({ head, index, all }: { head?: string, index?: number, all?: boolean }) => {
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/reimburse/${projectData!._id}/${head}?index=${index}&all=${all}`,
+                `${import.meta.env.VITE_BACKEND_URL}/reimburse/${projectData!._id}/?head=${head}&index=${index}&all=${all}`,
                 { credentials: "include" }
             );
             const data = await response.json();

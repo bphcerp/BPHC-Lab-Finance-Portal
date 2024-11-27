@@ -114,6 +114,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                             value={reimbursementTitle}
                             onChange={(e) => setReimbursementTitle(e.target.value)}
                             placeholder="Enter reimbursement title"
+                            required
                         />
                         <TextInput
                             value={description}
@@ -122,7 +123,11 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                         />
                         <Select
                             value={selectedProject}
-                            onChange={(e) => setSelectedProject(e.target.value)}
+                            onChange={(e) => {
+                                setSelectedProject(e.target.value)
+                                setSelectedProjectHead("")
+                            }}
+                            required
                         >
                             <option value="">Select a Project</option>
                             {projects.map((project) => (
@@ -135,6 +140,7 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                             <Select
                                 value={selectedProjectHead}
                                 onChange={(e) => setSelectedProjectHead(e.target.value)}
+                                required
                             >
                                 <option value="">Select a Project Head</option>
                                 {Object.entries(
@@ -194,7 +200,9 @@ const FileReimbursementModal: React.FC<FileReimbursementModalProps> = ({
                         <Button type="button" onClick={onClose} disabled={loading} color="failure">
                             Cancel
                         </Button>
-                        <Button type="submit" color="blue" disabled={loading}>
+                        <Button type="submit" color="blue" disabled={selectedProject && selectedProjectHead && !projects.find((p) => p._id === selectedProject)?.negative_heads.includes(selectedProjectHead) &&
+                                    (projects.find((p) => p._id === selectedProject)!.project_heads[selectedProjectHead][0] <
+                                        totalExpenseAmount) || loading}>
                             {loading ? 'Submitting...' : 'Submit Reimbursement'}
                         </Button>
                     </div>

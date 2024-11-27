@@ -89,17 +89,22 @@ router.get('/:id/total-expenses', async (req: Request, res: Response) => {
     }
 
     try {
+
+        const project = await ProjectModel.findById(id)
         
-        if (!mongoose.Types.ObjectId.isValid(id)) {
+        if (!project) {
             res.status(400).send({ message: 'Invalid project ID' });
             return;
         }
+
+        console.log(project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project))
 
         
         const result = await ReimbursementModel.aggregate([
             {
                 $match: {
-                    project: new mongoose.Types.ObjectId(id), 
+                    project: project._id,
+                    year_or_installment :  project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
                 },
             },
             {
@@ -287,7 +292,7 @@ router.get('/', async (req: Request, res: Response) => {
         if (balance === 'true') {
             const updatedProjects = await Promise.all(filteredProjects.map(async project => {
                 const isInvoice = project.project_type === "invoice";
-                const curr = project.override?.index ?? (isInvoice ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project));
+                const curr = isInvoice ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project);
 
                 if (curr !== -1) {
                     const projectHeads = project.project_heads;
@@ -295,7 +300,8 @@ router.get('/', async (req: Request, res: Response) => {
                     const result = await ReimbursementModel.aggregate([
                         {
                             $match: {
-                                project: project._id, 
+                                project: project._id,
+                                year_or_installment : curr
                             },
                         },
                         {
