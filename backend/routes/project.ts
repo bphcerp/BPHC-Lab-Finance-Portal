@@ -97,8 +97,6 @@ router.get('/:id/total-expenses', async (req: Request, res: Response) => {
             return;
         }
 
-        console.log(project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project))
-
         
         const result = await ReimbursementModel.aggregate([
             {

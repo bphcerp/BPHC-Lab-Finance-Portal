@@ -160,8 +160,6 @@ const ReimbursementPage: React.FC = () => {
         if (!reimbursementToEdit) return;
         try {
 
-            console.log(formData)
-
             const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceDocument } = formData;
             
             const data = new FormData();

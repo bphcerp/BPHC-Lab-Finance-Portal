@@ -89,18 +89,13 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
             setReimbursementTitle(reimbursement.title)
             setDescription(reimbursement.description)
             setSelectedProject(reimbursement.project._id!)
-            console.log(reimbursement.project._id)
             setSelectedProjectHead(reimbursement.projectHead)
             setTotalExpenseAmount(reimbursement.expenses.reduce((acc, obj) => acc + obj.amount, 0))
         }
     }, [isOpen]);
 
-    useEffect(() => {
-        console.log(isOpen)
-    }, [])
-
     return (
-        projects.length && isOpen && (
+        (projects.length && isOpen) ?(
             <Modal show={isOpen} onClose={onClose}>
                 <Modal.Header>Edit Reimbursement</Modal.Header>
                 <Modal.Body>
@@ -218,7 +213,7 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
                     </form>
                 </Modal.Body>
             </Modal>
-        )
+        ) : <></>
     );
 };
 
