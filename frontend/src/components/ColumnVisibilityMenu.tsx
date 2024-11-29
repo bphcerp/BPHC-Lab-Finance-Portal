@@ -17,7 +17,7 @@ function ColumnVisibilityMenu<TData,>({ table }: { table: Table<TData> }) {
       {/* Submenu */}
       {isMenuOpen && (
         <div
-          className="absolute z-[5] top-full left-0 mt-2 w-96 bg-white border border-gray-300 rounded-lg shadow-lg"
+          className="absolute z-[5] top-full left-0 mt-2 w-auto bg-white border border-gray-300 rounded-lg shadow-lg"
         >
           <div className="px-4 py-2 border-b border-gray-300 bg-gray-100">
             <label className="flex items-center gap-2 text-gray-700">

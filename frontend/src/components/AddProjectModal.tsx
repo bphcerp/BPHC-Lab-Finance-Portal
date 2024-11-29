@@ -492,7 +492,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                   <div className="flex flex-wrap gap-x-3">
                     {projectHeads[head].map((value, idx) => (
                       editMode[head] ? <div key={idx} className="mt-2 space-y-2">
-                        <Label htmlFor={`${head}_${idx}`} value={`Year ${idx + 1}`} />
+                        <Label htmlFor={`${head}_${idx}`} value={`${projectType === "invoice" ? "Installment" : 'Year'} ${idx + 1}`} />
                         <TextInput
                           id={`${head}_${idx}`}
                           type="number"
