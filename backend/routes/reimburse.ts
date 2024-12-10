@@ -110,7 +110,7 @@ router.post('/paid', async (req: Request, res: Response) => {
             return;
         }
 
-        const reimbursements = await ReimbursementModel.find({ _id: { $in: reimbursementIds } })
+        let reimbursements = await ReimbursementModel.find({ _id: { $in: reimbursementIds } })
             .populate<{ expenses: { amount: number, settled: { type: String } }[] }>({
                 path: 'expenses',
                 populate: {
@@ -119,9 +119,11 @@ router.post('/paid', async (req: Request, res: Response) => {
                 }
             });
 
+        reimbursements = reimbursements.filter(reimbursement => !reimbursement.paidStatus)
+
 
         if (!reimbursements || reimbursements.length === 0) {
-            res.status(404).json({ message: 'No reimbursements found with the provided IDs.' });
+            res.status(404).json({ message: 'No valid reimbursements found to be marked paid.' });
             return;
         }
 
@@ -149,7 +151,63 @@ router.post('/paid', async (req: Request, res: Response) => {
             { paidStatus: true }
         );
 
-        res.status(200).json({ message: 'Reimbursements updated successfully, and project head expenses updated.' });
+        res.status(200).json({ message: 'Reimbursements updated successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating reimbursements: ' + (error as Error).message });
+    }
+});
+
+router.post('/unpaid', async (req: Request, res: Response) => {
+    try {
+        const { reimbursementIds } = req.body;
+
+        if (!Array.isArray(reimbursementIds) || reimbursementIds.length === 0) {
+            res.status(400).json({ message: 'Invalid input. Please provide an array of reimbursement IDs.' });
+            return;
+        }
+
+        let reimbursements = await ReimbursementModel.find({ _id: { $in: reimbursementIds } })
+            .populate<{ expenses: { amount: number, settled: { type: String } }[] }>({
+                path: 'expenses',
+                populate: {
+                    path: 'settled',
+                    select: 'type'
+                }
+            });
+
+        reimbursements = reimbursements.filter(reimbursement => reimbursement.paidStatus)
+
+
+        if (!reimbursements || reimbursements.length === 0) {
+            res.status(404).json({ message: 'No valid reimbursements found to be marked unpaid.' });
+            return;
+        }
+
+        let totalTransferableAmount = 0, amount = 0;
+        reimbursements.forEach(reimbursement => {
+            amount += reimbursement.totalAmount
+            reimbursement.expenses.forEach(expense => {
+
+                if (expense.settled?.type === "Savings") {
+                    totalTransferableAmount += expense.amount;
+                }
+            });
+        });
+
+        await new AccountModel({
+            amount,
+            type: "Current",
+            remarks: `Reverted reimbursement money for ${reimbursements.map(item => item.title).join(",")}`,
+            credited: false,
+            transferable: -totalTransferableAmount
+        }).save();
+
+        await ReimbursementModel.updateMany(
+            { _id: { $in: reimbursementIds } },
+            { paidStatus: false }
+        );
+
+        res.status(200).json({ message: 'Reimbursements updated successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Error updating reimbursements: ' + (error as Error).message });
     }

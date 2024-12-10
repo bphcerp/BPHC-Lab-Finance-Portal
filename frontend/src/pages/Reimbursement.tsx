@@ -17,6 +17,7 @@ import EditReimbursementModal from '../components/EditReimbursementModal';
 const ReimbursementPage: React.FC = () => {
     const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isPaidLoading, setIsPaidLoading] = useState(false);
     const [selectedReimbursements, setSelectedReimbursements] = useState<Set<string>>(new Set());
     const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false)
     const [description, setDescription] = useState("")
@@ -248,9 +249,10 @@ const ReimbursementPage: React.FC = () => {
         }
     }
 
-    const handleMarkAsPaid = async () => {
+    const handleMarkAsPaid = async (unpaid : boolean) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse/paid`, {
+            setIsPaidLoading(true)
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse/${unpaid?'unpaid':'paid'}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -260,15 +262,18 @@ const ReimbursementPage: React.FC = () => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to mark reimbursements as paid');
+                throw new Error((await response.json()).message ?? `Failed to mark reimbursements as ${unpaid?'unpaid':'paid'}`);
             }
 
-            toastSuccess('Selected reimbursements marked as paid.');
+            toastSuccess(`Selected reimbursements marked as ${unpaid?'unpaid':'paid'}.`);
             fetchReimbursements();
             setSelectedReimbursements(new Set());
         } catch (error) {
-            toastError('Error marking reimbursements as paid');
-            console.error('Error marking reimbursements as paid:', error);
+            toastError((error as Error).message);
+            console.error(`Error marking reimbursements as ${unpaid?'unpaid':'paid'}:`, error);
+        }
+        finally {
+            setIsPaidLoading(false)
         }
     };
 
@@ -306,13 +311,21 @@ const ReimbursementPage: React.FC = () => {
             />
             <h1 className="text-2xl font-bold mb-4">List of Reimbursements</h1>
 
-            <div className="mb-4">
+            <div className="flex space-x-2 mb-4">
                 <button
                     className="bg-green-500 text-white px-4 py-2 rounded disabled:opacity-50"
-                    onClick={handleMarkAsPaid}
-                    disabled={selectedReimbursements.size === 0}
+                    onClick={() => handleMarkAsPaid}
+                    disabled={isPaidLoading || selectedReimbursements.size === 0}
                 >
                     Mark as Paid
+                </button>
+
+                <button
+                    className="bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50"
+                    onClick={() => handleMarkAsPaid(true)}
+                    disabled={isPaidLoading || selectedReimbursements.size === 0}
+                >
+                    Mark as Unpaid
                 </button>
             </div>
 
