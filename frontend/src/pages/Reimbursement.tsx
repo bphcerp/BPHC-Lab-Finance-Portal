@@ -249,7 +249,7 @@ const ReimbursementPage: React.FC = () => {
         }
     }
 
-    const handleMarkAsPaid = async (unpaid : boolean) => {
+    const handleMarkAsPaid = async (unpaid : boolean = false) => {
         try {
             setIsPaidLoading(true)
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse/${unpaid?'unpaid':'paid'}`, {
@@ -314,7 +314,7 @@ const ReimbursementPage: React.FC = () => {
             <div className="flex space-x-2 mb-4">
                 <button
                     className="bg-green-500 text-white px-4 py-2 rounded disabled:opacity-50"
-                    onClick={() => handleMarkAsPaid}
+                    onClick={() => handleMarkAsPaid()}
                     disabled={isPaidLoading || selectedReimbursements.size === 0}
                 >
                     Mark as Paid
