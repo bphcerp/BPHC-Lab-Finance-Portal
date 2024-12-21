@@ -328,6 +328,7 @@ router.put('/:id', upload.single('referenceDocument'), async (req: Request, res:
     const { project, projectHead, totalAmount, title, description } = req.body;
 
     const expenses = JSON.parse(req.body.expenses)
+    const removedExpenses = JSON.parse(req.body.removedExpenses)
 
     try {
 
@@ -363,8 +364,13 @@ router.put('/:id', upload.single('referenceDocument'), async (req: Request, res:
             }
         }
 
+        await ExpenseModel.updateMany(
+            { _id: { $in: removedExpenses } }, 
+            { $set: { reimbursedID: null } }
+        )
+
         await ReimbursementModel.updateOne({_id : id}, {
-            $set : { project,projectHead,title,description,expenses, reference_id : referenceId ?? reimbursementToBeEdited.reference_id }
+            $set : { project,projectHead,title,description,totalAmount,expenses, reference_id : referenceId ?? reimbursementToBeEdited.reference_id }
         })
 
         res.status(200).json();

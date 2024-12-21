@@ -161,7 +161,7 @@ const ReimbursementPage: React.FC = () => {
         if (!reimbursementToEdit) return;
         try {
 
-            const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceDocument } = formData;
+            const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceDocument, removedExpenses } = formData;
             
             const data = new FormData();
             data.append('expenses', JSON.stringify(expenseIds));
@@ -170,6 +170,7 @@ const ReimbursementPage: React.FC = () => {
             data.append('totalAmount', totalAmount.toString());
             data.append('title', reimbursementTitle);
             data.append('description', description);
+            data.append('removedExpenses', JSON.stringify(removedExpenses));
 
             if (referenceDocument) {
                 data.append('referenceDocument', referenceDocument);
