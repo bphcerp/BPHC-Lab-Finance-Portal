@@ -12,6 +12,8 @@ import reimburseRoutes from './routes/reimburse';
 import memberRoutes from './routes/member';
 import accountRoutes from './routes/account';
 import { authenticateToken } from './middleware/authenticateToken';
+import {ExpenseModel} from "./models/expense";
+import {ProjectModel} from "./models/project";
 
 dotenv.config();
 
@@ -61,6 +63,42 @@ app.get('/api', (req: Request, res: Response) => {
 app.get('/api/check-auth',authenticateToken, (req: Request, res: Response) => {
   res.send('Welcome to LAMBDA LAB ERP API (Authenticated)')
 });
+
+app.get('/api/stats', async (req: Request, res: Response) => {
+  try {
+    const totalDueQuery = ExpenseModel.aggregate([
+      { $match: { reimbursedID: null } },
+      { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
+    ]);
+
+    const unsettledQuery = ExpenseModel.aggregate([
+      { $match: { settled: null } },
+      { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
+    ]);
+
+    const grandTotalQuery = ProjectModel.aggregate([
+      { $group: { _id: null, totalSum: { $sum: '$total_amount' } } },
+    ]);
+
+    const [totalDueResult, unsettledResult, grandTotalResult] = await Promise.all([
+      totalDueQuery,
+      unsettledQuery,
+      grandTotalQuery,
+    ]);
+
+    const totalDue = totalDueResult.length > 0 ? totalDueResult[0].totalAmount : 0;
+    const totalUnsettled = unsettledResult.length > 0 ? unsettledResult[0].totalAmount : 0;
+    const grandTotal = grandTotalResult.length > 0 ? grandTotalResult[0].totalSum : 0;
+
+    res.status(200).json({
+      total_due: totalDue,
+      total_unsettled: totalUnsettled,
+      grand_total: grandTotal,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error', error });
+  }
+})
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`)

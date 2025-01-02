@@ -61,25 +61,6 @@ export const getCurrentInstallmentIndex = (project: Project): number => {
     return -1;
 }
 
-
-router.get('/grandtotal', async (req: Request, res: Response) => {
-    try {
-        const result = await ProjectModel.aggregate([
-            {
-                $group: {
-                    _id: null,
-                    totalSum: { $sum: "$total_amount" }
-                }
-            }
-        ]);
-
-        const totalAmountSum = result.length > 0 ? result[0].totalSum : 0;
-        res.json({ total_amount_sum: totalAmountSum });
-    } catch (error) {
-        res.status(500).json({ message: 'Error calculating total sum', error });
-    }
-});
-
 router.get('/:id/total-expenses', async (req: Request, res: Response) => {
     const id = req.params.id; 
 
@@ -421,7 +402,7 @@ router.get('/:id/util_cert', async (req, res) => {
 
         const html = `
         <!DOCTYPE html>
-        <html>
+        <html lang="en-IN">
         <head>
             <meta charset="utf-8">
             <title>Utilization Certificate for ${project.project_type==="yearly"?"Year":"Installment"} ${curr+1}</title>

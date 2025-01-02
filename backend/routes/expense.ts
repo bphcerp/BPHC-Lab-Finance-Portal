@@ -88,38 +88,6 @@ router.get('/passbook', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/totaldue', async (req: Request, res: Response) => {
-  try {
-    const [result] = await ExpenseModel.aggregate([
-      { $match: { reimbursedID: null } },
-      { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
-    ]);
-
-    res.status(200).json({
-      total_due: result?.totalAmount || 0,
-    });
-  } catch (error) {
-    console.error('Error calculating total due:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
-router.get('/unsettled', async (req: Request, res: Response) => {
-  try {
-    const [result] = await ExpenseModel.aggregate([
-      { $match: { settled: null } },
-      { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
-    ]);
-
-    res.status(200).json({
-      total_unsettled: result?.totalAmount || 0,
-    });
-  } catch (error) {
-    console.error('Error calculating unsettled total:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
 router.patch('/settle', async (req: Request, res: Response) => {
   try {
     const { ids, type, amount, remarks } = req.body;

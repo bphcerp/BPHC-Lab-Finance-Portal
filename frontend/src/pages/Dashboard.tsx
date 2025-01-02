@@ -12,38 +12,14 @@ const DashBoard: FunctionComponent = () => {
     const [openModal, setOpenModal] = useState(false);
 
     const fetchProjectData = () => {
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/grandtotal/`, {
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/stats`, {
             credentials: "include",
         })
             .then((res) =>
                 res.json().then((data) => {
-                    setGrandTotal(data.total_amount_sum);
-                })
-            )
-            .catch((e) => {
-                toastError("Something went wrong");
-                console.error(e);
-            });
-
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/totaldue/`, {
-            credentials: "include",
-        })
-            .then((res) =>
-                res.json().then((data) => {
-                    setTotalDue(data.total_due);
-                })
-            )
-            .catch((e) => {
-                toastError("Something went wrong");
-                console.error(e);
-            });
-
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/unsettled/`, {
-            credentials: "include",
-        })
-            .then((res) =>
-                res.json().then((data) => {
-                    setTotalUnsettled(data.total_unsettled);
+                    setGrandTotal(data.grand_total);
+                    setTotalDue(data.total_due)
+                    setTotalUnsettled(data.total_unsettled)
                 })
             )
             .catch((e) => {
