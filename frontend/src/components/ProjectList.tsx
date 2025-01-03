@@ -10,7 +10,7 @@ import { Project } from "../types";
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import EditProjectModal from "./EditProjectModal";
 import PDFLink from "./PDFLink";
-import { getCurrentInstallmentIndex, calculateCurrentYear } from "../pages/ProjectDetails";
+import { getCurrentIndex } from "../helper";
 
 const ProjectList: FunctionComponent = () => {
     const [projectData, setProjectData] = useState<Array<Project>>([]);
@@ -85,7 +85,7 @@ const ProjectList: FunctionComponent = () => {
                 },
             }
         ),
-        columnHelper.accessor(row => (row.project_type === "invoice" ? getCurrentInstallmentIndex(row) : calculateCurrentYear(row)) >= 0 ? "Ongoing" : "Ended", {
+        columnHelper.accessor(row => getCurrentIndex(row) >= 0 ? "Ongoing" : "Ended", {
             header: 'Status',
             cell: info => {
                 return <span
@@ -122,7 +122,7 @@ const ProjectList: FunctionComponent = () => {
         columnHelper.accessor(() => "util_cert", {
             header: "UC",
             cell: ({ row }) => {
-                const curr = row.original.project_type === "invoice" ? getCurrentInstallmentIndex(row.original) : calculateCurrentYear(row.original)
+                const curr = getCurrentIndex(row.original)
                 return (curr >=0 ? <PDFLink
                     url={`${import.meta.env.VITE_BACKEND_URL}/project/${row.original._id}/util_cert`}
                 >
@@ -208,7 +208,7 @@ const ProjectList: FunctionComponent = () => {
         }
     };
 
-    const handleSaveProject = async (updatedProject: any) => {
+    const handleSaveProject = async (updatedProject: Project) => {
         try {
             const response = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/project/${updatedProject._id}`,

@@ -244,30 +244,52 @@ const ExpensesPage: React.FC = () => {
         }
     };
 
-    const handleAddExpense = async (newExpense: Expense) => {
+    const handleAddExpense = async (newExpense : any) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense`, {
-                method: 'POST',
-                credentials: "include",
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(newExpense),
-            });
-
+            let response;
+    
+            if (newExpense.type === 'Institute') {
+                const formData = new FormData();
+                formData.append('expenseReason', newExpense.expenseReason);
+                formData.append('category', newExpense.category);
+                formData.append('amount', newExpense.amount.toString());
+                formData.append('paidBy', newExpense.paidBy);
+                formData.append('description', newExpense.description);
+                formData.append('referenceDocument', newExpense.referenceDocument);
+                formData.append('type', newExpense.type);
+                formData.append('project', newExpense.projectName);
+                formData.append('projectHead', newExpense.projectHead);
+                formData.append('overheadPercentage', newExpense.overheadPercentage.toString());
+    
+                response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData,
+                });
+            } else {
+                response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(newExpense),
+                });
+            }
+    
             if (!response.ok) {
                 throw new Error('Failed to add expense');
             }
-
+    
             const addedExpense = await response.json();
             setExpenses([...expenses, addedExpense]);
-            fetchExpenses()
+            fetchExpenses();
             toastSuccess('Expense added successfully');
         } catch (error) {
             toastError('Error adding expense');
             console.error('Error adding expense:', error);
         }
-    };
+    };    
 
     const fetchExpenses = async () => {
         try {
@@ -353,7 +375,7 @@ const ExpensesPage: React.FC = () => {
                 description={description}
             />
             <div className='flex justify-between'>
-                <h1 className="text-2xl font-bold mb-4">Expenses</h1>
+                <span className="text-2xl font-bold mb-4">Expenses</span>
                 <div className='flex justify-center items-end mb-4 space-x-4'>
                     <div className="bg-gray-100 p-3 rounded-lg shadow-md flex items-center space-x-4">
                         <h2 className="font-semibold text-gray-700 mr-4">Legend:</h2>

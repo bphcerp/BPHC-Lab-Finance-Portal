@@ -27,7 +27,9 @@ const upload = multer({ storage });
 
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 
-export const calculateCurrentYear = (data: Project) => {
+export const getCurrentIndex = (project : Project) => project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
+
+const calculateCurrentYear = (data: Project) => {
     if (data.override) return data.override.index
     const curr = new Date();
 
@@ -44,7 +46,7 @@ export const calculateCurrentYear = (data: Project) => {
     return (currentYear >= 0 ? currentYear : 0);
 }
 
-export const getCurrentInstallmentIndex = (project: Project): number => {
+const getCurrentInstallmentIndex = (project: Project): number => {
     if (project.override) return project.override.index
     const currentDate = new Date();
 
@@ -83,7 +85,7 @@ router.get('/:id/total-expenses', async (req: Request, res: Response) => {
             {
                 $match: {
                     project: project._id,
-                    year_or_installment :  project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
+                    year_or_installment :  getCurrentIndex(project)
                 },
             },
             {
@@ -270,8 +272,7 @@ router.get('/', async (req: Request, res: Response) => {
 
         if (balance === 'true') {
             const updatedProjects = await Promise.all(filteredProjects.map(async project => {
-                const isInvoice = project.project_type === "invoice";
-                const curr = isInvoice ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project);
+                const curr = getCurrentIndex(project)
 
                 if (curr !== -1) {
                     const projectHeads = project.project_heads;

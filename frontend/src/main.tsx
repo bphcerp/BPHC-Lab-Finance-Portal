@@ -22,6 +22,7 @@ import AccountPage from './pages/AccountPage'
 import PDAccountPage from './pages/PDAccountPage'
 import NotFound from './components/NotFound'
 import DeveloperPage from './pages/DeveloperPage'
+import { InstituteExpensesPage } from './pages/InstituteExpenses.js'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={import.meta.env.VITE_OAUTH_CID}>
@@ -37,6 +38,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path='/expenses' element={<ExpensesLayout />}>
               <Route index element={<ExpensesPage />} />
               <Route path='member-wise' element={<MembersView />} />
+              <Route path='institute' element={<InstituteExpensesPage />} />
             </Route>
             <Route path='/reimbursements' element={<ReimbursementPage />} />
             <Route path='/admin' element={<AdminPage />} />

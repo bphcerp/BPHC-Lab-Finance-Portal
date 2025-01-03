@@ -7,8 +7,7 @@ import { createColumnHelper } from '@tanstack/react-table'
 import TableCustom from "../components/TableCustom";
 import { Link } from "react-router-dom";
 import { Project } from "../types";
-import { getCurrentInstallmentIndex, calculateCurrentYear } from "./ProjectDetails";
-
+import { getCurrentIndex } from "../helper";
 
 const ProjectList: FunctionComponent = () => {
 
@@ -91,7 +90,7 @@ const ProjectList: FunctionComponent = () => {
                 filterType : "dropdown"
             }
         }),
-        columnHelper.accessor(row => (row.project_type === "invoice" ? getCurrentInstallmentIndex(row) : calculateCurrentYear(row)) >= 0 ? "Ongoing" : "Ended", {
+        columnHelper.accessor(row => getCurrentIndex(row) >= 0 ? "Ongoing" : "Ended", {
             header: 'Status',
             cell: info => {
                 return <span

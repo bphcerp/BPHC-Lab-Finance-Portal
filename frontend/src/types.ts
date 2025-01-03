@@ -21,6 +21,22 @@ export interface Expense {
     updatedAt: Date;
 }
 
+export interface InstituteExpense {
+    _id : string
+    expenseReason: string;
+    category: Category;
+    project: Project;
+    projectHead: string;
+    amount: number;
+    paidBy: Member;
+    pd_ref : Account
+    acc_ref: Account
+    overheadPercentage: number;
+    reference_id?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface EditExpenseData {
     expenseReason: string;
     category: string;
@@ -46,7 +62,8 @@ export interface Reimbursement {
     projectHead: string;
     paidStatus: boolean;
     description: string
-    reference_id : string
+    reference_id: string
+    year_or_installment : number
 }
 
 export interface Installment {
@@ -57,8 +74,8 @@ export interface Installment {
 export interface Project {
     _id?: string;
     project_name: string;
-    project_id : string
-    project_title : string
+    project_id: string
+    project_title: string
     start_date: Date | null;
     end_date: Date | null;
     project_heads: {
@@ -75,19 +92,19 @@ export interface Project {
     sanction_letter?: File | null;
     sanction_letter_file_id?: string;
     description: string
-    negative_heads : string[]
-    override : { type : string, index : number}
+    negative_heads: string[]
+    override: { type: string, index: number }
 }
 
 export interface Account {
     _id: string
     amount: number;
-    createdAt : Date
+    createdAt: Date
     type: 'Current' | 'Savings' | 'PDA' | 'PDF' | null;
     remarks?: string;
     credited: boolean;
     transferable: number;
-    transfer : string
+    transfer: string
 }
 
 

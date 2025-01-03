@@ -1,15 +1,19 @@
 import express, { Request, Response } from 'express';
-import { ExpenseModel } from '../models/expense';
+import { ExpenseModel, InstituteExpenseModel } from '../models/expense';
 import { CategoryModel } from '../models/category';
 import { authenticateToken } from '../middleware/authenticateToken';
-import { ObjectId, Schema } from 'mongoose';
+import mongoose, { ObjectId, Schema } from 'mongoose';
 import { AccountModel } from '../models/account';
+import multer from 'multer';
+import { Readable } from 'stream';
 
 const router = express.Router();
 
 interface ExpenseRequest {
   category: ObjectId;
+  expenseReason: string;
   amount: number;
+  type: 'Normal' | 'Institute'
   description: string;
   paidBy: ObjectId;
   reimbursedID?: ObjectId;
@@ -24,7 +28,19 @@ interface MemberExpenseSummary {
   totalDue: number;
 }
 
+let gfs: mongoose.mongo.GridFSBucket;
+const conn = mongoose.connection;
+
 router.use(authenticateToken);
+
+conn.once("open", () => {
+  gfs = new mongoose.mongo.GridFSBucket(conn.db!, {
+    bucketName: "references"
+  });
+});
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const VALID_SETTLED_STATUS = ['Current', 'Savings'] as const;
 
@@ -33,8 +49,8 @@ const validateCategory = async (categoryId: Schema.Types.ObjectId): Promise<bool
   return !!categoryExists;
 };
 
-router.post('/', async (req: Request, res: Response) => {
-  const expenseData = req.body as ExpenseRequest;
+router.post('/', upload.single('referenceDocument'), async (req: Request, res: Response) => {
+  const expenseData = req.body;
 
   try {
     if (!await validateCategory(expenseData.category)) {
@@ -42,14 +58,72 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const expense = new ExpenseModel({
-      ...expenseData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    let expense;
+
+    if (expenseData.type === 'Institute') {
+
+      if (!req.file) {
+        res.status(400).send({ message: 'No reference document attached!' })
+        return
+      }
+
+      if (expenseData.overheadPercentage > 1){
+        res.status(400).send({ message: 'Overhead Percentage is incorrect. (Enter from 0 to 1)' })
+        return
+      }
+
+      let reference_id: mongoose.Types.ObjectId | null = null
+
+      const readableStream = new Readable();
+      readableStream.push(req.file.buffer);
+      readableStream.push(null);
+
+      const uploadStream = gfs.openUploadStream(req.file.originalname, {
+        contentType: req.file.mimetype || 'application/octet-stream'
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        readableStream.pipe(uploadStream)
+          .on("error", (err) => reject(err))
+          .on("finish", () => {
+            reference_id = uploadStream.id;
+            resolve();
+          });
+      });
+
+
+      const pd_entry = await (new AccountModel({
+        type: 'PDF',
+        amount: expenseData.amount * expenseData.overheadPercentage,
+        credited: false,
+        remarks: `Institute Expense : ${expenseData.expenseReason}`
+      })).save();
+
+      const acc_entry = await (new AccountModel({
+        type: 'Current',
+        amount: expenseData.amount,
+        credited: true,
+        remarks: `Institute Expense : ${expenseData.expenseReason}`
+      })).save();
+
+      expense = new InstituteExpenseModel({
+        ...expenseData,
+        reference_id,
+        pd_ref : pd_entry._id,
+        acc_ref : acc_entry._id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+    }
+    else {
+      expense = new ExpenseModel({
+        ...expenseData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
 
     await expense.save();
-    await expense.populate('category paidBy');
     res.status(201).json(expense);
   } catch (error) {
     console.error('Error creating expense:', error);
@@ -59,6 +133,17 @@ router.post('/', async (req: Request, res: Response) => {
 
 router.get('/', async (req: Request, res: Response) => {
   try {
+    const { type } = req.query;
+
+    if (type === 'Institute') {
+      const instituteExpenses = await InstituteExpenseModel.find()
+        .populate('category project paidBy pd_ref acc_ref')
+        .lean();
+
+      res.status(200).send(instituteExpenses);
+      return
+    }
+
     const expenses = await ExpenseModel.find()
       .populate<{ reimbursedID: { _id: ObjectId; title: string; paidStatus: boolean } }>({ path: 'reimbursedID', select: 'title paidStatus' })
       .populate<{ settled: { _id: Schema.Types.ObjectId, type: string } }>('settled')
@@ -67,10 +152,10 @@ router.get('/', async (req: Request, res: Response) => {
 
     res.status(200).send(expenses);
   } catch (error) {
-    console.error('Error fetching expenses:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 router.get('/passbook', async (req: Request, res: Response) => {
   const { type } = req.query;

@@ -7,11 +7,11 @@ import mongoose from 'mongoose';
 import { ProjectModel } from '../models/project';
 import { AccountModel } from '../models/account';
 import multer from 'multer';
-import { getCurrentInstallmentIndex, calculateCurrentYear } from './project';
+import { getCurrentIndex } from './project';
 
 const router = express.Router();
 const conn = mongoose.connection;
-let gfs: mongoose.mongo.GridFSBucket;
+export let gfs: mongoose.mongo.GridFSBucket;
 
 router.use(authenticateToken);
 
@@ -259,7 +259,7 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
             description,
             submittedAt: new Date(),
             reference_id: referenceId,
-            year_or_installment: project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
+            year_or_installment: getCurrentIndex(project)
         });
 
         await reimbursement.save();
