@@ -3,13 +3,12 @@ import { FunctionComponent, useEffect, useState } from "react";
 import { InstituteExpense } from "../types";
 import TableCustom from "../components/TableCustom";
 import { toastError } from "../toasts";
-import React from "react";
 import { Link } from "react-router-dom";
 
 export const InstituteExpensesPage: FunctionComponent = () => {
 
     const [expenses, setExpenses] = useState<Array<InstituteExpense>>([]);
-    const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set());
+    // const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set());
 
     const columnHelper = createColumnHelper<InstituteExpense>()
 
@@ -98,16 +97,18 @@ export const InstituteExpensesPage: FunctionComponent = () => {
     return (
         <div className="flex flex-col">
             <span className="text-2xl font-bold mb-4">Institute Expenses</span>
-            <TableCustom data={expenses} columns={columns} setSelected={(selectedExpenses: Array<InstituteExpense>) => {
-                setSelectedExpenses(new Set(selectedExpenses.map(expense => expense._id)))
-            }} initialState={{
-                sorting: [
-                    {
-                        id: 'updatedAt',
-                        desc: true
-                    }
-                ]
-            }} />
+            <TableCustom data={expenses} columns={columns}/>
         </div>
     )
 }
+
+// setSelected={(selectedExpenses: Array<InstituteExpense>) => {
+//     setSelectedExpenses(new Set(selectedExpenses.map(expense => expense._id)))
+// }} initialState={{
+//     sorting: [
+//         {
+//             id: 'updatedAt',
+//             desc: true
+//         }
+//     ]
+// }} 
