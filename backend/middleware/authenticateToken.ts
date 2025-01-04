@@ -36,8 +36,6 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 
   const token = decrypt(encryptedToken.encryptedData,encryptedToken.iv)
 
-  console.log(token)
-
   jwt.verify(token, process.env.JWT_SECRET_KEY!, (err: any,decoded: any) => {
     if (err || !decoded) {
       client.verifyIdToken({

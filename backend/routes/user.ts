@@ -101,7 +101,7 @@ router.post('/passlogin', async (req: Request, res: Response) => {
 	if (result!.pwd === pwd) {
 		const jwtSecretKey = process.env.JWT_SECRET_KEY!;
 		const token = jwt.sign(resultPasswordHidden, jwtSecretKey)
-		const encryptedToken = encrypt((JSON.stringify(token)))
+		const encryptedToken = encrypt(token)
 		res.cookie("token", encryptedToken, {
 			expires: new Date(Date.now() + 3600 * 1000),
 			path: "/",

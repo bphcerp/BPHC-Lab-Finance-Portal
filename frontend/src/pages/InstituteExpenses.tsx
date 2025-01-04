@@ -19,7 +19,7 @@ export const InstituteExpensesPage: FunctionComponent = () => {
                 info.getValue()
                     ? new Date(info.getValue()).toLocaleDateString('en-IN')
                     : 'N/A',
-            enableColumnFilter:false
+            enableColumnFilter: false
         }),
         columnHelper.accessor('updatedAt', {
             header: 'Updated At',
@@ -27,7 +27,7 @@ export const InstituteExpensesPage: FunctionComponent = () => {
                 info.getValue()
                     ? new Date(info.getValue()).toLocaleDateString('en-IN')
                     : 'N/A',
-            enableColumnFilter:false
+            enableColumnFilter: false
         }),
         columnHelper.accessor('expenseReason', {
             header: 'Expense Reason',
@@ -36,8 +36,8 @@ export const InstituteExpensesPage: FunctionComponent = () => {
         columnHelper.accessor('category.name', {
             header: 'Category',
             cell: (info) => info.getValue(),
-            meta : {
-                filterType : 'dropdown'
+            meta: {
+                filterType: 'dropdown'
             }
         }),
         columnHelper.accessor('project.project_name', {
@@ -52,8 +52,8 @@ export const InstituteExpensesPage: FunctionComponent = () => {
         columnHelper.accessor('projectHead', {
             header: 'Project Head',
             cell: (info) => info.getValue(),
-            meta : {
-                filterType : 'dropdown'
+            meta: {
+                filterType: 'dropdown'
             }
         }),
         columnHelper.accessor('amount', {
@@ -63,19 +63,19 @@ export const InstituteExpensesPage: FunctionComponent = () => {
                     style: 'currency',
                     currency: 'INR',
                 }),
-            enableColumnFilter:false
+            enableColumnFilter: false
         }),
         columnHelper.accessor('paidBy.name', {
             header: 'Paid By',
             cell: (info) => info.getValue(),
-            meta : {
-                filterType : 'dropdown'
+            meta: {
+                filterType: 'dropdown'
             }
         }),
         columnHelper.accessor('overheadPercentage', {
             header: 'Overhead %',
-            cell: (info) => `${info.getValue() * 100}%`,
-            enableColumnFilter:false
+            cell: (info) => `${info.getValue()}%`,
+            enableColumnFilter: false
         }),
     ]
 
@@ -97,18 +97,18 @@ export const InstituteExpensesPage: FunctionComponent = () => {
     return (
         <div className="flex flex-col">
             <span className="text-2xl font-bold mb-4">Institute Expenses</span>
-            <TableCustom data={expenses} columns={columns}/>
+            <TableCustom data={expenses} columns={columns} initialState={{
+                sorting: [
+                    {
+                        id: 'updatedAt',
+                        desc: true
+                    }
+                ]
+            }} />
         </div>
     )
 }
 
 // setSelected={(selectedExpenses: Array<InstituteExpense>) => {
 //     setSelectedExpenses(new Set(selectedExpenses.map(expense => expense._id)))
-// }} initialState={{
-//     sorting: [
-//         {
-//             id: 'updatedAt',
-//             desc: true
-//         }
-//     ]
-// }} 
+// }}

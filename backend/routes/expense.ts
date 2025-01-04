@@ -6,6 +6,8 @@ import mongoose, { ObjectId, Schema } from 'mongoose';
 import { AccountModel } from '../models/account';
 import multer from 'multer';
 import { Readable } from 'stream';
+import { ProjectModel } from '../models/project';
+import { getCurrentIndex } from './project';
 
 const router = express.Router();
 
@@ -62,13 +64,20 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
 
     if (expenseData.type === 'Institute') {
 
+      const project = await ProjectModel.findById(expenseData.project)
+
+      if (!project) {
+        res.status(404).send("Project ID not found!")
+        return
+      }
+
       if (!req.file) {
         res.status(400).send({ message: 'No reference document attached!' })
         return
       }
 
-      if (expenseData.overheadPercentage > 1){
-        res.status(400).send({ message: 'Overhead Percentage is incorrect. (Enter from 0 to 1)' })
+      if (expenseData.overheadPercentage && (expenseData.overheadPercentage < 0 || expenseData.overheadPercentage > 100)) {
+        res.status(400).send({ message: 'Overhead Percentage is incorrect. (Enter from 0 to 100)' })
         return
       }
 
@@ -94,7 +103,7 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
 
       const pd_entry = await (new AccountModel({
         type: 'PDF',
-        amount: expenseData.amount * expenseData.overheadPercentage,
+        amount: expenseData.amount * (expenseData.overheadPercentage / 100),
         credited: false,
         remarks: `Institute Expense : ${expenseData.expenseReason}`
       })).save();
@@ -109,8 +118,9 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
       expense = new InstituteExpenseModel({
         ...expenseData,
         reference_id,
-        pd_ref : pd_entry._id,
-        acc_ref : acc_entry._id,
+        pd_ref: pd_entry._id,
+        acc_ref: acc_entry._id,
+        year_or_installment: getCurrentIndex(project),
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -137,7 +147,9 @@ router.get('/', async (req: Request, res: Response) => {
 
     if (type === 'Institute') {
       const instituteExpenses = await InstituteExpenseModel.find()
-        .populate('category project paidBy pd_ref acc_ref')
+        .populate('category', 'name')
+        .populate('project', 'project_name project_title project_type')
+        .populate('paidBy', 'name')
         .lean();
 
       res.status(200).send(instituteExpenses);
