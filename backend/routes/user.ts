@@ -3,7 +3,7 @@ import { UserModel } from "../models/user";
 import { OAuth2Client } from "google-auth-library";
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
-import { authenticateToken } from "../middleware/authenticateToken";
+import { authenticateToken, encrypt } from "../middleware/authenticateToken";
 
 dotenv.config();
 
@@ -72,7 +72,11 @@ router.post('/login', async (req: Request, res: Response) => {
 			await user.save();
 		}
 
-		res.cookie("token", credentialResponse.credential, {
+		const encryptedToken = encrypt(credentialResponse.credential)
+
+		res.cookie("token", encryptedToken, {
+			expires: new Date(Date.now() + 3600 * 1000),
+			path: "/",
 			secure: process.env.DEPLOYED_STATUS === "true",
 			httpOnly: true,
 			sameSite: process.env.DEPLOYED_STATUS === "true" ? "none" : "lax"
@@ -97,7 +101,8 @@ router.post('/passlogin', async (req: Request, res: Response) => {
 	if (result!.pwd === pwd) {
 		const jwtSecretKey = process.env.JWT_SECRET_KEY!;
 		const token = jwt.sign(resultPasswordHidden, jwtSecretKey)
-		res.cookie("token", token, {
+		const encryptedToken = encrypt((JSON.stringify(token)))
+		res.cookie("token", encryptedToken, {
 			expires: new Date(Date.now() + 3600 * 1000),
 			path: "/",
 			httpOnly: true,
