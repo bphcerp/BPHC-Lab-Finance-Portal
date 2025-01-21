@@ -47,7 +47,7 @@ const ExpensesPage: React.FC = () => {
             header: 'Category',
             cell: info => info.getValue(),
             meta: {
-                filterType: "dropdown"
+                filterType: "multiselect"
             }
         }),
         columnHelper.accessor('amount', {

@@ -23,6 +23,7 @@ const ProjectDetails = () => {
     const [currentYear, setCurrentYear] = useState(0)
     const [isProjectOver, setIsProjectOver] = useState(false)
     const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false)
+    const [info, setInfo] = useState<{ head?: string, index?: number, all?: boolean }>()
     const [label, setLabel] = useState<string>()
     const [resetOverride, setResetOverride] = useState(false)
     const [yearFlag, setYearFlag] = useState<boolean | null>(null)
@@ -36,7 +37,7 @@ const ProjectDetails = () => {
             .then((data) => {
                 setProjectData(data)
                 const curr = getCurrentIndex(data)
-                if (curr >=0) {
+                if (curr >= 0) {
                     setCurrentYear(curr)
                     setIsProjectOver(false)
                 }
@@ -73,14 +74,41 @@ const ProjectDetails = () => {
                 { credentials: "include" }
             );
             const data = await response.json();
-            setLabel(` ${head??""}${all ? projectData?.project_name : ""}${index !== undefined ? ` ${projectData?.project_type === "invoice"? "Installment" :'Year'} ${index + 1}` : ""}`)
-            setYearFlag(index?null:projectData?.project_type !== 'invoice')
+            setInfo({ head, index, all })
+            setLabel(` ${head ?? ""}${all ? projectData?.project_name : ""}${index !== undefined ? ` ${projectData?.project_type === "invoice" ? "Installment" : 'Year'} ${index + 1}` : ""}`)
+            setYearFlag(index ? null : projectData?.project_type !== 'invoice')
             setShowHead(head ? false : true)
             setReimbursements(data.reimbursements);
             setInstituteExpenses(data.instituteExpenses)
             setIsModalOpen(true);
         } catch (error) {
             toastError("Error fetching reimbursements");
+            console.error(error);
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+
+            const { head, index, all } = info!
+
+            const response = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/reimburse/${projectData!._id}/?exportData=true&head=${head}&index=${index}&all=${all}`,
+                { credentials: "include" }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch the Excel file');
+              }
+          
+              const blob = await response.blob();
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(blob);
+              link.download = `${projectData?.project_name}${ head ? ` ${head}` : ""}${index !== undefined? projectData?.project_type === 'invoice'? " Installment ": " Year " : ""}${index !== undefined ? index+1 : ""} Expense Data.xlsx`;
+              link.click();
+
+        } catch (error) {
+            toastError("Error exporting reimbursement data");
             console.error(error);
         }
     };
@@ -213,7 +241,7 @@ const ProjectDetails = () => {
                                                 <div className="flex flex-col">
                                                     <button
                                                         className="text-blue-600 text-lg hover:underline"
-                                                        onClick={() => fetchReimbursements({ index:i, all: true })}>
+                                                        onClick={() => fetchReimbursements({ index: i, all: true })}>
                                                         {projectData.project_type === "invoice" ? "Installment" : "Year"} {i + 1}
                                                     </button>
                                                     {projectData.project_type === "invoice" ? <span>{formatDate(projectData.installments![i].start_date)} - {formatDate(projectData.installments![i].end_date)}</span> : <></>}
@@ -368,7 +396,7 @@ const ProjectDetails = () => {
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             <button
                                                 className="text-blue-600 hover:underline"
-                                                onClick={() => fetchReimbursements({head, index : currentYear})}>
+                                                onClick={() => fetchReimbursements({ head, index: currentYear })}>
                                                 {expenseData ? formatCurrency(expenseData[head] ?? 0) : "Loading"}
                                             </button>
                                         </td>
@@ -402,6 +430,7 @@ const ProjectDetails = () => {
                 onClose={() => setIsModalOpen(false)}
                 label={label!}
                 showHead={showHead}
+                handleExport={handleExport}
                 reimbursements={reimbursements}
                 instituteExpenses={instituteExpenses}
                 yearFlag={yearFlag}

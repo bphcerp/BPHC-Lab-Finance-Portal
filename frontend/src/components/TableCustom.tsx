@@ -14,12 +14,13 @@ import {
 import { Checkbox, TextInput, Select, Table } from "flowbite-react";
 import { FunctionComponent, ReactNode, useEffect, useMemo } from "react";
 import ColumnVisibilityMenu from "./ColumnVisibilityMenu";
+import MultiSelectFilter from "./MultiSelectFilter";
 
 declare module '@tanstack/react-table' {
     interface ColumnMeta<TData extends RowData, TValue> {
         getSum?: boolean;
         sumFormatter?: (sum: number) => ReactNode;
-        filterType?: "dropdown";
+        filterType?: "dropdown" | "multiselect";
     }
 }
 
@@ -107,8 +108,8 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                                 {header.column.getIsSorted() === "asc" ? ' 🔼' : header.column.getIsSorted() === "desc" ? ' 🔽' : null}
                                             </div>
                                             {header.column.getCanFilter() ? (
-                                                <div className="mt-2 flex flex-col gap-2">
-                                                    {header.column.columnDef.meta && header.column.columnDef.meta.filterType === "dropdown" ? (
+                                                <div className="mt-2">
+                                                    {header.column.columnDef.meta ? (header.column.columnDef.meta.filterType === "dropdown" ? (
                                                         <Select
                                                             onChange={e => header.column.setFilterValue(e.target.value)}
                                                             value={(header.column.getFilterValue() ?? "") as string}
@@ -118,7 +119,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                                             {getSortedUniqueValues(header.column).map(value => (
                                                                 <option value={value} key={value}>{value}</option>
                                                             ))}
-                                                        </Select>
+                                                        </Select>) : <MultiSelectFilter column={header.column}/>
                                                     ) : (
                                                         <TextInput
                                                             className="w-fit bg-white border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500"

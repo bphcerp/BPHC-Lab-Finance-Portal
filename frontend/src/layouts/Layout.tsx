@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import { RxHamburgerMenu, RxCross2 } from "react-icons/rx";
 import SidebarComponent from "../components/Sidebar";
 import NewFinancialYearModal from "../components/NewFinancialYearModal";
+import OutsideClickHandler from "react-outside-click-handler";
 
 const Layout: FunctionComponent = () => {
   const [isSideBarOpen, setISSideBarOpen] = useState(false);
@@ -24,7 +25,7 @@ const Layout: FunctionComponent = () => {
   return (
     <div className="flex flex-col w-screen h-screen">
       <NewFinancialYearModal isOpen={isReset} onClose={() => setIsReset(false)}/>
-      <SidebarComponent isOpen={isSideBarOpen} setIsOpen={setISSideBarOpen} />
+      <OutsideClickHandler onOutsideClick={() => setISSideBarOpen(false)}><SidebarComponent isOpen={isSideBarOpen} setIsOpen={setISSideBarOpen} /></OutsideClickHandler>
       <div className="header relative shrink-0 shadow-lg z-10 flex w-full h-14 px-4 bg-gray-100 items-center justify-between">
         <div className="flex items-center space-x-3">
           {isSideBarOpen ? (

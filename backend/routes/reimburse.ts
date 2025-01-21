@@ -8,6 +8,7 @@ import { ProjectModel } from '../models/project';
 import { AccountModel } from '../models/account';
 import multer from 'multer';
 import { getCurrentIndex } from './project';
+import { Workbook } from 'exceljs';
 
 const router = express.Router();
 const conn = mongoose.connection;
@@ -23,6 +24,8 @@ conn.once("open", () => {
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+
+type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 
 router.get('/:id/reference', async (req: Request, res: Response) => {
     try {
@@ -83,12 +86,91 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:projectId', async (req, res) => {
     try {
         const { projectId } = req.params
-        const { head, index, all } = req.query
+        const { head, index, all, exportData } = req.query
         const filter = { project: projectId, ...(all === "undefined" ? { projectHead: head } : {}), ...(index !== "undefined" ? { year_or_installment: index } : {}) }
-        const reimbursements = await ReimbursementModel.find(filter).populate('expenses');
-        const instituteExpenses = await InstituteExpenseModel.find(filter)
-        res.status(200).json({reimbursements, instituteExpenses});
+        const reimbursements = await ReimbursementModel.find(filter).populate('project expenses').lean();
+        const instituteExpenses = await InstituteExpenseModel.find(filter).populate('project').lean()
+
+        if (exportData) {
+            const workbook = new Workbook()
+
+            workbook.creator = 'LAMBDA Lab, BITS Hyderabad'
+            workbook.lastModifiedBy = 'LAMBDA Lab, BITS Hyderabad'
+            workbook.created = new Date()
+            workbook.modified = new Date()
+
+            const project = (reimbursements[0].project as unknown as Project) ?? (instituteExpenses[0].project as unknown as Project)
+
+            const sheet = workbook.addWorksheet(project.project_name)
+
+            sheet.columns = [
+                { header: 'S.No.', key: 'sno', width: 10 },
+                { header: 'Submitted On', key: 'createdAt', width: 20 },
+                { header: 'Title', key: 'title', width: 30 },
+                { header: 'Project Head', key: 'projectHead', width: 25 },
+                { header: 'Type', key: 'expenseType', width: 25 },
+                { header: project.project_type === 'invoice' ? 'Installment' : 'Year', key: 'year_or_installment', width: 20 },
+                { header: 'Amount', key: 'totalAmount', width: 15 },
+            ]
+
+            sheet.spliceRows(1, 0, [])
+            sheet.spliceRows(1, 0, [])
+
+            sheet.mergeCells('A1:G1');
+            const titleCell = sheet.getCell('A1');
+            titleCell.value = project.project_name
+            titleCell.font = { bold: true, size: 20, name: 'Arial' }
+            titleCell.alignment = { horizontal: 'center', vertical : 'middle' }
+
+            sheet.mergeCells('A2:C2');
+            const projectIdCell = sheet.getCell('A2');
+            projectIdCell.value = `Project ID: ${project.project_id}`
+            projectIdCell.font = { bold: true, size: 20, name: 'Arial' }
+            projectIdCell.alignment = { horizontal: 'center' }
+
+            sheet.mergeCells('D2:G2');
+            const projectTitleCell = sheet.getCell('D2');
+            projectTitleCell.value = `Project Title: ${project.project_title}`
+            projectTitleCell.font = { bold: true, size: 20, name: 'Arial' }
+            projectTitleCell.alignment = { horizontal: 'center' }
+
+            sheet.getRow(1).height = 70
+            sheet.getRow(2).font = { bold: true, size: 12 }
+            sheet.getRow(2).height = 50
+            sheet.getRow(3).font = { bold: true, size: 12 }
+            sheet.getRow(3).height = 25
+
+            sheet.getColumn('createdAt').numFmt = 'dd-mm-yyyy'
+            sheet.getColumn('totalAmount').numFmt = '"₹" #,##0.00'
+
+            reimbursements.map((reimbursement, sno) => {
+                sheet.addRow({ sno: sno + 1, ...reimbursement,expenseType : "Reimbursement", year_or_installment: reimbursement.year_or_installment + 1 })
+            })
+
+            const serialAfterReimbursement = reimbursements.length
+
+            instituteExpenses.map((expense, sno) => {
+                sheet.addRow({ sno: serialAfterReimbursement + sno + 1, ...expense,expenseType : "Institute Expense", totalAmount: expense.amount, title: expense.expenseReason, year_or_installment: expense.year_or_installment + 1 })
+            })
+
+            const reimbursementTotal = reimbursements.reduce((acc, reimbursement) => acc + reimbursement.totalAmount, 0);
+            const instituteExpenseTotal = instituteExpenses.reduce((acc, reimbursement) => acc + reimbursement.amount, 0);
+            const totalAmount = reimbursementTotal + instituteExpenseTotal
+
+            sheet.addRow({ year_or_installment : 'Total Amount', totalAmount })
+            sheet.getRow(sheet.rowCount).font = { bold: true, size: 12 }
+
+            const buffer = await workbook.xlsx.writeBuffer();
+
+            res.setHeader('Content-Disposition', 'attachment; filename=reimbursements.xlsx');
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.send(buffer)
+            return
+        }
+
+        res.status(200).json({ reimbursements, instituteExpenses });
     } catch (error) {
+        console.error(error)
         res.status(400).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
     }
 });
@@ -357,12 +439,12 @@ router.put('/:id', upload.single('referenceDocument'), async (req: Request, res:
         }
 
         await ExpenseModel.updateMany(
-            { _id: { $in: removedExpenses } }, 
+            { _id: { $in: removedExpenses } },
             { $set: { reimbursedID: null } }
         )
 
-        await ReimbursementModel.updateOne({_id : id}, {
-            $set : { project,projectHead,title,description,totalAmount,expenses, reference_id : referenceId ?? reimbursementToBeEdited.reference_id }
+        await ReimbursementModel.updateOne({ _id: id }, {
+            $set: { project, projectHead, title, description, totalAmount, expenses, reference_id: referenceId ?? reimbursementToBeEdited.reference_id }
         })
 
         res.status(200).json();

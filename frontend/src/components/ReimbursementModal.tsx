@@ -8,11 +8,12 @@ interface ReimbursementModalProps {
     label: string
     showHead?: boolean
     yearFlag: boolean | null
+    handleExport : () => void
     reimbursements: Reimbursement[]
     instituteExpenses : InstituteExpense[]
 }
 
-const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen, onClose, label, showHead, yearFlag, reimbursements, instituteExpenses }) => {
+const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen, onClose, label, showHead, yearFlag, reimbursements, instituteExpenses, handleExport }) => {
     const reimbursementTotal = reimbursements.reduce((acc, reimbursement) => acc + reimbursement.totalAmount, 0);
     const instituteExpenseTotal = instituteExpenses.reduce((acc, reimbursement) => acc + reimbursement.amount, 0);
     const totalAmount = reimbursementTotal + instituteExpenseTotal
@@ -93,7 +94,8 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                 </div>
             </Modal.Body>
             <Modal.Footer>
-                <Button color="blue" onClick={onClose}>Close</Button>
+            <Button color="blue" onClick={onClose}>Close</Button>
+            <Button color="success" onClick={handleExport}>Export as Excel</Button>
             </Modal.Footer>
         </Modal>
     );
