@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { ReimbursementModel } from '../models/reimburse';
-import { ExpenseModel } from '../models/expense';
+import { ExpenseModel, InstituteExpenseModel } from '../models/expense';
 import { authenticateToken } from '../middleware/authenticateToken';
 import { Readable } from "stream";
 import mongoose from 'mongoose';
@@ -84,22 +84,14 @@ router.get('/:projectId', async (req, res) => {
     try {
         const { projectId } = req.params
         const { head, index, all } = req.query
-        const reimbursements = await ReimbursementModel.find({ project: projectId, ...(all === "undefined" ? { projectHead: head } : {}), ...(index !== "undefined" ? { year_or_installment: index } : {}) }).populate('expenses');
-        res.status(200).json(reimbursements);
+        const filter = { project: projectId, ...(all === "undefined" ? { projectHead: head } : {}), ...(index !== "undefined" ? { year_or_installment: index } : {}) }
+        const reimbursements = await ReimbursementModel.find(filter).populate('expenses');
+        const instituteExpenses = await InstituteExpenseModel.find(filter)
+        res.status(200).json({reimbursements, instituteExpenses});
     } catch (error) {
         res.status(400).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
     }
 });
-
-router.get('/:projectId/:head/expenses', async (req, res) => {
-    try {
-        const { projectId, head } = req.params
-        const reimbursements = await ReimbursementModel.find({ project: projectId, projectHead: head }).populate('expenses');
-        res.status(200).json(reimbursements.flatMap(reimbursement => reimbursement.expenses));
-    } catch (error) {
-        res.status(400).json({ message: 'Error fetching reimbursements: ' + (error as Error).message });
-    }
-})
 
 router.post('/paid', async (req: Request, res: Response) => {
     try {

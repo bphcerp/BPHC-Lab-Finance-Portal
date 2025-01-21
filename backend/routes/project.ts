@@ -6,6 +6,7 @@ import { Readable } from "stream";
 import { authenticateToken } from "../middleware/authenticateToken";
 import { ReimbursementModel } from "../models/reimburse";
 import wkhtmltopdf from "wkhtmltopdf";
+import { InstituteExpenseModel } from "../models/expense";
 
 
 const router: Router = Router();
@@ -96,12 +97,31 @@ router.get('/:id/total-expenses', async (req: Request, res: Response) => {
             },
         ]);
         
-        const formattedResult = result.reduce((acc, { _id, totalAmountSum }) => {
+        const result_expense = await InstituteExpenseModel.aggregate([
+            {
+                $match: {
+                    project: project._id,
+                    year_or_installment : getCurrentIndex(project)
+                },
+            },
+            {
+                $group: {
+                    _id: '$projectHead', 
+                    totalAmountSum: { $sum: '$amount' }, 
+                },
+            },
+        ]);
+
+        const project_head_expenses = result.reduce((acc, { _id, totalAmountSum }) => {
             acc[_id] = totalAmountSum; 
             return acc;
         }, {});
 
-        res.json(formattedResult);
+        result_expense.map(({_id, totalAmountSum}) => {
+            project_head_expenses[_id] = (project_head_expenses[_id] ?? 0) + totalAmountSum;
+        })
+
+        res.json(project_head_expenses);
     } catch (err) {
         console.error(err);
         res.status(500).send({ message: `Error occurred: ${(err as Error).message}` });
@@ -291,11 +311,30 @@ router.get('/', async (req: Request, res: Response) => {
                             },
                         },
                     ]);
-                    
+
+                    const result_expense = await InstituteExpenseModel.aggregate([
+                        {
+                            $match: {
+                                project: project._id,
+                                year_or_installment : curr
+                            },
+                        },
+                        {
+                            $group: {
+                                _id: '$projectHead', 
+                                totalAmountSum: { $sum: '$amount' }, 
+                            },
+                        },
+                    ]);
+
                     const project_head_expenses = result.reduce((acc, { _id, totalAmountSum }) => {
                         acc[_id] = totalAmountSum; 
                         return acc;
                     }, {});
+
+                    result_expense.map(({_id, totalAmountSum}) => {
+                        project_head_expenses[_id] = (project_head_expenses[_id] ?? 0) + totalAmountSum;
+                    })
 
                     
                     projectHeads.forEach((allocations, head) => {
@@ -305,8 +344,6 @@ router.get('/', async (req: Request, res: Response) => {
                         allocations[curr] = allocation - headExpense;
                         projectHeads.set(head, [allocations[curr]])
                     });
-
-                    return project;
                 }
 
                 return project;

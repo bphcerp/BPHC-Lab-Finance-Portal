@@ -14,6 +14,7 @@ import accountRoutes from './routes/account';
 import { authenticateToken } from './middleware/authenticateToken';
 import {ExpenseModel} from "./models/expense";
 import {ProjectModel} from "./models/project";
+import morgan from 'morgan'
 
 dotenv.config();
 
@@ -21,12 +22,6 @@ const interval = 30000;
 
 function keepAlive() {
   fetch(process.env.BASE_URL!)
-    .then((response) => {
-      console.log(`Pinged at ${new Date().toISOString()}: Status Code ${response.status}`);
-    })
-    .catch((error) => {
-      console.error(`Error pinging at ${new Date().toISOString()}:, ${error.message}`);
-    });
 }
 
 setInterval(keepAlive, interval)
@@ -37,6 +32,8 @@ const PORT = process.env.PORT!
 mongoose.connect(process.env.DB_URI!)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
+
+app.use(morgan('combined'))
 
 app.use(express.json());
 app.use(cookieParser())

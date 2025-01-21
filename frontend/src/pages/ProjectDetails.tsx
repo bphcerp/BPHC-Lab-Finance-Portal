@@ -2,10 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toastError, toastSuccess, toastWarn } from "../toasts";
 import ReimbursementModal from "../components/ReimbursementModal";
-import { Expense, Project, Reimbursement } from "../types";
+import { InstituteExpense, Project, Reimbursement } from "../types";
 import { Button } from "flowbite-react";
 import OverrideConfirmation from "../components/OverrideConfirmation";
-import ProjectHeadExpenses from "../components/ProjectHeadExpenses";
 import { calculateNumberOfYears, getCurrentIndex } from "../helper";
 
 const formatDate = (dateStr?: string) =>
@@ -19,14 +18,12 @@ const ProjectDetails = () => {
     const [projectData, setProjectData] = useState<Project>();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [reimbursements, setReimbursements] = useState<Array<Reimbursement>>([]);
+    const [instituteExpenses, setInstituteExpenses] = useState<Array<InstituteExpense>>([]);
     const [expenseData, setExpenseData] = useState<{ [key: string]: number }>()
     const [currentYear, setCurrentYear] = useState(0)
     const [isProjectOver, setIsProjectOver] = useState(false)
     const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false)
     const [label, setLabel] = useState<string>()
-    const [isHeadExpensesModalOpen, setIsHeadExpensesModalOpen] = useState(false)
-    const [headExpensesLabel, setHeadExpensesLabel] = useState<string>()
-    const [headExpenses, setHeadExpenses] = useState<Array<Expense>>([])
     const [resetOverride, setResetOverride] = useState(false)
     const [yearFlag, setYearFlag] = useState<boolean | null>(null)
     const [showHead, setShowHead] = useState(false)
@@ -79,26 +76,11 @@ const ProjectDetails = () => {
             setLabel(` ${head??""}${all ? projectData?.project_name : ""}${index !== undefined ? ` ${projectData?.project_type === "invoice"? "Installment" :'Year'} ${index + 1}` : ""}`)
             setYearFlag(index?null:projectData?.project_type !== 'invoice')
             setShowHead(head ? false : true)
-            setReimbursements(data);
+            setReimbursements(data.reimbursements);
+            setInstituteExpenses(data.instituteExpenses)
             setIsModalOpen(true);
         } catch (error) {
             toastError("Error fetching reimbursements");
-            console.error(error);
-        }
-    };
-
-    const fetchHeadExpenses = async (head: string) => {
-        try {
-            const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/reimburse/${projectData!._id}/${head}/expenses`,
-                { credentials: "include" }
-            );
-            const data = await response.json();
-            setHeadExpensesLabel(`Expenses under ${head} for Year ${currentYear + 1}`)
-            setHeadExpenses(data);
-            setIsHeadExpensesModalOpen(true);
-        } catch (error) {
-            toastError("Error fetching expenses");
             console.error(error);
         }
     };
@@ -386,7 +368,7 @@ const ProjectDetails = () => {
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             <button
                                                 className="text-blue-600 hover:underline"
-                                                onClick={() => fetchHeadExpenses(head)}>
+                                                onClick={() => fetchReimbursements({head, index : currentYear})}>
                                                 {expenseData ? formatCurrency(expenseData[head] ?? 0) : "Loading"}
                                             </button>
                                         </td>
@@ -421,13 +403,8 @@ const ProjectDetails = () => {
                 label={label!}
                 showHead={showHead}
                 reimbursements={reimbursements}
+                instituteExpenses={instituteExpenses}
                 yearFlag={yearFlag}
-            />
-            <ProjectHeadExpenses
-                isOpen={isHeadExpensesModalOpen}
-                onClose={() => setIsHeadExpensesModalOpen(false)}
-                label={headExpensesLabel!}
-                expenses={headExpenses}
             />
         </>
     );
