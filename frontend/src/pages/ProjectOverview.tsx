@@ -6,8 +6,9 @@ import DescriptionModal from "../components/DescriptionModal";
 import { createColumnHelper } from '@tanstack/react-table'
 import TableCustom from "../components/TableCustom";
 import { Link } from "react-router-dom";
-import { Project } from "../types";
+import { InstituteExpense, Project, Reimbursement } from "../types";
 import { getCurrentIndex } from "../helper";
+import ReimbursementModal from "../components/ReimbursementModal";
 
 const ProjectList: FunctionComponent = () => {
 
@@ -51,6 +52,65 @@ const ProjectList: FunctionComponent = () => {
         fetchProjectData()
     }, [])
 
+    const fetchReimbursements = async ({ project, head }: { project: Project, head?: string }) => {
+        try {
+
+            const index = getCurrentIndex(project)
+
+            const response = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/reimburse/${project!._id}/?head=${head}&index=${index}`,
+                { credentials: "include" }
+            );
+            const data = await response.json();
+            setInfo({ project, head })
+            setLabel(` ${project.project_name} ${head ?? ""}${index !== undefined ? ` ${project.project_type === "invoice" ? "Installment" : 'Year'} ${index + 1}` : ""}`)
+            setYearFlag(index ? null : project.project_type !== 'invoice')
+            setShowHead(head ? false : true)
+            setReimbursements(data.reimbursements);
+            setInstituteExpenses(data.instituteExpenses)
+            setIsModalOpen(true);
+        } catch (error) {
+            toastError("Error fetching reimbursements");
+            console.error(error);
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+
+            const { head, project } = info!
+
+            const index = getCurrentIndex(project)
+
+            const response = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/reimburse/${project._id}/?exportData=true&head=${head}&index=${index}`,
+                { credentials: "include" }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch the Excel file');
+            }
+
+            const blob = await response.blob();
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${project.project_name}${head ? ` ${head}` : ""}${index !== undefined ? project.project_type === 'invoice' ? " Installment " : " Year " : ""}${index !== undefined ? index + 1 : ""} Expense Data.xlsx`;
+            link.click();
+
+        } catch (error) {
+            toastError("Error exporting reimbursement data");
+            console.error(error);
+        }
+    };
+
+    const [info, setInfo] = useState<{ project: Project, head?: string }>()
+    const [label, setLabel] = useState<string>()
+    const [yearFlag, setYearFlag] = useState<boolean | null>(null)
+    const [showHead, setShowHead] = useState(false)
+    const [reimbursements, setReimbursements] = useState<Array<Reimbursement>>([]);
+    const [instituteExpenses, setInstituteExpenses] = useState<Array<InstituteExpense>>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     const [uniqueHeads, setUniqueHeads] = useState<Array<string>>([])
     const [projectData, setProjectData] = useState<Array<Project>>([]);
     const [isDescModalOpen, setIsDescModalOpen] = useState(false);
@@ -86,8 +146,8 @@ const ProjectList: FunctionComponent = () => {
         }),
         columnHelper.accessor(row => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1), {
             header: "Project Type",
-            meta : {
-                filterType : "dropdown"
+            meta: {
+                filterType: "dropdown"
             }
         }),
         columnHelper.accessor(row => getCurrentIndex(row) >= 0 ? "Ongoing" : "Ended", {
@@ -106,10 +166,14 @@ const ProjectList: FunctionComponent = () => {
         }),
         columnHelper.accessor('total_amount', {
             header: "Granted Amount",
-            cell: info => info.getValue().toLocaleString("en-IN", {
-                style: "currency",
-                currency: "INR",
-            }),
+            cell: info => getCurrentIndex(info.row.original) !== -1 ? <button className='text-blue-600 hover:underline'
+                onClick={() => fetchReimbursements({ project: info.row.original })}>{(info.row.original.total_amount ?? 0).toLocaleString("en-IN", {
+                    style: "currency",
+                    currency: "INR",
+                })}</button> : (info.row.original.total_amount ?? 0).toLocaleString("en-IN", {
+                    style: "currency",
+                    currency: "INR",
+                }),
             enableColumnFilter: false
         }),
         columnHelper.group({
@@ -117,11 +181,15 @@ const ProjectList: FunctionComponent = () => {
             columns: uniqueHeads.map(head => (
                 columnHelper.accessor(row => `${row.project_name}_${head}`, {
                     header: head,
-                    cell: info => (info.row.original.project_heads[head] ?? 0).toLocaleString("en-IN", {
-                        style: "currency",
-                        currency: "INR",
-                    }),
-                    enableColumnFilter : false
+                    cell: info => (getCurrentIndex(info.row.original) === -1 ? "Project Ended" : <button className={info.row.original.project_heads[head] !== undefined ? `text-blue-600 hover:underline` : ''}
+                        onClick={() => fetchReimbursements({ project: info.row.original, head })}>{(info.row.original.project_heads[head] ?? 0).toLocaleString("en-IN", {
+                            style: "currency",
+                            currency: "INR",
+                        })}</button>),
+                    enableColumnFilter: false,
+                    meta: {
+                        truncateLength: 15
+                    }
                 })
             ))
         }),
@@ -141,7 +209,7 @@ const ProjectList: FunctionComponent = () => {
             enableSorting: false
         })
     ];
-    
+
 
     return projectData ? (
         <div className="flex flex-col w-full p-4">
@@ -152,7 +220,24 @@ const ProjectList: FunctionComponent = () => {
                 type='project'
                 description={description}
             />
-            <TableCustom data={projectData} columns={columns} />
+            <ReimbursementModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                label={label!}
+                showHead={showHead}
+                handleExport={handleExport}
+                reimbursements={reimbursements}
+                instituteExpenses={instituteExpenses}
+                yearFlag={yearFlag}
+            />
+            <TableCustom data={projectData} columns={columns} initialState={{
+                sorting: [
+                    {
+                        id: 'Status',
+                        desc: true
+                    }
+                ]
+            }} />
         </div>
     ) : (
         <div className="text-center text-gray-500">No projects available</div>

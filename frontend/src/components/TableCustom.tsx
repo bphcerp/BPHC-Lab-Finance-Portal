@@ -20,6 +20,7 @@ declare module '@tanstack/react-table' {
     interface ColumnMeta<TData extends RowData, TValue> {
         getSum?: boolean;
         sumFormatter?: (sum: number) => ReactNode;
+        truncateLength? :number
         filterType?: "dropdown" | "multiselect";
     }
 }
@@ -81,7 +82,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
 
     return (
         <>
-            <div className="flex flex-col w-full space-y-2">
+            <div className="flex flex-col min-w-full w-min space-y-2">
                 <ColumnVisibilityMenu table={table} />
                 <Table>
                     {table.getHeaderGroups().map(headerGroup => (
@@ -104,7 +105,10 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                                     onClick: header.column.getToggleSortingHandler(),
                                                 }}
                                             >
-                                                {flexRender(header.column.columnDef.header, header.getContext())}
+                                                {header.column.columnDef.meta?.truncateLength && header.column.columnDef.meta?.truncateLength < header.column.columnDef.header!.length ? <div className="relative group">
+                                                    <span>{flexRender(header.column.columnDef.header?.toString().slice(0,header.column.columnDef.meta.truncateLength) + '...', header.getContext())}</span>
+                                                    <span className="absolute left-0 mt-5 opacity-0 transition-opacity duration-700 group-hover:opacity-100 bg-gray-300 text-gray-700 text-xs p-2 rounded shadow-lg">{header.column.columnDef.header?.toString()}</span>
+                                                </div> :flexRender(header.column.columnDef.header, header.getContext())}
                                                 {header.column.getIsSorted() === "asc" ? ' 🔼' : header.column.getIsSorted() === "desc" ? ' 🔽' : null}
                                             </div>
                                             {header.column.getCanFilter() ? (
