@@ -82,8 +82,8 @@ export interface Project {
     project_heads: {
         [key: string]: number[];
     };
-    project_head_expenses: {
-        [key: string]: number
+    carry_forward: {
+        [key: string]: number[]
     }
     project_type: string;
     installments?: Installment[];

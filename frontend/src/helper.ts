@@ -10,6 +10,12 @@ export const calculateNumberOfYears = (start: Date, end: Date) => {
     return (yearsDiff >= 1 ? yearsDiff : 0);
 };
 
+export const formatDate = (dateStr?: string) =>
+    dateStr ? new Date(dateStr).toLocaleDateString("en-IN") : "N/A";
+
+export const formatCurrency = (amount: number) =>
+    amount.toLocaleString("en-IN", { style: "currency", currency: "INR" });
+
 const calculateCurrentYear = (data: Project) => {
 
     if (data.override) return data.override.index

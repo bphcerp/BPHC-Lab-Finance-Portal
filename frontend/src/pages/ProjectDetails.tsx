@@ -5,13 +5,8 @@ import ReimbursementModal from "../components/ReimbursementModal";
 import { InstituteExpense, Project, Reimbursement } from "../types";
 import { Button } from "flowbite-react";
 import OverrideConfirmation from "../components/OverrideConfirmation";
-import { calculateNumberOfYears, getCurrentIndex } from "../helper";
-
-const formatDate = (dateStr?: string) =>
-    dateStr ? new Date(dateStr).toLocaleDateString("en-IN") : "N/A";
-
-const formatCurrency = (amount: number) =>
-    amount.toLocaleString("en-IN", { style: "currency", currency: "INR" });
+import { calculateNumberOfYears, formatCurrency, formatDate, getCurrentIndex } from "../helper";
+import { CarryDetailsModal } from "../components/CarryDetailsModal";
 
 const ProjectDetails = () => {
     const { id } = useParams();
@@ -28,6 +23,22 @@ const ProjectDetails = () => {
     const [resetOverride, setResetOverride] = useState(false)
     const [yearFlag, setYearFlag] = useState<boolean | null>(null)
     const [showHead, setShowHead] = useState(false)
+    const [isCarryModalOpen, setIsCarryModalOpen] = useState(false)
+    const [carryYear, setCarryYear] = useState<number | null>(null)
+
+    const getProjectTotal = () => {
+        return Object.values(projectData!.project_heads)
+            .map((arr) => arr[currentYear] || 0)
+            .reduce((sum, value) => sum + value, 0);
+    }
+
+    const getExpenseTotal = () => {
+        return Object.values(expenseData!).reduce((sum, value) => sum + value, 0);
+    }
+
+    const getCarryTotal = () => {
+        return currentYear ? Object.values(projectData!.carry_forward).reduce((sum, arr) => sum + (arr[currentYear - 1] || 0), 0) : 0
+    }
 
     const fetchProjectData = () => {
         fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${id}`, {
@@ -99,16 +110,47 @@ const ProjectDetails = () => {
 
             if (!response.ok) {
                 throw new Error('Failed to fetch the Excel file');
-              }
-          
-              const blob = await response.blob();
-              const link = document.createElement('a');
-              link.href = URL.createObjectURL(blob);
-              link.download = `${projectData?.project_name}${ head ? ` ${head}` : ""}${index !== undefined? projectData?.project_type === 'invoice'? " Installment ": " Year " : ""}${index !== undefined ? index+1 : ""} Expense Data.xlsx`;
-              link.click();
+            }
+
+            const blob = await response.blob();
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${projectData?.project_name}${head ? ` ${head}` : ""}${index !== undefined ? projectData?.project_type === 'invoice' ? " Installment " : " Year " : ""}${index !== undefined ? index + 1 : ""} Expense Data.xlsx`;
+            link.click();
 
         } catch (error) {
             toastError("Error exporting reimbursement data");
+            console.error(error);
+        }
+    };
+
+    const handleCarryForward = async () => {
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/project/${projectData!._id}/carry`,
+                {
+                    credentials: "include",
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (response.ok) {
+                fetchProjectData()
+                toastSuccess("Amount carried forward sucessfully!")
+            }
+            else {
+                const message = (await response.json()).message
+                toastError(message ?? "Something went wrong!")
+                console.error(message)
+                return
+            }
+
+            setIsOverrideModalOpen(false)
+        } catch (error) {
+            toastError("Something went wrong");
             console.error(error);
         }
     };
@@ -176,7 +218,7 @@ const ProjectDetails = () => {
     return (
         <>
             {projectData && (
-                <div className="relative flex flex-col space-y-4 w-full mx-4">
+                <div className="relative flex flex-col space-y-6 w-full mx-4">
                     <OverrideConfirmation
                         isOpen={isOverrideModalOpen}
                         label={projectData.project_type === "yearly" ? "year" : "invoice"}
@@ -188,10 +230,11 @@ const ProjectDetails = () => {
                         }}
                         onConfirm={!resetOverride ? handleOverride : handleOverrideReset}
                     />
-                    {!projectData.override ? <Button color="failure" onClick={() => setIsOverrideModalOpen(true)} className="absolute top-5 right-0">Override Current {projectData.project_type === "invoice" ? "Installment" : "Year"}</Button> : <Button color="failure" onClick={() => {
+
+                    {<Button className="absolute top-5 right-0" color="failure" onClick={!projectData.override ? () => setIsOverrideModalOpen(true) : () => {
                         setIsOverrideModalOpen(true)
                         setResetOverride(true)
-                    }} className="absolute top-5 right-0">Revert Override</Button>}
+                    }}>{!projectData.override ? `Override Current ${projectData.project_type === "invoice" ? "Installment" : "Year"}` : 'Revert Override'}</Button>}
                     <span className="text-4xl font-bold text-center mt-5 text-gray-800">
                         {projectData.project_name}
                     </span>
@@ -238,13 +281,20 @@ const ProjectDetails = () => {
                                                 key={i}
                                                 className={`py-3 px-6 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
                                             >
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-col space-y-2">
                                                     <button
                                                         className="text-blue-600 text-lg hover:underline"
                                                         onClick={() => fetchReimbursements({ index: i, all: true })}>
                                                         {projectData.project_type === "invoice" ? "Installment" : "Year"} {i + 1}
                                                     </button>
                                                     {projectData.project_type === "invoice" ? <span>{formatDate(projectData.installments![i].start_date)} - {formatDate(projectData.installments![i].end_date)}</span> : <></>}
+                                                    {(i < Math.max(
+                                                        ...Object.values(projectData.project_heads).map(
+                                                            (arr) => arr.length
+                                                        )) - 1) ? <button onClick={() => {
+                                                            setIsCarryModalOpen(true)
+                                                            setCarryYear(i + 1)
+                                                        }} className="underline text-sm text-green-500 hover:text-green-600">Show Carry</button> : <></>}
                                                 </div>
                                             </th>
                                         ))}
@@ -365,23 +415,20 @@ const ProjectDetails = () => {
                     </div>
 
 
-                    <h2 className="text-2xl font-semibold text-gray-700 mt-6">Current ( {projectData.project_type === "yearly" ? "Year" : "Installment"} {currentYear + 1} ) Expense Sheet</h2>
-                    <div className="flex py-5">
+                    <div className="flex items-center space-x-2">
+                        <span className="text-2xl font-semibold text-gray-700">Current ( {projectData.project_type === "yearly" ? "Year" : "Installment"} {currentYear + 1} ) Expense Sheet</span>
+                        {<Button onClick={() => handleCarryForward()} size="sm" color="failure" >Carry Forward</Button>}
+                    </div>
+                    <div className="flex pb-8">
                         {!isProjectOver ? <table className="min-w-full bg-white shadow-md rounded-lg mt-2">
                             <thead className="bg-gray-200">
                                 <tr>
-                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">
-                                        Head
-                                    </th>
-                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">
-                                        Total Initial Amount
-                                    </th>
-                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">
-                                        Expenses
-                                    </th>
-                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">
-                                        Balance
-                                    </th>
+                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Head</th>
+                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Total Initial Amount</th>
+                                    {currentYear ? <><th className="py-3 px-6 text-center text-gray-800 font-semibold">Carry Forward</th>
+                                        <th className="py-3 px-6 text-center text-gray-800 font-semibold">Total Current Amount</th></>:<></>}
+                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Expenses</th>
+                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Balance</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -393,6 +440,12 @@ const ProjectDetails = () => {
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             {formatCurrency(allocations[currentYear])}
                                         </td>
+                                        {currentYear ? <><td className="py-3 px-6 text-center text-gray-600">
+                                            {formatCurrency(projectData.carry_forward[head][currentYear - 1])}
+                                        </td>
+                                        <td className="py-3 px-6 text-center text-gray-600">
+                                            {formatCurrency(allocations[currentYear] + projectData.carry_forward[head][currentYear - 1])}
+                                        </td></>:<></>}
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             <button
                                                 className="text-blue-600 hover:underline"
@@ -401,20 +454,22 @@ const ProjectDetails = () => {
                                             </button>
                                         </td>
                                         <td className="py-3 px-6 text-center text-gray-600">
-                                            {expenseData ? formatCurrency(allocations[currentYear] - (expenseData[head] ?? 0)) : "Loading"}
+                                            {expenseData ? formatCurrency(allocations[currentYear] + ( currentYear ? projectData.carry_forward[head][currentYear - 1] : 0) - (expenseData[head] ?? 0)) : "Loading"}
                                         </td>
                                     </tr>
                                 })}
                                 <tr className="border-t bg-gray-100 font-semibold">
                                     <td className="py-3 px-6 text-gray-800 text-center">Total</td>
                                     <td className="py-3 px-6 text-center">
-                                        {formatCurrency(Object.values(projectData.project_heads).map(arr => arr[currentYear] || 0).reduce((sum, value) => sum + value, 0))}
+                                        {formatCurrency(getProjectTotal())}
+                                    </td>
+                                    {currentYear ? <><td className="py-3 px-6 text-gray-800 text-center">{formatCurrency(getCarryTotal())}</td>
+                                        <td className="py-3 px-6 text-gray-800 text-center">{formatCurrency(getProjectTotal() + getCarryTotal())}</td></> : <></>}
+                                    <td className="py-3 px-6 text-center">
+                                        {expenseData ? formatCurrency(getExpenseTotal()) : "Loading"}
                                     </td>
                                     <td className="py-3 px-6 text-center">
-                                        {expenseData ? formatCurrency(Object.values(expenseData).reduce((acc, value) => acc + value, 0)) : "Loading"}
-                                    </td>
-                                    <td className="py-3 px-6 text-center">
-                                        {expenseData ? formatCurrency(Object.values(projectData.project_heads).map(arr => arr[currentYear] || 0).reduce((sum, value) => sum + value, 0) - Object.values(expenseData).reduce((acc, value) => acc + value, 0)) : "Loading"}
+                                        {expenseData ? formatCurrency(getProjectTotal() + getCarryTotal() - getExpenseTotal()) : "Loading"}
                                     </td>
                                 </tr>
                             </tbody>
@@ -435,6 +490,18 @@ const ProjectDetails = () => {
                 instituteExpenses={instituteExpenses}
                 yearFlag={yearFlag}
             />
+
+            {projectData && expenseData && isCarryModalOpen && <CarryDetailsModal
+                projectHeads={projectData.project_heads}
+                projectExpenses={expenseData}
+                formerYear={carryYear!}
+                carryData={projectData.carry_forward}
+                isOpen={isCarryModalOpen}
+                onClose={() => {
+                    setIsCarryModalOpen(false)
+                    setCarryYear(null)
+                }}
+            />}
         </>
     );
 };

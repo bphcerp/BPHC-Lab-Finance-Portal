@@ -28,7 +28,7 @@ const upload = multer({ storage });
 
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 
-export const getCurrentIndex = (project : Project) => project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
+export const getCurrentIndex = (project: Project) => project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
 
 const calculateCurrentYear = (data: Project) => {
     if (data.override) return data.override.index
@@ -64,8 +64,52 @@ const getCurrentInstallmentIndex = (project: Project): number => {
     return -1;
 }
 
+const getProjectExpenses = async (project: Project) => {
+    const reimbursementExpenses = await ReimbursementModel.aggregate([
+        {
+            $match: {
+                project: (project as any)._id,
+                year_or_installment: getCurrentIndex(project)
+            },
+        },
+        {
+            $group: {
+                _id: '$projectHead',
+                totalAmountSum: { $sum: '$totalAmount' },
+            },
+        },
+    ]);
+
+    const instituteExpenses = await InstituteExpenseModel.aggregate([
+        {
+            $match: {
+                project: (project as any)._id,
+                year_or_installment: getCurrentIndex(project)
+            },
+        },
+        {
+            $group: {
+                _id: '$projectHead',
+                totalAmountSum: { $sum: '$amount' },
+            },
+        },
+    ]);
+
+    const project_head_expenses = reimbursementExpenses.reduce((acc, { _id, totalAmountSum }) => {
+        acc[_id] = totalAmountSum;
+        return acc;
+    }, {});
+
+    instituteExpenses.map(({ _id, totalAmountSum }) => {
+        project_head_expenses[_id] = (project_head_expenses[_id] ?? 0) + totalAmountSum;
+    })
+
+
+    return project_head_expenses
+}
+
 router.get('/:id/total-expenses', async (req: Request, res: Response) => {
-    const id = req.params.id; 
+    const id = req.params.id;
 
     if (!id) {
         res.status(400).send({ message: 'Project ID is required and should be a single value' });
@@ -75,51 +119,13 @@ router.get('/:id/total-expenses', async (req: Request, res: Response) => {
     try {
 
         const project = await ProjectModel.findById(id)
-        
+
         if (!project) {
             res.status(400).send({ message: 'Invalid project ID' });
             return;
         }
 
-        
-        const result = await ReimbursementModel.aggregate([
-            {
-                $match: {
-                    project: project._id,
-                    year_or_installment :  getCurrentIndex(project)
-                },
-            },
-            {
-                $group: {
-                    _id: '$projectHead', 
-                    totalAmountSum: { $sum: '$totalAmount' }, 
-                },
-            },
-        ]);
-        
-        const result_expense = await InstituteExpenseModel.aggregate([
-            {
-                $match: {
-                    project: project._id,
-                    year_or_installment : getCurrentIndex(project)
-                },
-            },
-            {
-                $group: {
-                    _id: '$projectHead', 
-                    totalAmountSum: { $sum: '$amount' }, 
-                },
-            },
-        ]);
-
-        const project_head_expenses = result.reduce((acc, { _id, totalAmountSum }) => {
-            acc[_id] = totalAmountSum; 
-            return acc;
-        }, {});
-
-        result_expense.map(({_id, totalAmountSum}) => {
-            project_head_expenses[_id] = (project_head_expenses[_id] ?? 0) + totalAmountSum;
-        })
+        const project_head_expenses = await getProjectExpenses(project)
 
         res.json(project_head_expenses);
     } catch (err) {
@@ -186,6 +192,42 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
     }
 });
 
+router.post('/:id/carry', async (req: Request, res: Response) => {
+    try {
+        const project = await ProjectModel.findById(req.params.id);
+
+        if (!project) {
+            res.status(404).json({ message: 'Project not found.' });
+            return;
+        }
+
+        //check if project is in its last year, you cant carry forward.
+
+        const project_head_expenses = await getProjectExpenses(project)
+
+        project.carry_forward!.forEach((alloc , head) => {
+            console.log(head)
+            const carryForwardPerHead = project.project_heads.get(head)![getCurrentIndex(project)] - (project_head_expenses[head] ?? 0)
+            let oldCarryArray = project.carry_forward!.get(head)!
+            oldCarryArray[getCurrentIndex(project)] = carryForwardPerHead
+            project.carry_forward!.set(head, oldCarryArray) 
+        })
+
+        project.override = {
+            type: project.project_type,
+            index: getCurrentIndex(project) + 1
+        }
+
+        await project.save()
+        res.send({ updatedProject: project })
+    }
+    catch (err) {
+        console.error(err)
+        res.status(500).send({ message: (err as Error).message })
+    }
+})
+
+//Enforce
 router.post('/:id/override', async (req: Request, res: Response) => {
     try {
         const project = await ProjectModel.findById(req.params.id);
@@ -208,6 +250,7 @@ router.post('/:id/override', async (req: Request, res: Response) => {
     }
 })
 
+//Revert
 router.delete('/:id/override', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -219,7 +262,7 @@ router.delete('/:id/override', async (req: Request, res: Response) => {
             return;
         }
 
-        await ProjectModel.updateOne({ _id: id }, { $unset: { override: "" }});
+        await ProjectModel.updateOne({ _id: id }, { $unset: { override: "" } });
 
         res.send({ message: 'Override field removed successfully.' });
     } catch (err) {
@@ -297,51 +340,14 @@ router.get('/', async (req: Request, res: Response) => {
                 if (curr !== -1) {
                     const projectHeads = project.project_heads;
 
-                    const result = await ReimbursementModel.aggregate([
-                        {
-                            $match: {
-                                project: project._id,
-                                year_or_installment : curr
-                            },
-                        },
-                        {
-                            $group: {
-                                _id: '$projectHead', 
-                                totalAmountSum: { $sum: '$totalAmount' }, 
-                            },
-                        },
-                    ]);
+                    const project_head_expenses =  await getProjectExpenses(project)
 
-                    const result_expense = await InstituteExpenseModel.aggregate([
-                        {
-                            $match: {
-                                project: project._id,
-                                year_or_installment : curr
-                            },
-                        },
-                        {
-                            $group: {
-                                _id: '$projectHead', 
-                                totalAmountSum: { $sum: '$amount' }, 
-                            },
-                        },
-                    ]);
-
-                    const project_head_expenses = result.reduce((acc, { _id, totalAmountSum }) => {
-                        acc[_id] = totalAmountSum; 
-                        return acc;
-                    }, {});
-
-                    result_expense.map(({_id, totalAmountSum}) => {
-                        project_head_expenses[_id] = (project_head_expenses[_id] ?? 0) + totalAmountSum;
-                    })
-
-                    
                     projectHeads.forEach((allocations, head) => {
                         const allocation = allocations[curr];
                         const headExpense = project_head_expenses[head] || 0;
+                        const carryForward = curr ? project.carry_forward!.get(head)![curr - 1] : 0
 
-                        allocations[curr] = allocation - headExpense;
+                        allocations[curr] = allocation + carryForward - headExpense;
                         projectHeads.set(head, [allocations[curr]])
                     });
                 }
@@ -416,7 +422,7 @@ router.get('/:id/util_cert', async (req, res) => {
             return;
         }
 
-        const curr = project.project_type==="invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
+        const curr = project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
 
 
         const reimbursements = await ReimbursementModel.find({ project: projectId });
@@ -443,7 +449,7 @@ router.get('/:id/util_cert', async (req, res) => {
         <html lang="en-IN">
         <head>
             <meta charset="utf-8">
-            <title>Utilization Certificate for ${project.project_type==="yearly"?"Year":"Installment"} ${curr+1}</title>
+            <title>Utilization Certificate for ${project.project_type === "yearly" ? "Year" : "Installment"} ${curr + 1}</title>
             <style>
                 body { font-family: Arial, sans-serif; margin: 10px 20px; }
                 .header { display: flex; justify-content: space-between; align-items: center;}
