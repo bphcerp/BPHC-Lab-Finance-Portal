@@ -1,5 +1,4 @@
 import mongoose, { Schema } from 'mongoose';
-import { calculateNumberOfYears } from '../routes/project';
 
 const installmentSchema = new Schema({
     start_date: { type: Date, required: true },
@@ -38,8 +37,9 @@ projectSchema.pre('save', function (next) {
         return
     }
     let carryForward : { [key : string] : number[] } = {}
-    Object.keys(this.project_heads).forEach(key => {
-        carryForward[key] = new Array(calculateNumberOfYears(this.start_date!,this.end_date!)).fill(-1);
+    this.project_heads.forEach((alloc, key) => {
+        console.log(key)
+        carryForward[key] = new Array(alloc.length).fill(0);
     })
     next();
 });
