@@ -422,7 +422,7 @@ const ProjectDetails = () => {
 
                     <div className="flex items-center space-x-2">
                         <span className="text-2xl font-semibold text-gray-700">Current ( {projectData.project_type === "yearly" ? "Year" : "Installment"} {currentYear + 1} ) Expense Sheet</span>
-                        {<Button onClick={() => handleCarryForward()} size="sm" color="failure" >Carry Forward</Button>}
+                        {(projectData.project_type === 'invoice' ? ( currentYear + 1 === projectData.installments!.length) : ( currentYear + 1 === calculateNumberOfYears(projectData.start_date!,projectData.end_date!)))?<></>:<Button onClick={() => handleCarryForward()} size="sm" color="failure" >Carry Forward</Button>}
                     </div>
                     <div className="flex pb-8">
                         {!isProjectOver ? <table className="min-w-full bg-white shadow-md rounded-lg mt-2">

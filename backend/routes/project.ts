@@ -28,6 +28,14 @@ const upload = multer({ storage });
 
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 
+export const calculateNumberOfYears = (start: Date, end: Date) => {
+    const startYear = start.getMonth() < 3 ? start.getFullYear() - 1 : start.getFullYear();
+    const endYear = end.getMonth() < 3 ? end.getFullYear() - 1 : end.getFullYear();
+
+    const yearsDiff = endYear - startYear + 1;
+    return (yearsDiff >= 1 ? yearsDiff : 0);
+};
+
 export const getCurrentIndex = (project: Project) => project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
 
 const calculateCurrentYear = (data: Project) => {
@@ -201,7 +209,13 @@ router.post('/:id/carry', async (req: Request, res: Response) => {
             return;
         }
 
-        //check if project is in its last year, you cant carry forward.
+        const currentIndex = getCurrentIndex(project)
+        const isYearInvalid = project.project_type === 'invoice' ? ( currentIndex + 1 === project.installments.length) : ( currentIndex + 1 === calculateNumberOfYears(project.start_date!,project.end_date!))
+
+        if (isYearInvalid){
+            res.status(400).send({message : `Project's last ${project.project_type === 'invoice' ? 'installment' :  'year'}, cannot carry forward`})
+            return
+        }
 
         const project_head_expenses = await getProjectExpenses(project)
 
@@ -236,12 +250,24 @@ router.post('/:id/override', async (req: Request, res: Response) => {
             return;
         }
 
+        if (req.body.selectedIndex === getCurrentIndex(project)){
+            res.status(409).send({ message : "Override redundant. Already set to that year."})
+            return
+        }
+
         if (getCurrentIndex(project) !== -1) {
-            const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[req.body.selectedIndex] !== null)
+            const isCarrySet =  Array.from(project.carry_forward!.values()).some(carry => carry[req.body.selectedIndex] !== null)
             if (isCarrySet) {
-                res.status(403).json({ message: 'Carry already set. Cannot override to this year.' })
+                res.status(403).json({ message: 'Carry already set. Cannot override.' })
                 return
             }
+        }
+
+        const isYearInvalid = req.body.selectedIndex < 0 || project.project_type === 'invoice' ? ( req.body.selectedIndex >= project.installments.length) : ( req.body.selectedIndex >= calculateNumberOfYears(project.start_date!,project.end_date!))
+
+        if (isYearInvalid){
+            res.status(400).send({message : project.project_type ? "Invalid Installment Number" : "Invalid Year"})
+            return
         }
 
         project.override = {
@@ -270,9 +296,9 @@ router.delete('/:id/override', async (req: Request, res: Response) => {
         }
 
         if (getCurrentIndex(project) !== -1) {
-            const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[getCurrentIndex(project)] !== null)
+            const isCarrySet =  Array.from(project.carry_forward!.values()).some(carry => carry[getCurrentIndex(project)] !== null)
             if (isCarrySet) {
-                res.status(403).json({ message: 'Carry already set for this year. Cannot reset override. Please set the year to some other year.' })
+                res.status(403).json({ message: 'Carry already set. Cannot override.' })
                 return
             }
         }
