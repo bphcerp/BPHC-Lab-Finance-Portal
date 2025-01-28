@@ -227,7 +227,7 @@ router.post('/:id/carry', async (req: Request, res: Response) => {
     }
 })
 
-//Enforce
+//Enforce Override
 router.post('/:id/override', async (req: Request, res: Response) => {
     try {
         const project = await ProjectModel.findById(req.params.id);
@@ -235,6 +235,12 @@ router.post('/:id/override', async (req: Request, res: Response) => {
         if (!project) {
             res.status(404).json({ message: 'Project not found.' });
             return;
+        }
+
+        const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[req.body.selectedIndex] !== -1)
+        if (isCarrySet){
+            res.status(403).json({ message : 'Carry already set. Cannot override to this year.' })
+            return
         }
 
         project.override = {
@@ -250,7 +256,7 @@ router.post('/:id/override', async (req: Request, res: Response) => {
     }
 })
 
-//Revert
+//Revert Override
 router.delete('/:id/override', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -261,6 +267,13 @@ router.delete('/:id/override', async (req: Request, res: Response) => {
             res.status(404).json({ message: 'Project not found.' });
             return;
         }
+
+        const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[getCurrentIndex(project)] !== -1)
+        if (isCarrySet){
+            res.status(403).json({ message : 'Carry already set for this year. Cannot reset override. Please set the year to some other year.' })
+            return
+        }
+
 
         await ProjectModel.updateOne({ _id: id }, { $unset: { override: "" } });
 

@@ -231,10 +231,15 @@ const ProjectDetails = () => {
                         onConfirm={!resetOverride ? handleOverride : handleOverrideReset}
                     />
 
-                    {<Button className="absolute top-5 right-0" color="failure" onClick={!projectData.override ? () => setIsOverrideModalOpen(true) : () => {
-                        setIsOverrideModalOpen(true)
-                        setResetOverride(true)
-                    }}>{!projectData.override ? `Override Current ${projectData.project_type === "invoice" ? "Installment" : "Year"}` : 'Revert Override'}</Button>}
+                    <div className="absolute top-5 right-0 flex space-x-4">
+                        {<Button color="failure" onClick={() => setIsOverrideModalOpen(true)}>{`Override Current ${projectData.project_type === "invoice" ? "Installment" : "Year"}`}</Button>}
+
+                        {projectData.override ? <Button color="failure" onClick={() => {
+                            setIsOverrideModalOpen(true)
+                            setResetOverride(true)
+                        }}>Revert Override</Button>:<></>}
+                    </div>
+
                     <span className="text-4xl font-bold text-center mt-5 text-gray-800">
                         {projectData.project_name}
                     </span>
@@ -426,7 +431,7 @@ const ProjectDetails = () => {
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Head</th>
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Total Initial Amount</th>
                                     {currentYear ? <><th className="py-3 px-6 text-center text-gray-800 font-semibold">Carry Forward</th>
-                                        <th className="py-3 px-6 text-center text-gray-800 font-semibold">Total Current Amount</th></>:<></>}
+                                        <th className="py-3 px-6 text-center text-gray-800 font-semibold">Total Current Amount</th></> : <></>}
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Expenses</th>
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Balance</th>
                                 </tr>
@@ -443,9 +448,9 @@ const ProjectDetails = () => {
                                         {currentYear ? <><td className="py-3 px-6 text-center text-gray-600">
                                             {formatCurrency(projectData.carry_forward[head][currentYear - 1])}
                                         </td>
-                                        <td className="py-3 px-6 text-center text-gray-600">
-                                            {formatCurrency(allocations[currentYear] + projectData.carry_forward[head][currentYear - 1])}
-                                        </td></>:<></>}
+                                            <td className="py-3 px-6 text-center text-gray-600">
+                                                {formatCurrency(allocations[currentYear] + projectData.carry_forward[head][currentYear - 1])}
+                                            </td></> : <></>}
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             <button
                                                 className="text-blue-600 hover:underline"
@@ -454,7 +459,7 @@ const ProjectDetails = () => {
                                             </button>
                                         </td>
                                         <td className="py-3 px-6 text-center text-gray-600">
-                                            {expenseData ? formatCurrency(allocations[currentYear] + ( currentYear ? projectData.carry_forward[head][currentYear - 1] : 0) - (expenseData[head] ?? 0)) : "Loading"}
+                                            {expenseData ? formatCurrency(allocations[currentYear] + (currentYear ? projectData.carry_forward[head][currentYear - 1] : 0) - (expenseData[head] ?? 0)) : "Loading"}
                                         </td>
                                     </tr>
                                 })}
