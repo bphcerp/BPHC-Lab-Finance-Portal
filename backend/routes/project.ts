@@ -205,12 +205,11 @@ router.post('/:id/carry', async (req: Request, res: Response) => {
 
         const project_head_expenses = await getProjectExpenses(project)
 
-        project.carry_forward!.forEach((alloc , head) => {
-            console.log(head)
+        project.carry_forward!.forEach((alloc, head) => {
             const carryForwardPerHead = project.project_heads.get(head)![getCurrentIndex(project)] - (project_head_expenses[head] ?? 0)
             let oldCarryArray = project.carry_forward!.get(head)!
             oldCarryArray[getCurrentIndex(project)] = carryForwardPerHead
-            project.carry_forward!.set(head, oldCarryArray) 
+            project.carry_forward!.set(head, oldCarryArray)
         })
 
         project.override = {
@@ -237,10 +236,12 @@ router.post('/:id/override', async (req: Request, res: Response) => {
             return;
         }
 
-        const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[req.body.selectedIndex] !== null)
-        if (isCarrySet){
-            res.status(403).json({ message : 'Carry already set. Cannot override to this year.' })
-            return
+        if (getCurrentIndex(project) !== -1) {
+            const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[req.body.selectedIndex] !== null)
+            if (isCarrySet) {
+                res.status(403).json({ message: 'Carry already set. Cannot override to this year.' })
+                return
+            }
         }
 
         project.override = {
@@ -268,10 +269,12 @@ router.delete('/:id/override', async (req: Request, res: Response) => {
             return;
         }
 
-        const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[getCurrentIndex(project)] !== null)
-        if (isCarrySet){
-            res.status(403).json({ message : 'Carry already set for this year. Cannot reset override. Please set the year to some other year.' })
-            return
+        if (getCurrentIndex(project) !== -1) {
+            const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[getCurrentIndex(project)] !== null)
+            if (isCarrySet) {
+                res.status(403).json({ message: 'Carry already set for this year. Cannot reset override. Please set the year to some other year.' })
+                return
+            }
         }
 
 
@@ -344,7 +347,7 @@ router.get('/', async (req: Request, res: Response) => {
 
         const filteredProjects = past
             ? projects
-            : projects.filter(project => calculateCurrentYear(project) !== -1);
+            : projects.filter(project => getCurrentIndex(project) !== -1);
 
         if (balance === 'true') {
             const updatedProjects = await Promise.all(filteredProjects.map(async project => {
@@ -353,7 +356,7 @@ router.get('/', async (req: Request, res: Response) => {
                 if (curr !== -1) {
                     const projectHeads = project.project_heads;
 
-                    const project_head_expenses =  await getProjectExpenses(project)
+                    const project_head_expenses = await getProjectExpenses(project)
 
                     projectHeads.forEach((allocations, head) => {
                         const allocation = allocations[curr];
@@ -435,7 +438,7 @@ router.get('/:id/util_cert', async (req, res) => {
             return;
         }
 
-        const curr = project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
+        const curr = getCurrentIndex(project)
 
 
         const reimbursements = await ReimbursementModel.find({ project: projectId });

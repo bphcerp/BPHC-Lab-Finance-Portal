@@ -38,7 +38,6 @@ projectSchema.pre('save', function (next) {
     }
     let carryForward : { [key : string] : number[] } = {}
     this.project_heads.forEach((alloc, key) => {
-        console.log(key)
         carryForward[key] = new Array(alloc.length).fill(null);
     })
     next();

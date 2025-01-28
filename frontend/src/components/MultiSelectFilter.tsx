@@ -52,7 +52,7 @@ function MultiSelectFilter({ column }: { column: Column<any, unknown> }) {
                 Select All
               </label>
             </div>
-            <div className="flex flex-wrap space-y-4 p-4">
+            <div className="flex flex-wrap w-56 space-y-4 p-4">
               {values.map((value, i) => (
                 <div key={i} className="flex items-center gap-2 text-gray-700">
                   <input
@@ -65,7 +65,7 @@ function MultiSelectFilter({ column }: { column: Column<any, unknown> }) {
                       column.setFilterValue(filterValues)
                     }}
                   />
-                  <span className="text-sm">{value}</span>
+                  <span className="text-sm w-fit">{value}</span>
                 </div>
               ))}
             </div>
