@@ -39,7 +39,7 @@ projectSchema.pre('save', function (next) {
     }
     let carryForward : { [key : string] : number[] } = {}
     Object.keys(this.project_heads).forEach(key => {
-        carryForward[key] = new Array(calculateNumberOfYears(this.start_date!,this.end_date!)).fill(0);
+        carryForward[key] = new Array(calculateNumberOfYears(this.start_date!,this.end_date!)).fill(-1);
     })
     next();
 });
