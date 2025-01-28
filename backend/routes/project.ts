@@ -28,6 +28,14 @@ const upload = multer({ storage });
 
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 
+export const calculateNumberOfYears = (start: Date, end: Date) => {
+    const startYear = start.getMonth() < 3 ? start.getFullYear() - 1 : start.getFullYear();
+    const endYear = end.getMonth() < 3 ? end.getFullYear() - 1 : end.getFullYear();
+
+    const yearsDiff = endYear - startYear + 1;
+    return (yearsDiff >= 1 ? yearsDiff : 0);
+};
+
 export const getCurrentIndex = (project: Project) => project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
 
 const calculateCurrentYear = (data: Project) => {
