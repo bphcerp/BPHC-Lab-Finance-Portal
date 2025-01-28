@@ -13,8 +13,8 @@ export const calculateNumberOfYears = (start: Date, end: Date) => {
 export const formatDate = (dateStr?: string) =>
     dateStr ? new Date(dateStr).toLocaleDateString("en-IN") : "N/A";
 
-export const formatCurrency = (amount: number) =>
-    amount.toLocaleString("en-IN", { style: "currency", currency: "INR" });
+export const formatCurrency = (amount: number | null) =>
+    (amount ?? 0).toLocaleString("en-IN", { style: "currency", currency: "INR" });
 
 const calculateCurrentYear = (data: Project) => {
 

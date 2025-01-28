@@ -237,7 +237,7 @@ router.post('/:id/override', async (req: Request, res: Response) => {
             return;
         }
 
-        const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[req.body.selectedIndex] !== -1)
+        const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[req.body.selectedIndex] !== null)
         if (isCarrySet){
             res.status(403).json({ message : 'Carry already set. Cannot override to this year.' })
             return
@@ -268,7 +268,7 @@ router.delete('/:id/override', async (req: Request, res: Response) => {
             return;
         }
 
-        const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[getCurrentIndex(project)] !== -1)
+        const isCarrySet = Object.values(project.carry_forward!).some(carry => carry[getCurrentIndex(project)] !== null)
         if (isCarrySet){
             res.status(403).json({ message : 'Carry already set for this year. Cannot reset override. Please set the year to some other year.' })
             return
