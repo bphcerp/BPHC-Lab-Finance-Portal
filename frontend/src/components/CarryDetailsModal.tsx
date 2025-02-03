@@ -1,24 +1,34 @@
 import { Modal } from "flowbite-react"
-import { FunctionComponent, useEffect } from "react"
+import { FunctionComponent, useEffect, useState } from "react"
 import { formatCurrency } from "../helper"
+import { toastError } from "../toasts"
 
 
 interface CarryDetailsModalProps {
-    projectHeads : { [key: string]: number[] }
-    projectExpenses: { [key: string]: number }
+    projectId : string
+    projectHeads: { [key: string]: number[] }
     formerYear: number
     carryData: { [key: string]: number[] }
     isOpen: boolean
     onClose: () => void
 }
 
-export const CarryDetailsModal: FunctionComponent<CarryDetailsModalProps> = ({ projectHeads, projectExpenses, formerYear, carryData, isOpen, onClose }) => {
+export const CarryDetailsModal: FunctionComponent<CarryDetailsModalProps> = ({ projectId, projectHeads, formerYear, carryData, isOpen, onClose }) => {
 
     useEffect(() => {
-        console.log(projectExpenses)
-    },[projectExpenses])
+        //formerYear is 1-indexed. The data is saved as 0-indexed.
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${projectId}/total-expenses?index=${formerYear-1}`, {
+            credentials: "include",
+        })
+            .then((res) => res.json())
+            .then((data) => setProjectExpenses(data))
+            .catch((e) => {
+                toastError("Something went wrong");
+                console.error(e);
+            });
+    }, [formerYear])
 
-    console.log(carryData)
+    const [projectExpenses, setProjectExpenses] = useState<{ [key: string]: number }>({})
 
     const totalCarryAmount = Object.values(carryData).reduce((sum, arr) => sum + (arr[formerYear - 1] || 0), 0)
     const totalExpenseAmount = Object.values(projectExpenses).reduce((sum, expense) => sum + (expense || 0), 0)
@@ -46,13 +56,13 @@ export const CarryDetailsModal: FunctionComponent<CarryDetailsModalProps> = ({ p
                             {Object.entries(projectHeads).map(([head, alloc], key) => (
                                 <tr key={key} className="border-t">
                                     <td className="py-3 px-6 text-center text-gray-600">{head}</td>
-                                    <td className="py-3 px-6 text-center text-gray-600">{formatCurrency(alloc[formerYear-1])}</td>
+                                    <td className="py-3 px-6 text-center text-gray-600">{formatCurrency(alloc[formerYear - 1])}</td>
                                     <td className="py-3 px-6 text-center text-gray-600">{formatCurrency(projectExpenses[head] ?? 0)}</td>
-                                    <td className="py-3 px-6 text-center text-gray-600">{formatCurrency(alloc[formerYear-1] - (projectExpenses[head] ?? 0))}</td>
-                                    <td className="py-3 px-6 text-center text-gray-600">{formatCurrency(carryData[head][formerYear-1])}</td>
+                                    <td className="py-3 px-6 text-center text-gray-600">{formatCurrency(alloc[formerYear - 1] - (projectExpenses[head] ?? 0))}</td>
+                                    <td className="py-3 px-6 text-center text-gray-600">{formatCurrency(carryData[head][formerYear - 1])}</td>
                                     <td className="py-3 px-6 text-center text-gray-600">{formatCurrency(alloc[formerYear])}</td>
                                     <td className="py-3 px-6 text-center text-gray-600 font-bold">{formatCurrency(projectHeads[head][formerYear] + carryData[head][formerYear - 1])}</td>
-                                    </tr>
+                                </tr>
                             ))}
                             <tr className="border-t bg-gray-100 font-semibold">
                                 <td className="py-3 px-6 text-center">Total Amount</td>

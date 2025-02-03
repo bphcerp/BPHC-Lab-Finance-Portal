@@ -72,12 +72,12 @@ const getCurrentInstallmentIndex = (project: Project): number => {
     return -1;
 }
 
-const getProjectExpenses = async (project: Project) => {
+const getProjectExpenses = async (project: Project, index?: number) => {
     const reimbursementExpenses = await ReimbursementModel.aggregate([
         {
             $match: {
                 project: (project as any)._id,
-                year_or_installment: getCurrentIndex(project)
+                year_or_installment: index ?? getCurrentIndex(project)
             },
         },
         {
@@ -92,7 +92,7 @@ const getProjectExpenses = async (project: Project) => {
         {
             $match: {
                 project: (project as any)._id,
-                year_or_installment: getCurrentIndex(project)
+                year_or_installment: index ?? getCurrentIndex(project)
             },
         },
         {
@@ -117,7 +117,8 @@ const getProjectExpenses = async (project: Project) => {
 }
 
 router.get('/:id/total-expenses', async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const { id } = req.params
+    const { index } = req.query
 
     if (!id) {
         res.status(400).send({ message: 'Project ID is required and should be a single value' });
@@ -133,7 +134,7 @@ router.get('/:id/total-expenses', async (req: Request, res: Response) => {
             return;
         }
 
-        const project_head_expenses = await getProjectExpenses(project)
+        const project_head_expenses = await getProjectExpenses(project, index ? parseInt(index.toString()) : undefined)
 
         res.json(project_head_expenses);
     } catch (err) {
@@ -203,6 +204,9 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
 router.post('/:id/carry', async (req: Request, res: Response) => {
     try {
         const project = await ProjectModel.findById(req.params.id);
+        const { carryData } = req.body
+
+        console.log(carryData)
 
         if (!project) {
             res.status(404).json({ message: 'Project not found.' });
@@ -210,19 +214,16 @@ router.post('/:id/carry', async (req: Request, res: Response) => {
         }
 
         const currentIndex = getCurrentIndex(project)
-        const isYearInvalid = project.project_type === 'invoice' ? ( currentIndex + 1 === project.installments.length) : ( currentIndex + 1 === calculateNumberOfYears(project.start_date!,project.end_date!))
+        const isYearInvalid = project.project_type === 'invoice' ? (currentIndex + 1 === project.installments.length) : (currentIndex + 1 === calculateNumberOfYears(project.start_date!, project.end_date!))
 
-        if (isYearInvalid){
-            res.status(400).send({message : `Project's last ${project.project_type === 'invoice' ? 'installment' :  'year'}, cannot carry forward`})
+        if (isYearInvalid) {
+            res.status(400).send({ message: `Project's last ${project.project_type === 'invoice' ? 'installment' : 'year'}, cannot carry forward` })
             return
         }
 
-        const project_head_expenses = await getProjectExpenses(project)
-
         project.carry_forward!.forEach((alloc, head) => {
-            const carryForwardPerHead = project.project_heads.get(head)![getCurrentIndex(project)] - (project_head_expenses[head] ?? 0)
             let oldCarryArray = project.carry_forward!.get(head)!
-            oldCarryArray[getCurrentIndex(project)] = carryForwardPerHead
+            oldCarryArray[getCurrentIndex(project)] = carryData[head]
             project.carry_forward!.set(head, oldCarryArray)
         })
 
@@ -250,23 +251,23 @@ router.post('/:id/override', async (req: Request, res: Response) => {
             return;
         }
 
-        if (req.body.selectedIndex === getCurrentIndex(project)){
-            res.status(409).send({ message : "Override redundant. Already set to that year."})
+        if (req.body.selectedIndex === getCurrentIndex(project)) {
+            res.status(409).send({ message: "Override redundant. Already set to that year." })
             return
         }
 
         if (getCurrentIndex(project) !== -1) {
-            const isCarrySet =  Array.from(project.carry_forward!.values()).some(carry => carry[req.body.selectedIndex] !== null)
+            const isCarrySet = Array.from(project.carry_forward!.values()).some(carry => carry[req.body.selectedIndex] !== null)
             if (isCarrySet) {
                 res.status(403).json({ message: 'Carry already set. Cannot override.' })
                 return
             }
         }
 
-        const isYearInvalid = req.body.selectedIndex < 0 || project.project_type === 'invoice' ? ( req.body.selectedIndex >= project.installments.length) : ( req.body.selectedIndex >= calculateNumberOfYears(project.start_date!,project.end_date!))
+        const isYearInvalid = req.body.selectedIndex < 0 || project.project_type === 'invoice' ? (req.body.selectedIndex >= project.installments.length) : (req.body.selectedIndex >= calculateNumberOfYears(project.start_date!, project.end_date!))
 
-        if (isYearInvalid){
-            res.status(400).send({message : project.project_type ? "Invalid Installment Number" : "Invalid Year"})
+        if (isYearInvalid) {
+            res.status(400).send({ message: project.project_type ? "Invalid Installment Number" : "Invalid Year" })
             return
         }
 
@@ -296,7 +297,7 @@ router.delete('/:id/override', async (req: Request, res: Response) => {
         }
 
         if (getCurrentIndex(project) !== -1) {
-            const isCarrySet =  Array.from(project.carry_forward!.values()).some(carry => carry[getCurrentIndex(project)] !== null)
+            const isCarrySet = Array.from(project.carry_forward!.values()).some(carry => carry[getCurrentIndex(project)] !== null)
             if (isCarrySet) {
                 res.status(403).json({ message: 'Carry already set. Cannot override.' })
                 return

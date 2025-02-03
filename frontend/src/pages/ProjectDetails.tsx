@@ -7,6 +7,7 @@ import { Button } from "flowbite-react";
 import OverrideConfirmation from "../components/OverrideConfirmation";
 import { calculateNumberOfYears, formatCurrency, formatDate, getCurrentIndex } from "../helper";
 import { CarryDetailsModal } from "../components/CarryDetailsModal";
+import CarryConfirmationModal from "../components/CarryConfirmationModal";
 
 const ProjectDetails = () => {
     const { id } = useParams();
@@ -24,6 +25,7 @@ const ProjectDetails = () => {
     const [yearFlag, setYearFlag] = useState<boolean | null>(null)
     const [showHead, setShowHead] = useState(false)
     const [isCarryModalOpen, setIsCarryModalOpen] = useState(false)
+    const [isCarryDetailsModalOpen, setIsCarryDetailsModalOpen] = useState(false)
     const [carryYear, setCarryYear] = useState<number | null>(null)
 
     const getProjectTotal = () => {
@@ -124,7 +126,7 @@ const ProjectDetails = () => {
         }
     };
 
-    const handleCarryForward = async () => {
+    const handleCarryForward = async (carryData : { [key: string]: number }) => {
         try {
             const response = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/project/${projectData!._id}/carry`,
@@ -134,6 +136,7 @@ const ProjectDetails = () => {
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                    body : JSON.stringify({carryData})
                 }
             );
 
@@ -297,7 +300,7 @@ const ProjectDetails = () => {
                                                         ...Object.values(projectData.project_heads).map(
                                                             (arr) => arr.length
                                                         )) - 1) ? <button onClick={() => {
-                                                            setIsCarryModalOpen(true)
+                                                            setIsCarryDetailsModalOpen(true)
                                                             setCarryYear(i + 1)
                                                         }} className="underline text-sm text-green-500 hover:text-green-600">Show Carry</button> : <></>}
                                                 </div>
@@ -422,7 +425,7 @@ const ProjectDetails = () => {
 
                     <div className="flex items-center space-x-2">
                         <span className="text-2xl font-semibold text-gray-700">Current ( {projectData.project_type === "yearly" ? "Year" : "Installment"} {currentYear + 1} ) Expense Sheet</span>
-                        {(projectData.project_type === 'invoice' ? ( currentYear + 1 === projectData.installments!.length) : ( currentYear + 1 === calculateNumberOfYears(projectData.start_date!,projectData.end_date!)))?<></>:<Button onClick={() => handleCarryForward()} size="sm" color="failure" >Carry Forward</Button>}
+                        {(projectData.project_type === 'invoice' ? ( currentYear + 1 === projectData.installments!.length) : ( currentYear + 1 === calculateNumberOfYears(new Date(projectData.start_date!),new Date(projectData.end_date!))))?<></>:<Button onClick={() => setIsCarryModalOpen(true)} size="sm" color="failure" >Carry Forward</Button>}
                     </div>
                     <div className="flex pb-8">
                         {!isProjectOver ? <table className="min-w-full bg-white shadow-md rounded-lg mt-2">
@@ -496,14 +499,24 @@ const ProjectDetails = () => {
                 yearFlag={yearFlag}
             />
 
-            {projectData && expenseData && isCarryModalOpen && <CarryDetailsModal
+            {projectData &&  expenseData && isCarryModalOpen && <CarryConfirmationModal
+                projectHeads={projectData?.project_heads}
+                expenseData={expenseData}
+                carryData={projectData.carry_forward}
+                currentIndex={getCurrentIndex(projectData)}
+                isOpen={isCarryModalOpen}
+                onClose={() => setIsCarryModalOpen(false)}
+                onSubmit={handleCarryForward}
+            />}
+
+            {id && projectData && expenseData && isCarryDetailsModalOpen && <CarryDetailsModal
+                projectId={id}
                 projectHeads={projectData.project_heads}
-                projectExpenses={expenseData}
                 formerYear={carryYear!}
                 carryData={projectData.carry_forward}
-                isOpen={isCarryModalOpen}
+                isOpen={isCarryDetailsModalOpen}
                 onClose={() => {
-                    setIsCarryModalOpen(false)
+                    setIsCarryDetailsModalOpen(false)
                     setCarryYear(null)
                 }}
             />}
