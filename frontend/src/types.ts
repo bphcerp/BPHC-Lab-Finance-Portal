@@ -14,7 +14,7 @@ export interface Expense {
     category: Category;
     amount: number;
     reimbursedID: Reimbursement | null;
-    paidBy: Category;
+    paidBy?: Category;
     description: string
     settled: Account | null;
     createdAt: Date;

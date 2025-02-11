@@ -5,8 +5,9 @@ const expenseSchema = new Schema({
   category: { type: mongoose.Schema.Types.ObjectId, ref: 'categories', required: true },
   amount: { type: Number, required: true },
   reimbursedID: { type: mongoose.Schema.Types.ObjectId, ref: 'reimbursements', default: null },
-  paidBy: { type: mongoose.Schema.Types.ObjectId, ref: 'members', required: true },
+  paidBy: { type: mongoose.Schema.Types.ObjectId, ref: 'members'},
   settled: { type: mongoose.Schema.Types.ObjectId, ref: 'account' },
+  directExpense : { type: Schema.Types.Boolean, default : false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   description: { type: String, default: null }

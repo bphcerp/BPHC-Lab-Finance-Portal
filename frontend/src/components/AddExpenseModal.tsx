@@ -1,4 +1,4 @@
-import { Button, Modal, Label, TextInput, Select, FileInput, Textarea, ToggleSwitch } from 'flowbite-react';
+import { Button, Modal, Label, TextInput, Select, FileInput, Textarea, ToggleSwitch, Radio } from 'flowbite-react';
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess, toastWarn } from '../toasts';
 import AddCategoryModal from './AddCategoryModal';
@@ -21,6 +21,8 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
   const [projects, setProjects] = useState<Project[]>([]);
   const [description, setDescription] = useState<string>('');
   const [expenseType, setExpenseType] = useState<'Normal' | 'Institute'>('Normal');
+  const [paymentType, setPaymentType] = useState<'Direct' | 'Indirect'>('Indirect');
+  const [directPaymentAcc, setDirectPaymentAcc] = useState<'Current' | 'Savings'>();
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedProjectHead, setSelectedProjectHead] = useState('');
   const [overheadPercentage, setOverheadPercentage] = useState<number | string>('');
@@ -99,12 +101,15 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
   }, [isOpen, expenseType]);
 
   const handleSubmit = () => {
-    if (expenseReason && category && amount && ( expenseType === 'Normal' ? paidBy : true)) {
-      const expenseData: any = { expenseReason, category, amount: Number(amount), paidBy, description, referenceDocument, type: expenseType };
+    if (expenseReason && category && amount && ((expenseType === 'Normal' && paymentType == 'Indirect') ? paidBy : true)) {
+      const expenseData: any = { expenseReason, category, amount: Number(amount), ...((expenseType === 'Normal' && paymentType == 'Indirect') ? {paidBy} : {}), description, referenceDocument, type: expenseType };
       if (expenseType === 'Institute') {
         expenseData.projectId = selectedProject;
         expenseData.projectHead = selectedProjectHead;
         expenseData.overheadPercentage = Number(overheadPercentage);
+      }
+      if (paymentType === 'Direct'){
+        expenseData.paidDirectWith = directPaymentAcc
       }
       onSubmit(expenseData);
       onClose();
@@ -123,7 +128,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
         />
         <div className='flex justify-end items-center space-x-2'>
           <Label className='text-lg'>{expenseType}</Label>
-          <ToggleSwitch color='blue' checked={expenseType === 'Institute'} onChange={checked => setExpenseType(checked?'Institute':'Normal')}/>
+          <ToggleSwitch color='blue' checked={expenseType === 'Institute'} onChange={checked => setExpenseType(checked ? 'Institute' : 'Normal')} />
         </div>
         <div className="relative space-y-4">
           <div>
@@ -257,8 +262,14 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
               </div>
             </div>
           ) : <div>
-            <Label htmlFor="paidBy" value="Paid By" />
-            <div className="flex">
+            <div className='flex justify-between items-center mb-1'>
+              <Label htmlFor="paidBy" value="Paid By" />
+              <div className='flex justify-end items-center space-x-2'>
+                <Label>{paymentType}</Label>
+                <ToggleSwitch color='blue' checked={paymentType === 'Direct'} onChange={checked => setPaymentType(!checked ? 'Indirect' : 'Direct')} />
+              </div>
+            </div>
+            {paymentType === 'Indirect' ? <div className="flex">
               <Select
                 id="paidBy"
                 value={paidBy}
@@ -271,7 +282,31 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
                   <option key={member._id} value={member._id}>{member.name}</option>
                 ))}
               </Select>
-            </div>
+            </div> :
+              <div className="flex space-x-2">
+                <div className="flex items-center">
+                  <Radio
+                    id="Current"
+                    checked={directPaymentAcc === 'Current'}
+                    onChange={(e) => setDirectPaymentAcc(e.target.checked ? 'Current' : 'Savings')}
+                    value="Current"
+                  />
+                  <Label htmlFor="Current" className="ml-2">
+                    Current
+                  </Label>
+                </div>
+                <div className="flex items-center">
+                  <Radio
+                    id="Savings"
+                    checked={directPaymentAcc === 'Savings'}
+                    onChange={(e) => setDirectPaymentAcc(e.target.checked ? 'Savings' : 'Current')}
+                    value="Savings"
+                  />
+                  <Label htmlFor="Savings" className="ml-2">
+                    Savings
+                  </Label>
+                </div>
+              </div>}
           </div>}
 
           <div>
