@@ -149,7 +149,6 @@ router.get('/', async (req: Request, res: Response) => {
       const instituteExpenses = await InstituteExpenseModel.find()
         .populate('category', 'name')
         .populate('project', 'funding_agency project_title project_type')
-        .populate('paidBy', 'name')
         .lean();
 
       res.status(200).send(instituteExpenses);

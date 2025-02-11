@@ -65,13 +65,6 @@ export const InstituteExpensesPage: FunctionComponent = () => {
                 }),
             enableColumnFilter: false
         }),
-        columnHelper.accessor('paidBy.name', {
-            header: 'Paid By',
-            cell: (info) => info.getValue(),
-            meta: {
-                filterType: 'dropdown'
-            }
-        }),
         columnHelper.accessor('overheadPercentage', {
             header: 'Overhead %',
             cell: (info) => `${info.getValue()}%`,

@@ -29,7 +29,6 @@ export interface InstituteExpense {
     projectHead: string;
     amount: number;
     year_or_installment : number
-    paidBy: Member;
     pd_ref : Account
     acc_ref: Account
     overheadPercentage: number;
