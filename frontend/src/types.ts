@@ -30,7 +30,6 @@ export interface InstituteExpense {
     amount: number;
     year_or_installment : number
     pd_ref : Account
-    acc_ref: Account
     overheadPercentage: number;
     reference_id?: string | null;
     createdAt: Date;

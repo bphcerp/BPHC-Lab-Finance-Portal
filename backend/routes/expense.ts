@@ -100,26 +100,20 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
           });
       });
 
-
-      const pd_entry = await (new AccountModel({
-        type: 'PDF',
-        amount: expenseData.amount * (expenseData.overheadPercentage / 100),
-        credited: false,
-        remarks: `Institute Expense : ${expenseData.expenseReason}`
-      })).save();
-
-      const acc_entry = await (new AccountModel({
-        type: 'Current',
-        amount: expenseData.amount,
-        credited: true,
-        remarks: `Institute Expense : ${expenseData.expenseReason}`
-      })).save();
+      let pd_entry
+      if (expenseData.overHeadPercentage > 0 ) {
+        pd_entry = await (new AccountModel({
+          type: 'PDF',
+          amount: expenseData.amount * (expenseData.overheadPercentage / 100),
+          credited: false,
+          remarks: `Institute Expense : ${expenseData.expenseReason}`
+        })).save();
+      }
 
       expense = new InstituteExpenseModel({
         ...expenseData,
         reference_id,
-        pd_ref: pd_entry._id,
-        acc_ref: acc_entry._id,
+        pd_ref: pd_entry?._id,
         year_or_installment: getCurrentIndex(project),
         createdAt: new Date(),
         updatedAt: new Date(),

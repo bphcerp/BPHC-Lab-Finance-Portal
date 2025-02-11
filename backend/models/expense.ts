@@ -29,7 +29,6 @@ const instituteExpenseSchema = new Schema({
   overheadPercentage: { type: Number, default:0, required: true },
   reference_id: { type: Schema.Types.ObjectId, ref: 'references.files' },
   pd_ref: { type: Schema.Types.ObjectId, ref: 'account' },
-  acc_ref: { type: Schema.Types.ObjectId, ref: 'account' },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

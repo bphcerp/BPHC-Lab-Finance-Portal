@@ -67,7 +67,7 @@ export const InstituteExpensesPage: FunctionComponent = () => {
         }),
         columnHelper.accessor('overheadPercentage', {
             header: 'Overhead %',
-            cell: (info) => `${info.getValue()}%`,
+            cell: (info) => info.getValue() ? `${info.getValue()}%` : 'NA',
             enableColumnFilter: false
         }),
     ]
