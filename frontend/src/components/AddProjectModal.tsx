@@ -9,7 +9,7 @@ interface AddProjectProps {
 }
 
 export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal, setOpenModal }) => {
-  const [projectName, setProjectName] = useState<string>("");
+  const [fundingAgency, setFundingAgency] = useState<string>("");
   const [projectType, setProjectType] = useState<string>("yearly");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -147,7 +147,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     const totalAmount = Object.values(headTotals).reduce((sum, value) => sum + value, 0)
 
     const formData = new FormData();
-    formData.append("project_name", projectName);
+    formData.append("funding_agency", fundingAgency);
     formData.append("project_id", projectID);
     formData.append("project_title", projectTitle);
     formData.append("start_date", startDate ? new Date(startDate).toISOString() : "");
@@ -193,7 +193,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
 
   useEffect(() => {
     if (!openModal) {
-      setProjectName("");
+      setFundingAgency("");
       setStartDate("");
       setEndDate("");
       setProjectHeads({});
@@ -229,12 +229,12 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                 />
               </div>
               <div>
-                <Label htmlFor="project_name" value="Project Name" />
+                <Label htmlFor="funding_agency" value="Funding Agency" />
                 <TextInput
-                  id="project_name"
-                  placeholder="Enter project name"
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
+                  id="funding_agency"
+                  placeholder="Enter Funding Agency"
+                  value={fundingAgency}
+                  onChange={(e) => setFundingAgency(e.target.value)}
                   required
                 />
               </div>

@@ -74,7 +74,7 @@ export interface Installment {
 
 export interface Project {
     _id?: string;
-    project_name: string;
+    funding_agency: string;
     project_id: string
     project_title: string
     start_date: Date | null;

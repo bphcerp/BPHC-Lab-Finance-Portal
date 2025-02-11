@@ -102,7 +102,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
     if (expenseReason && category && amount && paidBy) {
       const expenseData: any = { expenseReason, category, amount: Number(amount), paidBy, description, referenceDocument, type: expenseType };
       if (expenseType === 'Institute') {
-        expenseData.projectName = selectedProject;
+        expenseData.projectId = selectedProject;
         expenseData.projectHead = selectedProjectHead;
         expenseData.overheadPercentage = Number(overheadPercentage);
       }
@@ -206,9 +206,9 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
           {expenseType === 'Institute' && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="projectName" value="Project Name" />
+                <Label htmlFor="fundingAgency" value="Funding Agency" />
                 <Select
-                  id="projectName"
+                  id="fundingAgency"
                   value={selectedProject}
                   onChange={(e) => {
                     setSelectedProject(e.target.value);
@@ -219,7 +219,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
                   <option value="">Select a Project</option>
                   {projects.map((project) => (
                     <option key={project._id} value={project._id}>
-                      {project.project_name}
+                      {project.funding_agency}-{project.project_title}
                     </option>
                   ))}
                 </Select>

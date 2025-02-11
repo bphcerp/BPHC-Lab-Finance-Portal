@@ -14,7 +14,7 @@ interface EditProjectModalProps {
 const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, project, onSave }) => {
     const { register, handleSubmit, watch, setValue, reset, control } = useForm<Project>({
         defaultValues: {
-            project_name: project?.project_name || '',
+            funding_agency: project?.funding_agency || '',
             total_amount: project?.total_amount || 0,
             project_heads: project?.project_heads || {},
             pis: project?.pis || [],  // Keep this as array of Member objects
@@ -114,13 +114,13 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                             />
                         </div>
 
-                        {/* Project Name Field */}
+                        {/* Funding Agency Field */}
                         <div>
-                            <Label htmlFor="projectName" value="Project Name" />
+                            <Label htmlFor="fundingAgency" value="Funding Agency" />
                             <TextInput
-                                id="projectName"
-                                {...register("project_name", { required: true })}
-                                placeholder="Enter project name"
+                                id="fundingAgency"
+                                {...register("funding_agency", { required: true })}
+                                placeholder="Enter Funding Agency"
                                 className="mt-1"
                             />
                         </div>

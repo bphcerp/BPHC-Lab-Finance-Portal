@@ -257,7 +257,7 @@ const ExpensesPage: React.FC = () => {
                 formData.append('description', newExpense.description);
                 formData.append('referenceDocument', newExpense.referenceDocument);
                 formData.append('type', newExpense.type);
-                formData.append('project', newExpense.projectName);
+                formData.append('project', newExpense.projectId);
                 formData.append('projectHead', newExpense.projectHead);
                 formData.append('overheadPercentage', newExpense.overheadPercentage.toString());
     

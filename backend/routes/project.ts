@@ -179,7 +179,7 @@ router.post('/', upload.single('sanction_letter'), async (req: Request, res: Res
         const newProject = new ProjectModel({
             project_id: data.project_id,
             project_title: data.project_title,
-            project_name: data.project_name,
+            funding_agency: data.funding_agency,
             project_type: data.project_type,
             start_date: startDate,
             end_date: endDate,
@@ -429,7 +429,7 @@ router.get('/:id/sanction_letter', async (req: Request, res: Response) => {
 
         const downloadStream = gfs.openDownloadStream(fileId);
 
-        const filename = `${project.project_name}_sanction_letter.pdf`.replace(/\s/g, '_')
+        const filename = `${project.funding_agency}_sanction_letter.pdf`.replace(/\s/g, '_')
 
 
         res.set('Content-Type', 'application/pdf');
@@ -516,7 +516,7 @@ router.get('/:id/util_cert', async (req, res) => {
             </div>
             <h2>Utilization Certificate</h2>
             <h3>Project Details</h3>
-            <p><strong>Project Name:</strong> ${project.project_name}</p>
+            <p><strong>Funding Agency:</strong> ${project.funding_agency}</p>
             <p><strong>Start Date:</strong> ${project.start_date ? project.start_date.toDateString() : 'N/A'}</p>
             <p><strong>End Date:</strong> ${project.end_date ? project.end_date.toDateString() : 'N/A'}</p>
             <p><strong>Total Allocated Amount:</strong> Rs. ${project.total_amount}</p>
@@ -560,7 +560,7 @@ router.get('/:id/util_cert', async (req, res) => {
         </html>`;
 
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename="Utilization_Certificate_${project.project_name}.pdf"`)
+        res.setHeader('Content-Disposition', `inline; filename="Utilization_Certificate_${project.funding_agency}_${project.project_title}.pdf"`)
         wkhtmltopdf(html, {
             orientation: 'Landscape', pageSize: "A4",
             marginBottom: "0",

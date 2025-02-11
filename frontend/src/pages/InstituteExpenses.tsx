@@ -40,13 +40,13 @@ export const InstituteExpensesPage: FunctionComponent = () => {
                 filterType: 'dropdown'
             }
         }),
-        columnHelper.accessor('project.project_name', {
-            header: 'Project Name',
+        columnHelper.accessor(() => 'Project', {
+            header: 'Project',
             cell: info => <Link className='hover:underline text-blue-600'
                 to={`/project/${info.row.original.project._id}`}
                 target="_blank"
                 rel="noopener noreferrer">
-                {info.row.original.project.project_name}-{info.row.original.project.project_title}
+                {info.row.original.project.funding_agency}-{info.row.original.project.project_title}
             </Link>
         }),
         columnHelper.accessor('projectHead', {
