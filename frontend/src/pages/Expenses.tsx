@@ -55,7 +55,7 @@ const ExpensesPage: React.FC = () => {
             cell: info => info.getValue().toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
             enableColumnFilter: false
         }),
-        columnHelper.accessor('paidBy.name', {
+        columnHelper.accessor((row) => row.paidBy?.name ?? 'Direct' , {
             header: 'Paid By',
             cell: info => info.getValue(),
             meta: {
@@ -130,24 +130,22 @@ const ExpensesPage: React.FC = () => {
         }),
         columnHelper.accessor(() => "Actions", {
             header: "Actions",
-            cell: ({ row }) => row.original.reimbursedID ? <div className='w-full text-center'>NA</div> : (
+            cell: ({ row }) => 
                 <div className="flex justify-center divide-x-2">
-                    <button
+                    {!row.original.reimbursedID && <button
                         className="w-10 flex justify-center hover:cursor-pointer"
                         onClick={() => openEditModal(row.original)}
                     >
                         <RiEdit2Line color="blue" />
-                    </button>
-                    {row.original.settled ? null : (
-                        <button
+                    </button>}
+                    <button
                             className="w-10 flex justify-center hover:cursor-pointer"
                             onClick={() => openDeleteModal(row.original)}
                         >
                             <RiDeleteBin6Line color="red" />
                         </button>
-                    )}
                 </div>
-            ),
+            ,
             enableColumnFilter: false,
             enableSorting: false
         })
@@ -257,7 +255,7 @@ const ExpensesPage: React.FC = () => {
                 formData.append('description', newExpense.description);
                 formData.append('referenceDocument', newExpense.referenceDocument);
                 formData.append('type', newExpense.type);
-                formData.append('project', newExpense.projectName);
+                formData.append('project', newExpense.projectId);
                 formData.append('projectHead', newExpense.projectHead);
                 formData.append('overheadPercentage', newExpense.overheadPercentage.toString());
     
@@ -316,13 +314,13 @@ const ExpensesPage: React.FC = () => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to delete expense');
+                throw new Error((await response.json()).message ?? 'Failed to delete expense');
             }
 
             fetchExpenses()
             toastSuccess('Expense deleted successfully');
         } catch (error) {
-            toastError('Error deleting expense');
+            toastError((error as Error).message);
             console.error('Error deleting expense:', error);
         } finally {
             setIsDeleteModalOpen(false);
@@ -344,7 +342,7 @@ const ExpensesPage: React.FC = () => {
             <SettleExpenseModal
                 isOpen={isSettleModalOpen}
                 onClose={() => setIsSettleModalOpen(false)}
-                selectedExpenses={expenses.filter(expense => selectedExpenses.has(expense._id))}
+                selectedExpenses={expenses.filter(expense => selectedExpenses.has(expense._id) && expense.paidBy !== undefined)}
                 onSettle={handleSettleExpenses}
             />
             <FileReimbursementModal

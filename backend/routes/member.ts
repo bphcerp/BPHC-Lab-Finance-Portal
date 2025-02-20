@@ -35,7 +35,7 @@ router.post('/', async (req: Request, res: Response) => {
             return;
         }
 
-        const newMember = new MemberModel({ name, type, institute_id });
+        const newMember = new MemberModel({ name:  (name as String).trim(), type, institute_id });
         await newMember.save();
 
         res.status(201).json(newMember);

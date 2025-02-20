@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authenticateToken';
 import { AccountModel } from '../models/account';
+import { ObjectId } from 'mongoose';
 
 const router = express.Router();
 
@@ -60,7 +61,7 @@ router.get('/:type', async (req: Request, res: Response) => {
     }
 
     try {
-        const account = await AccountModel.find({ type });
+        const account = await AccountModel.find({ type }).populate('transfer');
         res.status(200).json(account);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching account: ' + (error as Error).message });
@@ -87,39 +88,30 @@ router.post('/entry', async (req: Request, res: Response) => {
 
 router.post('/transfer', async (req: Request, res: Response) => {
     try {
-        const { amount } = req.body
-
-        try {
+        const { transferDetails } : { transferDetails : { [key : string] : number } } = req.body;
+        
+        const transactions = Object.entries(transferDetails).map(async ([accountEntryId, transferAmount ], i) => {
             const savingsEntry = new AccountModel({
                 type: 'Savings',
-                amount,
+                amount: transferAmount,
                 credited: true,
-                remarks: `Transferred ${amount} from Current`
+                remarks: `Transferred ${transferAmount} from Current`
             });
 
-            const currentEntry = new AccountModel({
-                type: 'Current',
-                amount,
-                credited: false,
-                remarks: `Transferred ${amount} to Savings`,
-                transferable: -amount,
+            await savingsEntry.save();
+
+            await AccountModel.findByIdAndUpdate(accountEntryId, {
                 transfer: savingsEntry._id
             });
 
-            const [savedCurrentEntry, savedSavingsEntry] = await Promise.all([currentEntry.save(), savingsEntry.save()]);
+            return { accountEntryId, savingsEntry };
+        });
 
-            res.status(200).json({
-                currentEntry: savedCurrentEntry,
-                savingsEntry: savedSavingsEntry
-            });
-
-        } catch (error) {
-            console.error('Error processing transaction:', error);
-            res.status(500).json({ error: 'An error occurred while processing the transaction.' });
-        }
-
+        const results = await Promise.all(transactions);
+        res.status(200).json(results);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching account: ' + (error as Error).message });
+        console.error(error)
+        res.status(500).json({ error: 'An error occurred while processing the transaction.' });
     }
 });
 

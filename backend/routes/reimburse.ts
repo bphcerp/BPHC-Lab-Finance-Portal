@@ -101,7 +101,7 @@ router.get('/:projectId', async (req, res) => {
 
             const project = (reimbursements[0].project as unknown as Project) ?? (instituteExpenses[0].project as unknown as Project)
 
-            const sheet = workbook.addWorksheet(project.project_name)
+            const sheet = workbook.addWorksheet(project.project_title)
 
             sheet.columns = [
                 { header: 'S.No.', key: 'sno', width: 10 },
@@ -118,7 +118,7 @@ router.get('/:projectId', async (req, res) => {
 
             sheet.mergeCells('A1:G1');
             const titleCell = sheet.getCell('A1');
-            titleCell.value = project.project_name
+            titleCell.value = project.funding_agency
             titleCell.font = { bold: true, size: 20, name: 'Arial' }
             titleCell.alignment = { horizontal: 'center', vertical : 'middle' }
 

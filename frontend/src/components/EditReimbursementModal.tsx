@@ -157,7 +157,7 @@ const EditReimbursementModal: React.FC<EditReimbursementModalProps> = ({
                                 <option value="">Select a Project</option>
                                 {projects.map((project) => (
                                     <option key={project._id} value={project._id}>
-                                        {project.project_name}
+                                        {project.funding_agency}
                                     </option>
                                 ))}
                             </Select>

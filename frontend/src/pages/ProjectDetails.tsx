@@ -88,7 +88,7 @@ const ProjectDetails = () => {
             );
             const data = await response.json();
             setInfo({ head, index, all })
-            setLabel(` ${head ?? ""}${all ? projectData?.project_name : ""}${index !== undefined ? ` ${projectData?.project_type === "invoice" ? "Installment" : 'Year'} ${index + 1}` : ""}`)
+            setLabel(` ${head ?? ""}${all ? projectData?.funding_agency : ""}${index !== undefined ? ` ${projectData?.project_type === "invoice" ? "Installment" : 'Year'} ${index + 1}` : ""}`)
             setYearFlag(index ? null : projectData?.project_type !== 'invoice')
             setShowHead(head ? false : true)
             setReimbursements(data.reimbursements);
@@ -117,7 +117,7 @@ const ProjectDetails = () => {
             const blob = await response.blob();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `${projectData?.project_name}${head ? ` ${head}` : ""}${index !== undefined ? projectData?.project_type === 'invoice' ? " Installment " : " Year " : ""}${index !== undefined ? index + 1 : ""} Expense Data.xlsx`;
+            link.download = `${projectData?.project_id}-${projectData?.funding_agency}${head ? ` ${head}` : ""}${index !== undefined ? projectData?.project_type === 'invoice' ? " Installment " : " Year " : ""}${index !== undefined ? index + 1 : ""} Expense Data.xlsx`;
             link.click();
 
         } catch (error) {
@@ -244,7 +244,7 @@ const ProjectDetails = () => {
                     </div>
 
                     <span className="text-4xl font-bold text-center mt-5 text-gray-800">
-                        {projectData.project_name}
+                        {projectData.funding_agency}
                     </span>
 
                     <div className="flex justify-center">

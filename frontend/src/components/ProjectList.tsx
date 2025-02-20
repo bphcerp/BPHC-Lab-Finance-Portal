@@ -51,8 +51,8 @@ const ProjectList: FunctionComponent = () => {
             header: "Project ID",
             enableColumnFilter: true,
         }),
-        columnHelper.accessor("project_name", {
-            header: "Project Name",
+        columnHelper.accessor("funding_agency", {
+            header: "Funding Agency",
             cell: (info) => (
                 <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
                     {info.getValue()}
@@ -238,7 +238,7 @@ const ProjectList: FunctionComponent = () => {
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onDelete={handleDeleteProject}
-                item={projectToDelete?.project_name || ""}
+                item={ projectToDelete ?`${projectToDelete.funding_agency}-${projectToDelete.project_title}` : ""}
             />
             <DescriptionModal
                 isOpen={isDescModalOpen}

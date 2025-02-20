@@ -6,7 +6,7 @@ import { FaBuildingColumns, FaCode } from "react-icons/fa6";
 import { BsSafe } from "react-icons/bs";
 import { FaDonate } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -29,6 +29,12 @@ const SidebarComponent: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const handleLinkClick = (e: React.MouseEvent) => {
     if (!(e.target as HTMLElement).closest("button")) setIsOpen(false);
   };
+
+  useEffect(() => {
+    if (!isOpen){
+      setMenuState({ account: false, pdAccount: false })
+    }
+  },[isOpen])
 
   return (
     <div

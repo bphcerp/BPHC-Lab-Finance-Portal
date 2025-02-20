@@ -63,7 +63,7 @@ const ProjectList: FunctionComponent = () => {
             );
             const data = await response.json();
             setInfo({ project, head })
-            setLabel(` ${project.project_name} ${head ?? ""}${index !== undefined ? ` ${project.project_type === "invoice" ? "Installment" : 'Year'} ${index + 1}` : ""}`)
+            setLabel(` ${project.funding_agency} ${head ?? ""}${index !== undefined ? ` ${project.project_type === "invoice" ? "Installment" : 'Year'} ${index + 1}` : ""}`)
             setYearFlag(index ? null : project.project_type !== 'invoice')
             setShowHead(head ? false : true)
             setReimbursements(data.reimbursements);
@@ -94,7 +94,7 @@ const ProjectList: FunctionComponent = () => {
             const blob = await response.blob();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `${project.project_name}${head ? ` ${head}` : ""}${index !== undefined ? project.project_type === 'invoice' ? " Installment " : " Year " : ""}${index !== undefined ? index + 1 : ""} Expense Data.xlsx`;
+            link.download = `${project.funding_agency}${head ? ` ${head}` : ""}${index !== undefined ? project.project_type === 'invoice' ? " Installment " : " Year " : ""}${index !== undefined ? index + 1 : ""} Expense Data.xlsx`;
             link.click();
 
         } catch (error) {
@@ -121,8 +121,8 @@ const ProjectList: FunctionComponent = () => {
             header: "Project ID",
             enableColumnFilter: true,
         }),
-        columnHelper.accessor("project_name", {
-            header: "Project Name",
+        columnHelper.accessor("funding_agency", {
+            header: "Funding Agency",
             cell: (info) => (
                 <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
                     {info.getValue()}
@@ -179,7 +179,7 @@ const ProjectList: FunctionComponent = () => {
         columnHelper.group({
             header: "Project Heads (Remaining)",
             columns: uniqueHeads.map(head => (
-                columnHelper.accessor(row => `${row.project_name}_${head}`, {
+                columnHelper.accessor(row => `${row.funding_agency}_${head}`, {
                     header: head,
                     cell: info => (getCurrentIndex(info.row.original) === -1 ? "Project Ended" : <button className={info.row.original.project_heads[head] !== undefined ? `text-blue-600 hover:underline` : ''}
                         onClick={() => fetchReimbursements({ project: info.row.original, head })}>{(info.row.original.project_heads[head] ?? 0).toLocaleString("en-IN", {

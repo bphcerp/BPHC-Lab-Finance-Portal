@@ -14,7 +14,7 @@ export interface Expense {
     category: Category;
     amount: number;
     reimbursedID: Reimbursement | null;
-    paidBy: Category;
+    paidBy?: Category;
     description: string
     settled: Account | null;
     createdAt: Date;
@@ -29,9 +29,7 @@ export interface InstituteExpense {
     projectHead: string;
     amount: number;
     year_or_installment : number
-    paidBy: Member;
     pd_ref : Account
-    acc_ref: Account
     overheadPercentage: number;
     reference_id?: string | null;
     createdAt: Date;
@@ -74,7 +72,7 @@ export interface Installment {
 
 export interface Project {
     _id?: string;
-    project_name: string;
+    funding_agency: string;
     project_id: string
     project_title: string
     start_date: Date | null;
@@ -105,7 +103,7 @@ export interface Account {
     remarks?: string;
     credited: boolean;
     transferable: number;
-    transfer: string
+    transfer: Account | null
 }
 
 

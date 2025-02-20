@@ -5,8 +5,9 @@ const expenseSchema = new Schema({
   category: { type: mongoose.Schema.Types.ObjectId, ref: 'categories', required: true },
   amount: { type: Number, required: true },
   reimbursedID: { type: mongoose.Schema.Types.ObjectId, ref: 'reimbursements', default: null },
-  paidBy: { type: mongoose.Schema.Types.ObjectId, ref: 'members', required: true },
+  paidBy: { type: mongoose.Schema.Types.ObjectId, ref: 'members'},
   settled: { type: mongoose.Schema.Types.ObjectId, ref: 'account' },
+  directExpense : { type: Schema.Types.Boolean, default : false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   description: { type: String, default: null }
@@ -26,11 +27,9 @@ const instituteExpenseSchema = new Schema({
   projectHead: { type: String, required: true },
   amount: { type: Number, required: true },
   year_or_installment : { type : Number , required : true},
-  paidBy: { type: mongoose.Schema.Types.ObjectId, ref: 'members', required: true },
   overheadPercentage: { type: Number, default:0, required: true },
   reference_id: { type: Schema.Types.ObjectId, ref: 'references.files' },
   pd_ref: { type: Schema.Types.ObjectId, ref: 'account' },
-  acc_ref: { type: Schema.Types.ObjectId, ref: 'account' },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

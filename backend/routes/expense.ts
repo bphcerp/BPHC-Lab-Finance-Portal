@@ -8,6 +8,7 @@ import multer from 'multer';
 import { Readable } from 'stream';
 import { ProjectModel } from '../models/project';
 import { getCurrentIndex } from './project';
+import { ReimbursementModel } from '../models/reimburse';
 
 const router = express.Router();
 
@@ -100,34 +101,52 @@ router.post('/', upload.single('referenceDocument'), async (req: Request, res: R
           });
       });
 
-
-      const pd_entry = await (new AccountModel({
-        type: 'PDF',
-        amount: expenseData.amount * (expenseData.overheadPercentage / 100),
-        credited: false,
-        remarks: `Institute Expense : ${expenseData.expenseReason}`
-      })).save();
-
-      const acc_entry = await (new AccountModel({
-        type: 'Current',
-        amount: expenseData.amount,
-        credited: true,
-        remarks: `Institute Expense : ${expenseData.expenseReason}`
-      })).save();
+      let pd_entry
+      if (expenseData.overHeadPercentage > 0) {
+        pd_entry = await (new AccountModel({
+          type: 'PDF',
+          amount: expenseData.amount * (expenseData.overheadPercentage / 100),
+          credited: false,
+          remarks: `Institute Expense : ${expenseData.expenseReason}`
+        })).save();
+      }
 
       expense = new InstituteExpenseModel({
         ...expenseData,
         reference_id,
-        pd_ref: pd_entry._id,
-        acc_ref: acc_entry._id,
+        pd_ref: pd_entry?._id,
         year_or_installment: getCurrentIndex(project),
         createdAt: new Date(),
         updatedAt: new Date(),
       })
     }
+    else if (expenseData.paidDirectWith) {
+
+      if (!VALID_SETTLED_STATUS.includes(expenseData.paidDirectWith)) {
+        res.status(400).json({
+          message: `Invalid account. Must be one of: ${VALID_SETTLED_STATUS.join(', ')}`,
+        });
+        return;
+      }
+
+      const accountEntry = await new AccountModel({
+        amount: expenseData.amount,
+        type: expenseData.paidDirectWith,
+        remarks: `Paid expense ${expenseData.expenseReason} with ${expenseData.paidDirectWith}`,
+        credited: false,
+      }).save();
+
+      expense = new ExpenseModel({
+        ...expenseData,
+        settled: accountEntry._id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
     else {
       expense = new ExpenseModel({
         ...expenseData,
+        directExpense: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -148,8 +167,7 @@ router.get('/', async (req: Request, res: Response) => {
     if (type === 'Institute') {
       const instituteExpenses = await InstituteExpenseModel.find()
         .populate('category', 'name')
-        .populate('project', 'project_name project_title project_type')
-        .populate('paidBy', 'name')
+        .populate('project', 'funding_agency project_title project_type')
         .lean();
 
       res.status(200).send(instituteExpenses);
@@ -267,7 +285,7 @@ router.get('/member-expenses', async (req: Request, res: Response) => {
 
     const memberExpenses: Record<string, MemberExpenseSummary> = {};
 
-    expenses.forEach(expense => {
+    expenses.filter(expense => expense.paidBy).forEach(expense => {
       const memberName = expense.paidBy.name;
 
       if (!memberExpenses[memberName]) {
@@ -325,6 +343,47 @@ router.patch('/:id', async (req: Request, res: Response) => {
     await updatedExpense.populate('category paidBy');
 
     res.status(200).json(updatedExpense);
+  } catch (error) {
+    console.error('Error updating expense:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.delete('/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const expenseToBeDeleted = await ExpenseModel.findById(id).populate<{ reimbursedID: { _id: ObjectId; paidStatus: boolean } }>({ path: 'reimbursedID', select: 'paidStatus' })
+
+    if (expenseToBeDeleted?.reimbursedID.paidStatus) {
+      res.status(400).json({ message: 'Expense cannot be deleted. The reimbursement has been marked paid' });
+      return;
+    }
+
+    if (!expenseToBeDeleted) {
+      res.status(404).json({ message: 'Expense not found' });
+      return;
+    }
+
+    if (expenseToBeDeleted.paidBy) {
+      await AccountModel.findByIdAndDelete(expenseToBeDeleted.paidBy)
+    }
+
+    if (expenseToBeDeleted.reimbursedID) {
+      const reimbursement = await ReimbursementModel.findById(expenseToBeDeleted.reimbursedID._id)
+      reimbursement!.expenses = reimbursement!.expenses.filter(expense => expense.toString() !== id)
+      if (reimbursement!.expenses.length === 0) {
+        await ReimbursementModel.findByIdAndDelete(expenseToBeDeleted.reimbursedID._id)
+      }
+      else {
+        reimbursement!.totalAmount -= expenseToBeDeleted.amount
+        await reimbursement?.save()
+      }
+    }
+
+    await ExpenseModel.findByIdAndDelete(id)
+
+    res.status(204).send()
   } catch (error) {
     console.error('Error updating expense:', error);
     res.status(500).json({ message: 'Internal server error' });

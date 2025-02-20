@@ -13,7 +13,7 @@ const overrideSchema = new Schema({
 const projectSchema = new Schema({
     project_id: { type: String, required: true, unique: true },
     project_title: { type: String, default: null },
-    project_name: { type: String, required: true },
+    funding_agency: { type: String, required: true },
     project_type: { type: String, enum: ["yearly", "invoice"], default: 'yearly' },
     start_date: { type: Date },
     end_date: { type: Date },
