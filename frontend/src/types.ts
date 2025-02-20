@@ -103,7 +103,7 @@ export interface Account {
     remarks?: string;
     credited: boolean;
     transferable: number;
-    transfer: string
+    transfer: Account | null
 }
 
 

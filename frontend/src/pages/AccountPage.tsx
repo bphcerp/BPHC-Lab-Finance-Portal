@@ -7,17 +7,19 @@ import { Button } from 'flowbite-react';
 import TransferModal from '../components/TransferModal';
 import { RiDeleteBin6Line } from 'react-icons/ri';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import { formatCurrency } from '../helper';
 
 interface AccountPageProps {
     type: 'Current' | 'Savings';
 }
 
 const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
-    const [accountData, setAccountData] = useState<Array<Account>>([]);
+    const [accountData, setAccountData] = useState<Account[]>([]);
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [entryToDelete, setEntryToDelete] = useState<Account>();
     const [columns, setColumns] = useState<any[]>([]);
+    const [selectedAccountEntries, setSelectedAccountEntries] = useState<Account[]>()
 
     const columnHelper = createColumnHelper<Account>();
 
@@ -91,12 +93,25 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
                         style: 'currency',
                         currency: 'INR',
                     }),
-                enableColumnFilter: false,
                 meta: {
                     filterType : "dropdown",
                     getSum: true,
                     sumFormatter: (sum: number) =>
                         <span className={sum<0?"text-green-400":"text-red-600"}>{sum.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>,
+                },
+            }),
+            columnHelper.accessor((row) => (row.transfer ? row.transfer.amount < row.transferable ? 'Partial' : 'Full' : 'No'), {
+                header: 'Transferred',
+                cell: ({ row }) => 
+                    <span className={`inline-block px-3 py-1 w-full text-center rounded-full text-xs font-semibold ${!row.original.transfer ? 'bg-red-100 text-red-800' :
+                        row.original.transfer.amount >= row.original.transferable ? 'bg-green-100 text-green-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        } shadow-sm`}>
+                        {row.original.transferable ? !row.original.transfer ? 'No Transfer' : formatCurrency(row.original.transfer.amount) : 'NA'}
+                    </span>
+                ,
+                meta: {
+                    filterType : "dropdown"
                 },
             }),
             columnHelper.accessor('_id', {
@@ -190,11 +205,12 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
     return (
         <div className="flex flex-col w-full p-4">
             {/* Modals */}
-            <TransferModal
+            {selectedAccountEntries && (selectedAccountEntries.length > 0) && isTransferModalOpen && <TransferModal
                 isOpen={isTransferModalOpen}
                 onClose={() => setIsTransferModalOpen(false)}
                 onSubmit={handleTransfer}
-            />
+                accounts={selectedAccountEntries}
+            />}
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
@@ -205,7 +221,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
             {/* Header and Button */}
             <div className="flex justify-between mb-4">
                 <h1 className="text-2xl font-bold">{type} Account</h1>
-                {type === 'Current' && (
+                {type === 'Current' && selectedAccountEntries && (selectedAccountEntries.length > 0) && (
                     <Button
                         color="blue"
                         className="flex justify-center items-center"
@@ -221,6 +237,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
                 <TableCustom
                     data={accountData}
                     columns={columns}
+                    setSelected={setSelectedAccountEntries}
                     initialState={{
                         sorting: [
                             {
