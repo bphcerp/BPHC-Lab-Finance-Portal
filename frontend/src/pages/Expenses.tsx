@@ -395,7 +395,7 @@ const ExpensesPage: React.FC = () => {
                         {selectedExpenses.size > 0 ?
                             <div className='flex space-x-2'>
                                 <Button color="gray" size="md" className='rounded-md' onClick={() => {
-                                    const eligibleExpenses = expenses.filter(expense => selectedExpenses.has(expense._id)).filter((expense) => (!expense.settled && !expense.reimbursedID?.paidStatus));
+                                    const eligibleExpenses = expenses.filter(expense => selectedExpenses.has(expense._id)).filter((expense) => ( expense.paidBy && !expense.settled && !expense.reimbursedID?.paidStatus));
                                     if (eligibleExpenses.length === 0) {
                                         toastWarn('No eligible expenses for settling');
                                         return

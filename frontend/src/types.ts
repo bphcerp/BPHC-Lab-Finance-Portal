@@ -40,7 +40,7 @@ export interface EditExpenseData {
     expenseReason: string;
     category: string;
     amount: number;
-    paidBy: string;
+    paidBy?: string;
 }
 
 export interface MemberExpense {

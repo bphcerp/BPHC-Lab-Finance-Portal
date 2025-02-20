@@ -24,7 +24,7 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [amount, setAmount] = useState<number | string>('');
-  const [paidBy, setPaidBy] = useState('');
+  const [paidBy, setPaidBy] = useState<string | undefined>('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
       setExpenseReason(expense.expenseReason);
       setCategory(expense.category._id);
       setAmount(expense.amount);
-      setPaidBy(expense.paidBy._id);
+      setPaidBy(expense.paidBy?._id);
       fetchCategories();
       fetchMembers()
     }
@@ -88,7 +88,7 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!expenseReason || !category || !amount || !paidBy) return;
+    if (!expenseReason || !category || !amount ) return;
 
     setLoading(true);
     try {
@@ -199,7 +199,7 @@ const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
         <Button 
           color="blue" 
           onClick={handleSubmit} 
-          disabled={loading || !expenseReason || !category || !amount || !paidBy}
+          disabled={loading || !expenseReason || !category || !amount}
           isProcessing={loading}
         >
           {loading ? 'Updating...' : 'Update Expense'}

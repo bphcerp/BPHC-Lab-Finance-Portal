@@ -61,7 +61,7 @@ const SettleExpenseModal: React.FC<SettleExpenseModalProps> = ({
                                         style: 'currency',
                                         currency: 'INR',
                                     })}{' '}
-                                    - {expense.paidBy.name}
+                                    - {expense.paidBy!.name}
                                 </li>
                             ))}
                         </ul>
