@@ -9,6 +9,7 @@ import { Readable } from 'stream';
 import { ProjectModel } from '../models/project';
 import { getCurrentIndex } from './project';
 import { ReimbursementModel } from '../models/reimburse';
+import { MemberModel } from '../models/member';
 
 const router = express.Router();
 
@@ -222,7 +223,7 @@ router.patch('/settle', async (req: Request, res: Response) => {
     const accountEntry = await new AccountModel({
       amount,
       type,
-      remarks: remarks ?? 'Settled Expenses',
+      remarks: (remarks as String).length ? remarks : 'Settled Expenses',
       credited: false,
     }).save();
 
@@ -251,10 +252,17 @@ router.post('/settle/:memberId', async (req: Request, res: Response) => {
       return;
     }
 
+    const member = await MemberModel.findById(memberId)
+
+    if (!member){
+      res.status(404).send({ message : "Invalid member id" })
+      return
+    }
+
     const accountEntry = new AccountModel({
       amount,
       type: settlementType,
-      remarks,
+      remarks : remarks.length ? remarks : `Settled expenses for ${member.name}`,
       credited: false,
     });
 

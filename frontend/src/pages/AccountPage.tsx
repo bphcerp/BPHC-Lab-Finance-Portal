@@ -159,7 +159,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
                 `${import.meta.env.VITE_BACKEND_URL}/account/${entryToDelete?._id}`,
                 { method: 'DELETE', credentials: 'include' }
             );
-            toastSuccess('Transfer Deleted');
+            toastSuccess('Entry Deleted');
             fetchAccountData();
         } catch (error) {
             toastError('Error deleting transfer');

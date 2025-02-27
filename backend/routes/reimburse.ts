@@ -3,7 +3,7 @@ import { ReimbursementModel } from '../models/reimburse';
 import { ExpenseModel, InstituteExpenseModel } from '../models/expense';
 import { authenticateToken } from '../middleware/authenticateToken';
 import { Readable } from "stream";
-import mongoose from 'mongoose';
+import mongoose, { InferSchemaType, ObjectId } from 'mongoose';
 import { ProjectModel } from '../models/project';
 import { AccountModel } from '../models/account';
 import multer from 'multer';
@@ -88,8 +88,8 @@ router.get('/:projectId', async (req, res) => {
         const { projectId } = req.params
         const { head, index, all, exportData } = req.query
         const filter = { project: projectId, ...(all === "undefined" ? { projectHead: head } : {}), ...(index !== "undefined" ? { year_or_installment: index } : {}) }
-        const reimbursements = await ReimbursementModel.find(filter).populate('project expenses').sort({ createdAt : -1 }).lean();
-        const instituteExpenses = await InstituteExpenseModel.find(filter).populate('project').sort({ createdAt : -1 }).lean()
+        const reimbursements = await ReimbursementModel.find(filter).populate('project expenses').sort({ createdAt: -1 }).lean();
+        const instituteExpenses = await InstituteExpenseModel.find(filter).populate('project').sort({ createdAt: -1 }).lean()
 
         if (exportData) {
             const workbook = new Workbook()
@@ -120,7 +120,7 @@ router.get('/:projectId', async (req, res) => {
             const titleCell = sheet.getCell('A1');
             titleCell.value = project.funding_agency
             titleCell.font = { bold: true, size: 20, name: 'Arial' }
-            titleCell.alignment = { horizontal: 'center', vertical : 'middle' }
+            titleCell.alignment = { horizontal: 'center', vertical: 'middle' }
 
             sheet.mergeCells('A2:C2');
             const projectIdCell = sheet.getCell('A2');
@@ -144,20 +144,20 @@ router.get('/:projectId', async (req, res) => {
             sheet.getColumn('totalAmount').numFmt = '"₹" #,##0.00'
 
             reimbursements.map((reimbursement, sno) => {
-                sheet.addRow({ sno: sno + 1, ...reimbursement,expenseType : "Reimbursement", year_or_installment: reimbursement.year_or_installment + 1 })
+                sheet.addRow({ sno: sno + 1, ...reimbursement, expenseType: "Reimbursement", year_or_installment: reimbursement.year_or_installment + 1 })
             })
 
             const serialAfterReimbursement = reimbursements.length
 
             instituteExpenses.map((expense, sno) => {
-                sheet.addRow({ sno: serialAfterReimbursement + sno + 1, ...expense,expenseType : "Institute Expense", totalAmount: expense.amount, title: expense.expenseReason, year_or_installment: expense.year_or_installment + 1 })
+                sheet.addRow({ sno: serialAfterReimbursement + sno + 1, ...expense, expenseType: "Institute Expense", totalAmount: expense.amount, title: expense.expenseReason, year_or_installment: expense.year_or_installment + 1 })
             })
 
             const reimbursementTotal = reimbursements.reduce((acc, reimbursement) => acc + reimbursement.totalAmount, 0);
             const instituteExpenseTotal = instituteExpenses.reduce((acc, reimbursement) => acc + reimbursement.amount, 0);
             const totalAmount = reimbursementTotal + instituteExpenseTotal
 
-            sheet.addRow({ year_or_installment : 'Total Amount', totalAmount })
+            sheet.addRow({ year_or_installment: 'Total Amount', totalAmount })
             sheet.getRow(sheet.rowCount).font = { bold: true, size: 12 }
 
             const buffer = await workbook.xlsx.writeBuffer();
@@ -212,7 +212,7 @@ router.post('/paid', async (req: Request, res: Response) => {
             });
         });
 
-        await new AccountModel({
+        const acc_entry = await new AccountModel({
             amount,
             type: "Current",
             remarks: `Reimbursement money for ${reimbursements.map(item => item.title).join(",")}`,
@@ -222,7 +222,7 @@ router.post('/paid', async (req: Request, res: Response) => {
 
         await ReimbursementModel.updateMany(
             { _id: { $in: reimbursementIds } },
-            { paidStatus: true }
+            { paidStatus: true, acc_entry: acc_entry._id }
         );
 
         res.status(200).json({ message: 'Reimbursements updated successfully' });
@@ -247,7 +247,8 @@ router.post('/unpaid', async (req: Request, res: Response) => {
                     path: 'settled',
                     select: 'type'
                 }
-            });
+            })
+            .populate<{ acc_entry : { transfer : ObjectId } }>('acc_entry')
 
         reimbursements = reimbursements.filter(reimbursement => reimbursement.paidStatus)
 
@@ -257,28 +258,49 @@ router.post('/unpaid', async (req: Request, res: Response) => {
             return;
         }
 
-        let totalTransferableAmount = 0, amount = 0;
-        reimbursements.forEach(reimbursement => {
-            amount += reimbursement.totalAmount
-            reimbursement.expenses.forEach(expense => {
-
-                if (expense.settled?.type === "Savings") {
-                    totalTransferableAmount += expense.amount;
+        for (const reimbursement of reimbursements) {
+            // First, delete if any transfer was made with the reimbursement money
+            if (!reimbursement.acc_entry) continue;
+            if (reimbursement.acc_entry.transfer) {
+                await AccountModel.findByIdAndDelete(reimbursement.acc_entry.transfer);
+            }
+        
+            // Then, remove the reimbursement amount from the account entry and update the remarks
+            function removeFirstOccurrence(searchString: string, wordToRemove: string) {
+                const prefix = "Reimbursement money for ";
+                searchString = searchString.slice(prefix.length);
+                let arr = searchString.split(",");
+                let index = arr.indexOf(wordToRemove);
+                if (index !== -1) {
+                    arr.splice(index, 1);
                 }
-            });
-        });
-
-        await new AccountModel({
-            amount,
-            type: "Current",
-            remarks: `Reverted reimbursement money for ${reimbursements.map(item => item.title).join(",")}`,
-            credited: false,
-            transferable: -totalTransferableAmount
-        }).save();
+                return prefix + arr.join(",");
+            }
+        
+            const acc_entry = await AccountModel.findById(reimbursement.acc_entry);
+            if (!acc_entry) continue;
+        
+            acc_entry.amount -= reimbursement.totalAmount;
+        
+            // Subtract the transferable
+            for (const expense of reimbursement.expenses) {
+                if (expense.settled?.type === "Savings") {
+                    acc_entry.transferable -= expense.amount;
+                }
+            }
+        
+            acc_entry.remarks = removeFirstOccurrence(acc_entry.remarks!, reimbursement.title);
+            if ( acc_entry.remarks === "Reimbursement money for "){
+                await AccountModel.findByIdAndDelete(acc_entry._id)
+                continue
+            }
+            await acc_entry.save();
+        }
+        
 
         await ReimbursementModel.updateMany(
             { _id: { $in: reimbursementIds } },
-            { paidStatus: false }
+            { paidStatus: false, acc_entry : null }
         );
 
         res.status(200).json({ message: 'Reimbursements updated successfully' });
