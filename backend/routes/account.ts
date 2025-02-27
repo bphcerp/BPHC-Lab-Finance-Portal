@@ -91,20 +91,40 @@ router.post('/transfer', async (req: Request, res: Response) => {
         const { transferDetails } : { transferDetails : { [key : string] : number } } = req.body;
         
         const transactions = Object.entries(transferDetails).map(async ([accountEntryId, transferAmount ], i) => {
-            const savingsEntry = new AccountModel({
-                type: 'Savings',
-                amount: transferAmount,
-                credited: true,
-                remarks: `Transferred ${transferAmount} from Current`
-            });
+            
+            const currentAccountEntry = await AccountModel.findById(accountEntryId)
 
-            await savingsEntry.save();
+            //If there is a transfer already add to it.
+            if (currentAccountEntry!.transfer){
+                const savingsEntry = await AccountModel.findById(currentAccountEntry!.transfer)
 
-            await AccountModel.findByIdAndUpdate(accountEntryId, {
-                transfer: savingsEntry._id
-            });
-
-            return { accountEntryId, savingsEntry };
+                savingsEntry!.amount += transferAmount
+                savingsEntry!.remarks =  `Transferred ${savingsEntry!.amount} from Current`
+    
+                await savingsEntry!.save();
+    
+                await AccountModel.findByIdAndUpdate(accountEntryId, {
+                    transfer: savingsEntry!._id
+                });
+    
+                return { accountEntryId, savingsEntry };
+            }
+            else{
+                const savingsEntry = new AccountModel({
+                    type: 'Savings',
+                    amount: transferAmount,
+                    credited: true,
+                    remarks: `Transferred ${transferAmount} from Current`
+                });
+    
+                await savingsEntry.save();
+    
+                await AccountModel.findByIdAndUpdate(accountEntryId, {
+                    transfer: savingsEntry._id
+                });
+    
+                return { accountEntryId, savingsEntry };
+            }
         });
 
         const results = await Promise.all(transactions);

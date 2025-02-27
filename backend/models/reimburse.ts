@@ -8,9 +8,10 @@ const reimbursementSchema = new Schema({
     expenses: [{ type: Schema.Types.ObjectId, ref: 'Expense', required: true }],
     paidStatus: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
-    description : {type : String, default : null},
+    description: { type: String, default: null },
     reference_id: { type: Schema.Types.ObjectId, ref: 'references.files' },
-    year_or_installment : { type : Number , required : true}
+    year_or_installment: { type: Number, required: true },
+    acc_entry: { type: mongoose.Schema.Types.ObjectId, ref: 'account', default : null }
 });
 
 export const ReimbursementModel = mongoose.model('reimbursements', reimbursementSchema);
