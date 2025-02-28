@@ -1,19 +1,21 @@
+networks:
+  caddy:
 services:
   frontend:
     build: frontend
     ports:
-     - 80:5173
+     - 3000:3000
     networks:
-      - mern
+      - caddy
     env_file:
       - "frontend/.env"
   
   backend:
     build: backend
     ports:
-     - 3000:3000
+     - 4000:4000
     networks:
-     - mern
+     - caddy
     depends_on:
       - mongo
     env_file:
@@ -26,14 +28,30 @@ services:
     ports:
       - 27017:27017
     networks:
-      - mern
+      - caddy
     volumes:
       - mongo-data:/data/db
   
-networks:
-  mern:
-      driver: bridge
+  caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    container_name: caddy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /home/opc/containers/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - /home/opc/containers/caddy/site:/srv
+      - /home/opc/containers/caddy/caddy_data:/data
+      - /home/opc/containers/caddy/caddy_config:/config
+    networks:
+      - caddy
+
 
 volumes:
   mongo-data:
     driver: local
+  caddy_data:
+    external: true
+  caddy_config:
+  
