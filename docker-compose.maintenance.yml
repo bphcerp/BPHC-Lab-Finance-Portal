@@ -1,0 +1,21 @@
+networks:
+  caddy-maintenance:
+services:
+  caddy-maintenance:
+    image: caddy:latest
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./maintenance.html:/usr/share/caddy/maintenance.html
+      - /home/opc/containers/caddy/Caddyfile.maintenance:/etc/caddy/Caddyfile
+      - /home/opc/containers/caddy/site:/srv
+      - /home/opc/containers/caddy/caddy_data:/data
+      - /home/opc/containers/caddy/caddy_config:/config
+    networks:
+      - caddy-maintenance
+
+volumes:
+  caddy_data:
+    external: true
+  caddy_config:

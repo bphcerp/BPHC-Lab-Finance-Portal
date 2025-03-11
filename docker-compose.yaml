@@ -30,7 +30,7 @@ services:
     networks:
       - caddy
     volumes:
-      - mongo-data:/data/db
+      - /home/opc/mongo-data:/data/db
   
   caddy:
     image: caddy:latest
@@ -50,7 +50,7 @@ services:
 
 volumes:
   mongo-data:
-    driver: local
+    external: true
   caddy_data:
     external: true
   caddy_config:
