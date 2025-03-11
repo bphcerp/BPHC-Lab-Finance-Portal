@@ -1,7 +1,38 @@
-import { FunctionComponent } from "react";
+import { FunctionComponent, useEffect, useState } from "react";
 import SignInUpPane from "../components/SignInUpPane";
+import { Navigate } from "react-router";
 
 const LoginPage: FunctionComponent = () => {
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  
+    useEffect(() => {
+      const checkAuth = async () => {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/check-auth`, {
+            credentials: 'include',
+            headers: {
+              'From-Page': 'login',
+          },
+          });
+  
+          if (res.status === 200) {
+            setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
+          }
+        } catch (error) {
+          console.error('Error checking authentication:', error);
+          setIsAuthenticated(false);
+        }
+      };
+  
+      checkAuth();
+    }, []);
+
+  if (isAuthenticated){
+    return <Navigate to="/dashboard" />
+  }
 
   return (
     <div className="loginPage flex w-screen h-screen">

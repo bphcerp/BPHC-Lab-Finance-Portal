@@ -14,9 +14,10 @@ const Layout: FunctionComponent = () => {
     fetch(`${import.meta.env.VITE_BACKEND_URL}/user/logout`, {
       method: "POST",
       credentials: "include",
-    });
-    navigate("/login");
-  };
+    })
+    .finally(() => navigate("/login"))
+    .catch((e) => console.error(e))
+  }
 
   useEffect(() => {
     setIsReset(new Date().getMonth() === 3 && new Date().getDate() === 1)
