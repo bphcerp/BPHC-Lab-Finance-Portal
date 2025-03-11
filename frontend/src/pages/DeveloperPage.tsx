@@ -25,10 +25,9 @@ const supervisors: Supervisor[] = [
 const DeveloperPage: FunctionComponent = () => {
     return (
         <div className="flex flex-col space-y-6 items-center w-full h-full p-5">
-            <h1 className="text-3xl font-bold text-gray-800 text-center">Developers</h1>
-            <p className="text-lg text-gray-700 text-center max-w-2xl">
-                We are the developers behind this platform. If you have any questions, suggestions, 
-                or need support, feel free to reach out to us. Your feedback is appreciated.
+            <h1 className="text-3xl font-bold text-gray-800 text-center">The Team</h1>
+            <p className="text-lg text-gray-700 text-center">
+                We are the developers behind this platform. If you have any issues with this portal, feel free to reach out to us.
             </p>
 
             <div className="flex flex-wrap justify-center gap-6">
@@ -53,9 +52,11 @@ const DeveloperPage: FunctionComponent = () => {
                     </div>
                 ))}
             </div>
-            <span className="text-xl text-gray-700 text-center max-w-2xl">
-                Under the supervision of
-            </span>
+            <div className="text-xl flex justify-center items-center space-x-3 text-gray-700 text-center max-w-2xl">
+                <span>Made in</span>
+                <img className="h-8 w-fit" src="/logo.jpg" />
+                <span>Under the supervision of</span>
+            </div>
             {supervisors.map((supervisor) => (
 
                 <div
