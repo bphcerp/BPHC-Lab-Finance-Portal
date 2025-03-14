@@ -30,7 +30,7 @@ const projectSchema = new Schema({
     carry_forward: { type: Map, of: [Number] }
 });
 
-projectSchema.pre('save', function (next) {
+projectSchema.pre('save', async function (next) {
     this.updated_at = new Date();
     if (this.carry_forward !== undefined){
         next()
@@ -40,6 +40,7 @@ projectSchema.pre('save', function (next) {
     this.project_heads.forEach((alloc, key) => {
         carryForward[key] = new Array(alloc.length).fill(null);
     })
+    this.carry_forward = carryForward as any
     next();
 });
 

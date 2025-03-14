@@ -4,10 +4,10 @@ FROM node:20.17.0 AS build
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN pnpm install
 
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 # Production stage
 FROM node:20.17.0-slim
@@ -15,7 +15,7 @@ FROM node:20.17.0-slim
 WORKDIR /app
 
 # Install a simple HTTP server to serve static content
-RUN npm install -g serve
+RUN pnpm install -g serve
 
 COPY --from=build /app/dist /app
 
