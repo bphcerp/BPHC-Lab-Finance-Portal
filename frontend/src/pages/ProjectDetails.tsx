@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toastError, toastSuccess, toastWarn } from "../toasts";
 import ReimbursementModal from "../components/ReimbursementModal";
@@ -28,6 +28,10 @@ const ProjectDetails = () => {
     const [isCarryDetailsModalOpen, setIsCarryDetailsModalOpen] = useState(false)
     const [carryYear, setCarryYear] = useState<number | null>(null)
 
+    const tableContainerRef = useRef<HTMLDivElement | null>(null);
+    const targetColumnRef = useRef<HTMLTableCellElement | null>(null);
+    const fixedColumnRef = useRef<HTMLTableCellElement | null>(null)
+
     const getProjectTotal = () => {
         return Object.values(projectData!.project_heads)
             .map((arr) => arr[currentYear] || 0)
@@ -49,6 +53,9 @@ const ProjectDetails = () => {
             .then((res) => res.json())
             .then((data) => {
                 setProjectData(data)
+                if (tableContainerRef.current && targetColumnRef.current && fixedColumnRef.current) {
+                    tableContainerRef.current.scrollLeft = targetColumnRef.current.offsetLeft - fixedColumnRef.current.offsetWidth;
+                }
                 const curr = getCurrentIndex(data)
                 if (curr >= 0) {
                     setCurrentYear(curr)
@@ -126,7 +133,7 @@ const ProjectDetails = () => {
         }
     };
 
-    const handleCarryForward = async (carryData : { [key: string]: number }) => {
+    const handleCarryForward = async (carryData: { [key: string]: number }) => {
         try {
             const response = await fetch(
                 `${import.meta.env.VITE_BACKEND_URL}/project/${projectData!._id}/carry`,
@@ -136,7 +143,7 @@ const ProjectDetails = () => {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body : JSON.stringify({carryData})
+                    body: JSON.stringify({ carryData })
                 }
             );
 
@@ -240,7 +247,7 @@ const ProjectDetails = () => {
                         {projectData.override ? <Button color="failure" onClick={() => {
                             setIsOverrideModalOpen(true)
                             setResetOverride(true)
-                        }}>Revert Override</Button>:<></>}
+                        }}>Revert Override</Button> : <></>}
                     </div>
 
                     <span className="text-4xl font-bold text-center mt-5 text-gray-800">
@@ -259,8 +266,8 @@ const ProjectDetails = () => {
                     </div>
 
 
-                    <div className="flex space-x-5 w-full h-fit">
-                        <div className="flex-1">
+                    <div className="grid grid-cols-4 gap-4">
+                        <div className="col-span-3">
                             <div className="flex justify-between mb-2">
                                 <div className="flex space-x-2 items-center w-fit">
                                     <span className="text-2xl font-semibold text-gray-70">Project Data</span>
@@ -272,99 +279,102 @@ const ProjectDetails = () => {
                                     View All Reimbursements
                                 </button>
                             </div>
-                            {Object.keys(projectData.project_heads).length ? <table className="min-w-full bg-white shadow-md rounded-lg">
-                                <thead className="bg-gray-200">
-                                    <tr>
-                                        <th className="py-3 px-6 text-center text-gray-800 font-semibold">
-                                            Head
-                                        </th>
-                                        {Array.from({
-                                            length: Math.max(
-                                                ...Object.values(projectData.project_heads).map(
-                                                    (arr) => arr.length
-                                                )
-                                            ),
-                                        }).map((_, i) => (
-                                            <th
-                                                key={i}
-                                                className={`py-3 px-6 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
-                                            >
-                                                <div className="flex flex-col space-y-2">
-                                                    <button
-                                                        className="text-blue-600 text-lg hover:underline"
-                                                        onClick={() => fetchReimbursements({ index: i, all: true })}>
-                                                        {projectData.project_type === "invoice" ? "Installment" : "Year"} {i + 1}
-                                                    </button>
-                                                    {projectData.project_type === "invoice" ? <span>{formatDate(projectData.installments![i].start_date)} - {formatDate(projectData.installments![i].end_date)}</span> : <></>}
-                                                    {(i < Math.max(
-                                                        ...Object.values(projectData.project_heads).map(
-                                                            (arr) => arr.length
-                                                        )) - 1) ? <button onClick={() => {
-                                                            setIsCarryDetailsModalOpen(true)
-                                                            setCarryYear(i + 1)
-                                                        }} className="underline text-sm text-green-500 hover:text-green-600">Show Carry</button> : <></>}
-                                                </div>
+                            <div ref={tableContainerRef} className="overflow-x-auto">
+                                {Object.keys(projectData.project_heads).length ? <table className="bg-white shadow-md rounded-lg">
+                                    <thead className="bg-gray-200">
+                                        <tr className="bg-inherit">
+                                            <th ref={fixedColumnRef} className="py-3 px-6 sticky left-0 bg-inherit text-center text-gray-800 font-semibold">
+                                                Head
                                             </th>
-                                        ))}
-                                        <th className="py-3 px-6 text-center text-gray-800 font-semibold">
-                                            Total
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {Object.entries(projectData.project_heads).map(
-                                        ([head, allocations], index) => (
-                                            <tr key={index} className="border-t">
-                                                <td className="py-3 px-6 text-gray-800 text-center font-medium">
-                                                    <button
-                                                        className="text-blue-600 hover:underline"
-                                                        onClick={() => fetchReimbursements({ head })}>
-                                                        {head}
-                                                    </button>
-                                                </td>
-                                                {allocations.map((amount, i) => (
-                                                    <td
-                                                        key={i}
-                                                        className={`py-3 px-6 text-center ${!isProjectOver && currentYear === i ? "text-red-600" : "text-blue-600"}`}
-                                                    >
+                                            {Array.from({
+                                                length: Math.max(
+                                                    ...Object.values(projectData.project_heads).map(
+                                                        (arr) => arr.length
+                                                    )
+                                                ),
+                                            }).map((_, i) => (
+                                                <th
+                                                    key={i}
+                                                    {...(!isProjectOver && currentYear === i ? { ref: targetColumnRef } : {})}
+                                                    className={`py-3 px-6 text-center bg-inherit text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
+                                                >
+                                                    <div className="flex flex-col space-y-2">
                                                         <button
-                                                            className="hover:underline"
-                                                            onClick={() => fetchReimbursements({ head, index: i })}>
-                                                            {formatCurrency(amount)}
+                                                            className="text-blue-600 text-lg hover:underline"
+                                                            onClick={() => fetchReimbursements({ index: i, all: true })}>
+                                                            {projectData.project_type === "invoice" ? "Installment" : "Year"} {i + 1}
+                                                        </button>
+                                                        {projectData.project_type === "invoice" ? <span>{formatDate(projectData.installments![i].start_date)} - {formatDate(projectData.installments![i].end_date)}</span> : <></>}
+                                                        {(i < Math.max(
+                                                            ...Object.values(projectData.project_heads).map(
+                                                                (arr) => arr.length
+                                                            )) - 1) ? <button onClick={() => {
+                                                                setIsCarryDetailsModalOpen(true)
+                                                                setCarryYear(i + 1)
+                                                            }} className="underline text-sm text-green-500 hover:text-green-600">Show Carry</button> : <></>}
+                                                    </div>
+                                                </th>
+                                            ))}
+                                            <th className="py-3 px-6 text-center text-gray-800 font-semibold">
+                                                Total
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {Object.entries(projectData.project_heads).map(
+                                            ([head, allocations], index) => (
+                                                <tr key={index} className="border-t bg-inherit">
+                                                    <td className="py-3 px-6 bg-white sticky left-0 text-gray-800 text-center font-medium">
+                                                        <button
+                                                            className="text-blue-600 hover:underline"
+                                                            onClick={() => fetchReimbursements({ head })}>
+                                                            {head}
                                                         </button>
                                                     </td>
-                                                ))}
-                                                {allocations.length <
-                                                    Math.max(
-                                                        ...Object.values(projectData.project_heads).map(
-                                                            (arr) => arr.length
-                                                        )
-                                                    ) &&
-                                                    Array.from({
-                                                        length:
-                                                            Math.max(
-                                                                ...Object.values(projectData.project_heads).map(
-                                                                    (arr) => arr.length
-                                                                )
-                                                            ) - allocations.length,
-                                                    }).map((_, i) => (
+                                                    {allocations.map((amount, i) => (
                                                         <td
                                                             key={i}
-                                                            className={`py-3 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
+                                                            className={`py-3 px-6 text-center ${!isProjectOver && currentYear === i ? "text-red-600" : "text-blue-600"}`}
                                                         >
-                                                            N/A
+                                                            <button
+                                                                className="hover:underline"
+                                                                onClick={() => fetchReimbursements({ head, index: i })}>
+                                                                {formatCurrency(amount)}
+                                                            </button>
                                                         </td>
                                                     ))}
-                                                <td className="py-3 px-6 text-gray-800 text-center font-medium">
-                                                    {formatCurrency(allocations.reduce((acc, allocation) => acc + allocation, 0))}
-                                                </td>
-                                            </tr>
-                                        )
-                                    )}
-                                </tbody>
-                            </table> : <div className="flex items-center justify-center text-2xl bg-gray-200 w-full h-56 rounded-lg ">
-                                <span>No project heads added yet.</span>
-                            </div>}
+                                                    {allocations.length <
+                                                        Math.max(
+                                                            ...Object.values(projectData.project_heads).map(
+                                                                (arr) => arr.length
+                                                            )
+                                                        ) &&
+                                                        Array.from({
+                                                            length:
+                                                                Math.max(
+                                                                    ...Object.values(projectData.project_heads).map(
+                                                                        (arr) => arr.length
+                                                                    )
+                                                                ) - allocations.length,
+                                                        }).map((_, i) => (
+                                                            <td
+                                                                key={i}
+                                                                className={`py-3 text-center text-gray-600 ${!isProjectOver && currentYear === i ? "text-red-600" : "   "}`}
+                                                            >
+                                                                N/A
+                                                            </td>
+                                                        ))}
+                                                    <td className="py-3 px-6 text-gray-800 text-center font-medium">
+                                                        {formatCurrency(allocations.reduce((acc, allocation) => acc + allocation, 0))}
+                                                    </td>
+                                                </tr>
+                                            )
+                                        )}
+                                    </tbody>
+                                </table> : <div className="flex items-center justify-center text-2xl bg-gray-200 w-full h-56 rounded-lg ">
+                                    <span>No project heads added yet.</span>
+                                </div>}
+                            </div>
                         </div>
 
                         <div className="flex flex-col space-y-4">
@@ -425,7 +435,7 @@ const ProjectDetails = () => {
 
                     <div className="flex items-center space-x-2">
                         <span className="text-2xl font-semibold text-gray-700">Current ( {projectData.project_type === "yearly" ? "Year" : "Installment"} {currentYear + 1} ) Expense Sheet</span>
-                        {!isProjectOver && ((projectData.project_type === 'invoice' ? ( currentYear + 1 === projectData.installments!.length) : ( currentYear + 1 === calculateNumberOfYears(new Date(projectData.start_date!),new Date(projectData.end_date!))))?<></>:<Button onClick={() => setIsCarryModalOpen(true)} size="sm" color="failure" >Carry Forward</Button>)}
+                        {!isProjectOver && ((projectData.project_type === 'invoice' ? (currentYear + 1 === projectData.installments!.length) : (currentYear + 1 === calculateNumberOfYears(new Date(projectData.start_date!), new Date(projectData.end_date!)))) ? <></> : <Button onClick={() => setIsCarryModalOpen(true)} size="sm" color="failure" >Carry Forward</Button>)}
                     </div>
                     <div className="flex pb-8">
                         {!isProjectOver ? <table className="min-w-full bg-white shadow-md rounded-lg mt-2">
@@ -499,7 +509,7 @@ const ProjectDetails = () => {
                 yearFlag={yearFlag}
             />
 
-            {projectData &&  expenseData && isCarryModalOpen && <CarryConfirmationModal
+            {projectData && expenseData && isCarryModalOpen && <CarryConfirmationModal
                 projectHeads={projectData?.project_heads}
                 expenseData={expenseData}
                 carryData={projectData.carry_forward}
