@@ -28,9 +28,7 @@ const ProjectDetails = () => {
     const [isCarryDetailsModalOpen, setIsCarryDetailsModalOpen] = useState(false)
     const [carryYear, setCarryYear] = useState<number | null>(null)
 
-    const tableContainerRef = useRef<HTMLDivElement | null>(null);
     const targetColumnRef = useRef<HTMLTableCellElement | null>(null);
-    const fixedColumnRef = useRef<HTMLTableCellElement | null>(null)
 
     const getProjectTotal = () => {
         return Object.values(projectData!.project_heads)
@@ -53,9 +51,6 @@ const ProjectDetails = () => {
             .then((res) => res.json())
             .then((data) => {
                 setProjectData(data)
-                if (tableContainerRef.current && targetColumnRef.current && fixedColumnRef.current) {
-                    tableContainerRef.current.scrollLeft = targetColumnRef.current.offsetLeft - fixedColumnRef.current.offsetWidth;
-                }
                 const curr = getCurrentIndex(data)
                 if (curr >= 0) {
                     setCurrentYear(curr)
@@ -82,6 +77,12 @@ const ProjectDetails = () => {
     useEffect(() => {
         fetchProjectData()
     }, [id]);
+
+    useEffect(() => {
+        if (projectData && targetColumnRef.current) {
+            targetColumnRef.current.scrollIntoView()
+        }
+    }, [projectData, targetColumnRef])
 
     useEffect(() => {
         if (isProjectOver) toastWarn("Project's end date has been crossed!")
@@ -279,11 +280,11 @@ const ProjectDetails = () => {
                                     View All Reimbursements
                                 </button>
                             </div>
-                            <div ref={tableContainerRef} className="overflow-x-auto">
+                            <div className="overflow-x-auto scroll-smooth">
                                 {Object.keys(projectData.project_heads).length ? <table className="bg-white shadow-md rounded-lg">
                                     <thead className="bg-gray-200">
                                         <tr className="bg-inherit">
-                                            <th ref={fixedColumnRef} className="py-3 px-6 sticky left-0 bg-inherit text-center text-gray-800 font-semibold">
+                                            <th className="py-3 px-6 sticky left-0 bg-inherit text-center text-gray-800 font-semibold">
                                                 Head
                                             </th>
                                             {Array.from({

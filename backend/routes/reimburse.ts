@@ -88,8 +88,8 @@ router.get('/:projectId', async (req, res) => {
         const { projectId } = req.params
         const { head, index, all, exportData } = req.query
         const filter = { project: projectId, ...(all === "undefined" ? { projectHead: head } : {}), ...(index !== "undefined" ? { year_or_installment: index } : {}) }
-        const reimbursements = await ReimbursementModel.find(filter).populate('project expenses').sort({ createdAt: -1 }).lean();
-        const instituteExpenses = await InstituteExpenseModel.find(filter).populate('project').sort({ createdAt: -1 }).lean()
+        const reimbursements = await ReimbursementModel.find(filter).populate('expenses').sort({ createdAt: -1 }).lean();
+        const instituteExpenses = await InstituteExpenseModel.find(filter).sort({ createdAt: -1 }).lean()
 
         if (exportData) {
             const workbook = new Workbook()

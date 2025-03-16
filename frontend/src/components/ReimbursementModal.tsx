@@ -23,7 +23,7 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
             <Modal.Header>Reimbursements Under {label}</Modal.Header>
             <Modal.Body>
                 <div>
-                    {reimbursements.length > 0 ? (
+                    {(reimbursements.length > 0 || instituteExpenses.length > 0) ? (
                         <table className="min-w-full bg-white rounded-lg">
                             <thead className="bg-gray-200">
                                 <tr>
