@@ -72,9 +72,9 @@
 ssh -i <public_ssh_key> opc@portal.lambda-india.com
 ```
 
-- To make starting, stopping and restarting easier, a service `lambda` is setup. 
+- To make starting, stopping and restarting easier, a service `lambda-finance` is setup. 
 
-- The .service file can be found at `/etc/systemd/system/lambda.service`
+- The .service file can be found at `/etc/systemd/system/lambda-finance.service`
 
 Command Reference:
 
@@ -82,16 +82,16 @@ Command Reference:
 ```bash
 
 #To start the service
-sudo systemctl start lambda
+sudo systemctl start lambda-finance
 
 #To stop the service
-sudo systemctl stop lambda
+sudo systemctl stop lambda-finance
 
 #To restart the service
-sudo systemctl restart lambda
+sudo systemctl restart lambda-finance
 
 #To view the logs
-journalctl -u lambda
+journalctl -u lambda-finance -r
 
 ```
 

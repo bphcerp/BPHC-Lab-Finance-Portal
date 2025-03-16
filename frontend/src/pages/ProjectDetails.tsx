@@ -281,7 +281,7 @@ const ProjectDetails = () => {
                                 </button>
                             </div>
                             <div className="overflow-x-auto scroll-smooth">
-                                {Object.keys(projectData.project_heads).length ? <table className="bg-white shadow-md rounded-lg">
+                                {Object.keys(projectData.project_heads).length ? <table className="bg-white min-w-full shadow-md rounded-lg">
                                     <thead className="bg-gray-200">
                                         <tr className="bg-inherit">
                                             <th className="py-3 px-6 sticky left-0 bg-inherit text-center text-gray-800 font-semibold">
