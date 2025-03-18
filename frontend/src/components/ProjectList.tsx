@@ -1,7 +1,7 @@
 import { FunctionComponent, useEffect, useState } from "react";
 import { toastError, toastSuccess } from "../toasts";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { MdOutlineDescription } from "react-icons/md";
 import DescriptionModal from "./DescriptionModal";
 import { createColumnHelper } from '@tanstack/react-table';

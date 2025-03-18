@@ -1,5 +1,5 @@
 import { FunctionComponent, useEffect, useState } from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router";
 import { RxHamburgerMenu, RxCross2 } from "react-icons/rx";
 import SidebarComponent from "../components/Sidebar";
 import NewFinancialYearModal from "../components/NewFinancialYearModal";

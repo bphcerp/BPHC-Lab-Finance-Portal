@@ -5,7 +5,7 @@ import { RiGovernmentLine } from "react-icons/ri";
 import { FaBuildingColumns, FaCode } from "react-icons/fa6";
 import { BsSafe } from "react-icons/bs";
 import { FaDonate } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 
 interface SidebarProps {

@@ -1,5 +1,5 @@
 import { FunctionComponent } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation } from "react-router";
 
 const ExpensesLayout: FunctionComponent = () => {
     const location = useLocation();

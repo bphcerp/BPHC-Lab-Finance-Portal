@@ -1,6 +1,6 @@
 import { Modal } from "flowbite-react";
 import { FunctionComponent } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 interface DocumentModalProps {
     isOpen: boolean;

@@ -3,7 +3,7 @@ import { FunctionComponent, useEffect, useState } from "react";
 import { InstituteExpense } from "../types";
 import TableCustom from "../components/TableCustom";
 import { toastError } from "../toasts";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 export const InstituteExpensesPage: FunctionComponent = () => {
 

@@ -3,7 +3,7 @@ import ProjectList from "../components/ProjectList";
 import { Button } from "flowbite-react";
 import { AddProjectModal } from "../components/AddProjectModal";
 import { toastError } from "../toasts";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 const DashBoard: FunctionComponent = () => {
     const [grandTotal, setGrandTotal] = useState(0);

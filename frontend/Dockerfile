@@ -16,12 +16,6 @@ FROM base
 COPY --from=prod-deps /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
 
-# Install a simple HTTP server to serve static content
 RUN pnpm install -g serve
-
-COPY --from=build /app/dist /app
-
 EXPOSE 3000
-
-# Start the server
-CMD ["serve", "-s", ".", "-l", "3000"]
+CMD ["serve", "-s", "./dist", "-l", "3000"]

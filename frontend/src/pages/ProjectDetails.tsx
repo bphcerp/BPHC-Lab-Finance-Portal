@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { toastError, toastSuccess, toastWarn } from "../toasts";
 import ReimbursementModal from "../components/ReimbursementModal";
 import { InstituteExpense, Project, Reimbursement } from "../types";

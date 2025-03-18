@@ -1,6 +1,6 @@
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import { FormEvent, FormEventHandler, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { toastError } from "../toasts";
 import PasswordLoginPane from "./PasswordLoginPane";
 

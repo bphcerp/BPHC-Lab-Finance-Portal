@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess } from '../toasts';
 import { MdOutlineDescription } from "react-icons/md";
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import DescriptionModal from '../components/DescriptionModal';
 import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
