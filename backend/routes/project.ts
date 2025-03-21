@@ -36,10 +36,10 @@ export const calculateNumberOfYears = (start: Date, end: Date) => {
     return (yearsDiff >= 1 ? yearsDiff : 0);
 };
 
-export const getCurrentIndex = (project: Project) => project.project_type === "invoice" ? getCurrentInstallmentIndex(project) : calculateCurrentYear(project)
+export const getCurrentIndex = (project: Project, discardOverride: boolean = false) => project.project_type === "invoice" ? getCurrentInstallmentIndex(project, discardOverride) : calculateCurrentYear(project, discardOverride)
 
-const calculateCurrentYear = (data: Project) => {
-    if (data.override) return data.override.index
+const calculateCurrentYear = (data: Project, discardOverride: boolean = false) => {
+    if (data.override && !discardOverride) return data.override.index
     const curr = new Date();
 
     if (curr > new Date(data.end_date!)) {
@@ -49,14 +49,14 @@ const calculateCurrentYear = (data: Project) => {
     const start = new Date(data.start_date!);
     let currentYear = curr.getFullYear() - start.getFullYear();
 
-    if (curr.getMonth() > 3) currentYear++
-    if (start.getMonth() > 3) currentYear--;
+    if (curr.getMonth() >= 3) currentYear++
+    if (start.getMonth() >= 3) currentYear--;
 
     return (currentYear >= 0 ? currentYear : 0);
 }
 
-const getCurrentInstallmentIndex = (project: Project): number => {
-    if (project.override) return project.override.index
+const getCurrentInstallmentIndex = (project: Project, discardOverride: boolean = false): number => {
+    if (project.override && !discardOverride) return project.override.index
     const currentDate = new Date();
 
     for (let i = 0; i < project.installments!.length; i++) {
@@ -243,6 +243,9 @@ router.post('/:id/carry', async (req: Request, res: Response) => {
 
 //Enforce Override
 router.post('/:id/override', async (req: Request, res: Response) => {
+
+    const { selectedIndex } = req.body
+
     try {
         const project = await ProjectModel.findById(req.params.id);
 
@@ -251,20 +254,30 @@ router.post('/:id/override', async (req: Request, res: Response) => {
             return;
         }
 
-        if (req.body.selectedIndex === getCurrentIndex(project)) {
+        if (selectedIndex === getCurrentIndex(project)) {
             res.status(409).send({ message: "Override redundant. Already set to that year." })
             return
         }
 
-        if (getCurrentIndex(project) !== -1) {
-            const isCarrySet = Array.from(project.carry_forward!.values()).some(carry => carry[req.body.selectedIndex] !== null)
-            if (isCarrySet) {
-                res.status(403).json({ message: 'Carry already set. Cannot override.' })
-                return
+        console.log(selectedIndex)
+        console.log((Math.abs(getCurrentIndex(project) - selectedIndex) == 1))
+        console.log(( Array.from(project.carry_forward!.values()).some(carry => carry[selectedIndex] !== null)))
+
+        const oneYearRevertRelax = (Math.abs(getCurrentIndex(project) - selectedIndex) == 1) && ( Array.from(project.carry_forward!.values()).some(carry => carry[selectedIndex] !== null))
+
+        if (selectedIndex !== -1) {
+
+            // Difference between current index with and without override
+            if (Math.abs(getCurrentIndex(project) - selectedIndex) !== 1) {
+                const isCarrySet = Array.from(project.carry_forward!.values()).some(carry => carry[selectedIndex] !== null)
+                if (isCarrySet) {
+                    res.status(403).json({ message: 'Carry already set. Cannot override.' })
+                    return
+                }
             }
         }
 
-        const isYearInvalid = req.body.selectedIndex < 0 || project.project_type === 'invoice' ? (req.body.selectedIndex >= project.installments.length) : (req.body.selectedIndex >= calculateNumberOfYears(project.start_date!, project.end_date!))
+        const isYearInvalid = selectedIndex < 0 || project.project_type === 'invoice' ? (selectedIndex >= project.installments.length) : (selectedIndex >= calculateNumberOfYears(project.start_date!, project.end_date!))
 
         if (isYearInvalid) {
             res.status(400).send({ message: project.project_type ? "Invalid Installment Number" : "Invalid Year" })
@@ -276,7 +289,7 @@ router.post('/:id/override', async (req: Request, res: Response) => {
             index: req.body.selectedIndex
         }
         await project.save()
-        res.send({ updatedProject: project })
+        res.send({ warn: oneYearRevertRelax ,message: oneYearRevertRelax ? 'Override Reset Successful!. The current year has already been carry forwarded. Donot make any new expenses.' : 'Override removed successfully.' });
     }
     catch (err) {
         console.error(err)
@@ -296,18 +309,25 @@ router.delete('/:id/override', async (req: Request, res: Response) => {
             return;
         }
 
-        if (getCurrentIndex(project) !== -1) {
-            const isCarrySet = Array.from(project.carry_forward!.values()).some(carry => carry[getCurrentIndex(project)] !== null)
-            if (isCarrySet) {
-                res.status(403).json({ message: 'Carry already set. Cannot override.' })
-                return
+        const currentIndex = getCurrentIndex(project, true)
+        const oneYearRevertRelax = (Math.abs(getCurrentIndex(project) - currentIndex) == 1) && ( Array.from(project.carry_forward!.values()).some(carry => carry[currentIndex] !== null))
+
+        if (currentIndex !== -1) {
+
+            // Difference between current index with and without override
+            if (Math.abs(getCurrentIndex(project) - currentIndex) !== 1) {
+                const isCarrySet = Array.from(project.carry_forward!.values()).some(carry => carry[currentIndex] !== null)
+                if (isCarrySet) {
+                    res.status(403).json({ message: 'Carry already set. Cannot override.' })
+                    return
+                }
             }
         }
 
 
         await ProjectModel.updateOne({ _id: id }, { $unset: { override: "" } });
 
-        res.send({ message: 'Override field removed successfully.' });
+        res.send({ warn: oneYearRevertRelax ,message: oneYearRevertRelax ? 'Override Reset Successful!. The current year has already been carry forwarded. Donot make any new expenses.' : 'Override removed successfully.' });
     } catch (err) {
         console.error(err);
         res.status(500).send({ message: (err as Error).message });

@@ -180,15 +180,16 @@ const ProjectDetails = () => {
                 }
             );
 
+            const res = (await response.json())
+
             if (response.ok) {
                 fetchProjectData()
-                toastSuccess("Override Set Sucessfully!")
+                if (res.warn) toastWarn(res.message ?? "Override Reset Sucessfully!")
+                else toastSuccess(res.message ?? "Override Reset Sucessfully!")
             }
             else {
-                const message = (await response.json()).message
-                toastError(message ?? "Something went wrong!")
-                console.error(message)
-                return
+                toastError(res.message ?? "Something went wrong!")
+                console.error(res.message)
             }
 
             setIsOverrideModalOpen(false)
@@ -208,14 +209,16 @@ const ProjectDetails = () => {
                 }
             );
 
+            const res = (await response.json())
+
             if (response.ok) {
                 fetchProjectData()
-                toastSuccess("Override Reset Sucessfully!")
+                if (res.warn) toastWarn(res.message ?? "Override Reset Sucessfully!")
+                else toastSuccess(res.message ?? "Override Reset Sucessfully!")
             }
             else {
-                const message = (await response.json()).message
-                toastError(message ?? "Something went wrong!")
-                console.error(message)
+                toastError(res.message ?? "Something went wrong!")
+                console.error(res.message)
             }
 
             setResetOverride(false)

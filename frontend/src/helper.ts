@@ -29,8 +29,8 @@ const calculateCurrentYear = (data: Project) => {
     const start = new Date(data.start_date!);
     let currentYear = curr.getFullYear() - start.getFullYear(); //should be +1, 0-indexing makes it +0
 
-    if (curr.getMonth() > 3) currentYear++ //should be +2, but 0 indexing makes it +1
-    if (start.getMonth() > 3) currentYear--;
+    if (curr.getMonth() >= 3) currentYear++ //should be +2, but 0 indexing makes it +1
+    if (start.getMonth() >= 3) currentYear--;
 
     return (currentYear >= 0 ? currentYear : 0);
 };
