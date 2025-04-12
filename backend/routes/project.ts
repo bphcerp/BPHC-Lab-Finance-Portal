@@ -259,10 +259,6 @@ router.post('/:id/override', async (req: Request, res: Response) => {
             return
         }
 
-        console.log(selectedIndex)
-        console.log((Math.abs(getCurrentIndex(project) - selectedIndex) == 1))
-        console.log(( Array.from(project.carry_forward!.values()).some(carry => carry[selectedIndex] !== null)))
-
         const oneYearRevertRelax = (Math.abs(getCurrentIndex(project) - selectedIndex) == 1) && ( Array.from(project.carry_forward!.values()).some(carry => carry[selectedIndex] !== null))
 
         if (selectedIndex !== -1) {
@@ -603,7 +599,8 @@ router.delete('/:id', async (req: Request, res: Response) => {
             res.status(404).json({ message: 'Project not found' });
         } else {
             const projectReimbursements = await ReimbursementModel.findOne({ project: toBeDeletedProject!._id })
-            if (projectReimbursements) res.status(409).send({ message: "Cannot delete, project has reimbursements filed against. Please delete them and try again." })
+            const projectInstituteExpenses = await InstituteExpenseModel.findOne({ project: toBeDeletedProject!._id })
+            if (projectReimbursements || projectInstituteExpenses) res.status(409).send({ message: "Cannot delete, project has expenses filed against. Please delete them and try again." })
             else {
                 const sanction_letter_file_id = toBeDeletedProject.sanction_letter_file_id;
 
