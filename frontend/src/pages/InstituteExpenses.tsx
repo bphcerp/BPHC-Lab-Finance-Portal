@@ -1,14 +1,30 @@
-import { createColumnHelper } from "@tanstack/react-table";
-import { FunctionComponent, useEffect, useState } from "react";
-import { InstituteExpense } from "../types";
-import TableCustom from "../components/TableCustom";
-import { toastError } from "../toasts";
-import { Link } from "react-router";
+import { RiDeleteBin6Line, RiEdit2Line } from 'react-icons/ri';
+import { FunctionComponent, useEffect, useState } from 'react';
+import TableCustom from '../components/TableCustom';
+import { toastError, toastSuccess } from '../toasts';
+import { InstituteExpense } from '../types';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import { createColumnHelper } from '@tanstack/react-table';
+import { Link } from 'react-router';
+import PDFLink from '../components/PDFLink';
+import AddExpenseModal from '../components/AddExpenseModal';
 
 export const InstituteExpensesPage: FunctionComponent = () => {
 
-    const [expenses, setExpenses] = useState<Array<InstituteExpense>>([]);
-    // const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set());
+    const [expenses, setExpenses] = useState<InstituteExpense[]>([]);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedExpense, setSelectedExpense] = useState<InstituteExpense | null>(null);
+
+    const openEditModal = (expense: InstituteExpense) => {
+        setSelectedExpense(expense);
+        setIsEditModalOpen(true);
+    };
+
+    const openDeleteModal = (expense: InstituteExpense) => {
+        setSelectedExpense(expense);
+        setIsDeleteModalOpen(true);
+    };
 
     const columnHelper = createColumnHelper<InstituteExpense>()
 
@@ -70,7 +86,68 @@ export const InstituteExpensesPage: FunctionComponent = () => {
             cell: (info) => info.getValue() ? `${info.getValue()}%` : 'NA',
             enableColumnFilter: false
         }),
+        columnHelper.accessor("reference_id", {
+            header: "Reference",
+            cell: ({ row }) => row.original.reference_id ? <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/expense/${row.original._id}/reference?type=Institute`}>View</PDFLink> : "-",
+            enableColumnFilter: false,
+            enableSorting: false,
+        }),
+        columnHelper.accessor(() => "Actions", {
+            header: "Actions",
+            cell: ({ row }) =>
+                <div className="flex justify-center divide-x-2">
+                    {<button
+                        className="w-10 flex justify-center hover:cursor-pointer"
+                        onClick={() => openEditModal(row.original)}
+                    >
+                        <RiEdit2Line color="blue" />
+                    </button>}
+                    <button
+                        className="w-10 flex justify-center hover:cursor-pointer"
+                        onClick={() => openDeleteModal(row.original)}
+                    >
+                        <RiDeleteBin6Line color="red" />
+                    </button>
+                </div>
+            ,
+            enableColumnFilter: false,
+            enableSorting: false
+        })
     ]
+
+    const handleEditExpense = async (updatedExpense: Partial<InstituteExpense>) => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/${selectedExpense?._id}?type=Institute`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedExpense),
+                credentials: "include"
+            });
+
+            if (!response.ok) throw new Error('Failed to update expense');
+            fetchExpenses();
+            toastSuccess('Expense updated successfully');
+        } catch (error) {
+            toastError('Error updating expense');
+            console.error('Error updating expense:', error);
+        }
+    };
+
+    const handleDeleteExpense = async () => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense/${selectedExpense?._id}?type=Institute`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Failed to delete expense');
+            fetchExpenses();
+            toastSuccess('Expense deleted successfully');
+        } catch (error) {
+            toastError('Error deleting expense');
+            console.error('Error deleting expense:', error);
+        }
+    };
 
     const fetchExpenses = async () => {
         try {
@@ -88,20 +165,24 @@ export const InstituteExpensesPage: FunctionComponent = () => {
     }, []);
 
     return (
-        <div className="flex flex-col">
-            <span className="text-2xl font-bold mb-4">Institute Expenses</span>
-            <TableCustom data={expenses} columns={columns} initialState={{
-                sorting: [
-                    {
-                        id: 'updatedAt',
-                        desc: true
-                    }
-                ]
-            }} />
-        </div>
-    )
-}
-
-// setSelected={(selectedExpenses: Array<InstituteExpense>) => {
-//     setSelectedExpenses(new Set(selectedExpenses.map(expense => expense._id)))
-// }}
+        <>
+            { selectedExpense && <AddExpenseModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                edit="Institute"
+                editData={selectedExpense}
+                onSubmit={handleEditExpense}
+            /> }
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onDelete={handleDeleteExpense}
+                item={selectedExpense?.expenseReason || ""}
+            />
+            <TableCustom
+                data={expenses}
+                columns={columns}
+            />
+        </>
+    );
+};

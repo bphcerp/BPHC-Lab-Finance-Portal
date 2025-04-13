@@ -12,6 +12,7 @@ import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
 import { EditExpenseData, Expense } from '../types';
+import PDFLink from '../components/PDFLink';
 
 const ExpensesPage: React.FC = () => {
     const [expenses, setExpenses] = useState<Array<Expense>>([]);
@@ -55,7 +56,7 @@ const ExpensesPage: React.FC = () => {
             cell: info => info.getValue().toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
             enableColumnFilter: false
         }),
-        columnHelper.accessor((row) => row.paidBy?.name ?? 'Direct' , {
+        columnHelper.accessor((row) => row.paidBy?.name ?? 'Direct', {
             header: 'Paid By',
             cell: info => info.getValue(),
             meta: {
@@ -128,9 +129,15 @@ const ExpensesPage: React.FC = () => {
             enableColumnFilter: false,
             enableSorting: false
         }),
+        columnHelper.accessor("reference_id", {
+            header: "Reference",
+            cell: ({ row }) => row.original.reference_id ? <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/expense/${row.original._id}/reference?type=Normal`}>View</PDFLink> : "-",
+            enableColumnFilter: false,
+            enableSorting: false,
+        }),
         columnHelper.accessor(() => "Actions", {
             header: "Actions",
-            cell: ({ row }) => 
+            cell: ({ row }) =>
                 <div className="flex justify-center divide-x-2">
                     {!row.original.reimbursedID && <button
                         className="w-10 flex justify-center hover:cursor-pointer"
@@ -139,11 +146,11 @@ const ExpensesPage: React.FC = () => {
                         <RiEdit2Line color="blue" />
                     </button>}
                     <button
-                            className="w-10 flex justify-center hover:cursor-pointer"
-                            onClick={() => openDeleteModal(row.original)}
-                        >
-                            <RiDeleteBin6Line color="red" />
-                        </button>
+                        className="w-10 flex justify-center hover:cursor-pointer"
+                        onClick={() => openDeleteModal(row.original)}
+                    >
+                        <RiDeleteBin6Line color="red" />
+                    </button>
                 </div>
             ,
             enableColumnFilter: false,
@@ -187,7 +194,7 @@ const ExpensesPage: React.FC = () => {
     const handleFileReimbursement = async (formData: any) => {
         try {
             const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceDocument } = formData;
-            
+
             const data = new FormData();
             data.append('expenseIds', JSON.stringify(expenseIds));
             data.append('projectId', selectedProject);
@@ -242,43 +249,41 @@ const ExpensesPage: React.FC = () => {
         }
     };
 
-    const handleAddExpense = async (newExpense : any) => {
+    const handleAddExpense = async (newExpense: any) => {
         try {
-            let response;
-    
-            if (newExpense.type === 'Institute') {
-                const formData = new FormData();
-                formData.append('expenseReason', newExpense.expenseReason);
-                formData.append('category', newExpense.category);
-                formData.append('amount', newExpense.amount.toString());
-                formData.append('paidBy', newExpense.paidBy);
-                formData.append('description', newExpense.description);
+            const formData = new FormData();
+            formData.append('expenseReason', newExpense.expenseReason);
+            formData.append('category', newExpense.category);
+            formData.append('amount', newExpense.amount.toString());
+            formData.append('description', newExpense.description);
+            formData.append('type', newExpense.type);
+
+            if (newExpense.referenceDocument) {
                 formData.append('referenceDocument', newExpense.referenceDocument);
-                formData.append('type', newExpense.type);
+            }
+
+            if (newExpense.type === 'Institute') {
                 formData.append('project', newExpense.projectId);
                 formData.append('projectHead', newExpense.projectHead);
                 formData.append('overheadPercentage', newExpense.overheadPercentage.toString());
-    
-                response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    body: formData,
-                });
             } else {
-                response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(newExpense),
-                });
+                if (newExpense.paymentType === 'Indirect') {
+                    formData.append('paidBy', newExpense.paidBy);
+                } else if (newExpense.paymentType === 'Direct') {
+                    formData.append('paidDirectWith', newExpense.paidDirectWith);
+                }
             }
-    
+
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/expense`, {
+                method: 'POST',
+                credentials: 'include',
+                body: formData,
+            });
+
             if (!response.ok) {
                 throw new Error('Failed to add expense');
             }
-    
+
             const addedExpense = await response.json();
             setExpenses([...expenses, addedExpense]);
             fetchExpenses();
@@ -287,7 +292,7 @@ const ExpensesPage: React.FC = () => {
             toastError('Error adding expense');
             console.error('Error adding expense:', error);
         }
-    };    
+    };
 
     const fetchExpenses = async () => {
         try {
@@ -395,7 +400,7 @@ const ExpensesPage: React.FC = () => {
                         {selectedExpenses.size > 0 ?
                             <div className='flex space-x-2'>
                                 <Button color="gray" size="md" className='rounded-md' onClick={() => {
-                                    const eligibleExpenses = expenses.filter(expense => selectedExpenses.has(expense._id)).filter((expense) => ( expense.paidBy && !expense.settled && !expense.reimbursedID?.paidStatus));
+                                    const eligibleExpenses = expenses.filter(expense => selectedExpenses.has(expense._id)).filter((expense) => (expense.paidBy && !expense.settled && !expense.reimbursedID?.paidStatus));
                                     if (eligibleExpenses.length === 0) {
                                         toastWarn('No eligible expenses for settling');
                                         return
@@ -418,10 +423,10 @@ const ExpensesPage: React.FC = () => {
             <TableCustom data={expenses} columns={columns} setSelected={(selectedExpenses: Array<Expense>) => {
                 setSelectedExpenses(new Set(selectedExpenses.map(expense => expense._id)))
             }} initialState={{
-                sorting : [
+                sorting: [
                     {
-                        id : 'updatedAt',
-                        desc : true
+                        id: 'updatedAt',
+                        desc: true
                     }
                 ]
             }} />

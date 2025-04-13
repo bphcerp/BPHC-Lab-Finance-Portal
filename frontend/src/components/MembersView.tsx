@@ -9,7 +9,7 @@ const MembersView: React.FC = () => {
     const [membersExpenses, setMembersExpenses] = useState<Array<MemberExpense>>([]);
     const [selectedMember, setSelectedMember] = useState<MemberExpense | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [totals, setTotals] = useState<Array<{ _id: String, totalCredited: number; totalDebited: number; balance: number }> | null>(null);
+    const [totals, setTotals] = useState<Array<{ _id: string, totalCredited: number; totalDebited: number; balance: number }> | null>(null);
 
     const fetchMembersExpenses = async () => {
         try {

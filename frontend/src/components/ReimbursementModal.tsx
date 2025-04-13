@@ -1,6 +1,7 @@
 import { FunctionComponent } from 'react';
 import { Modal, Button } from 'flowbite-react';
 import { InstituteExpense, Reimbursement } from '../types';
+import PDFLink from './PDFLink';
 
 interface ReimbursementModalProps {
     isOpen: boolean;
@@ -19,7 +20,7 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
     const totalAmount = reimbursementTotal + instituteExpenseTotal
 
     return (
-        <Modal size="6xl" show={isOpen} onClose={onClose}>
+        <Modal size="8xl" show={isOpen} onClose={onClose}>
             <Modal.Header>Reimbursements Under {label}</Modal.Header>
             <Modal.Body>
                 <div>
@@ -33,7 +34,14 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                     {showHead ? <th className="py-3 px-6 text-center text-gray-800 font-semibold">Project Head</th> : <></>}
                                     {yearFlag != null ? <th className="py-3 px-6 text-center text-gray-800 font-semibold">{yearFlag ? "Year" : "Installment"}</th> : <></>}
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Total Amount</th>
-                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Expenses</th>
+                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Type</th>
+                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">
+                                        <div className='flex flex-col space-y-2'>
+                                            <span className='text-center'>Expenses</span>
+                                            <span className='text-gray-500 text-center text-xs'>Click to view reference</span>
+                                        </div>
+                                    </th>
+                                    <th className="py-3 px-6 text-center text-gray-800 font-semibold">Reference</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -49,12 +57,16 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             {reimbursement.totalAmount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
                                         </td>
+                                        <td className="py-3 px-6 text-gray-600">Reimbursement</td>
                                         <td className="py-3 px-6 text-gray-600">
                                             <ul className="list-disc list-inside">
                                                 {reimbursement.expenses.map((expense, index) => (
-                                                    <li key={index}>{expense.expenseReason} - {expense.amount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}</li>
+                                                    expense.reference_id ? <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/expense/${expense._id}/reference?type=Institute`}><li key={index}>{expense.expenseReason} - {expense.amount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}</li></PDFLink> : <li key={index}>{expense.expenseReason} - {expense.amount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}</li>
                                                 ))}
                                             </ul>
+                                        </td>
+                                        <td className="py-3 px-6 text-gray-600 flex justify-center items-center">
+                                            { reimbursement.reference_id ?  <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/reimburse/${reimbursement._id}/reference`}>View</PDFLink> : "-" }
                                         </td>
                                     </tr>
                                 ))}
@@ -71,6 +83,8 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                             {expense.amount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
                                         </td>
                                         <td className="py-3 px-6 text-gray-600">Institute Expense</td>
+                                        <td className="py-3 px-6 text-gray-600">NA</td>
+                                        { expense.reference_id ?  <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/expense/${expense._id}/reference?type=Institute`}>View</PDFLink> : "-" }
                                     </tr>
                                 ))}
                                 <tr className="border-t bg-gray-100 font-semibold">
@@ -84,6 +98,8 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                     <td className="py-3 px-6 text-center">
                                         {totalAmount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
                                     </td>
+                                    <td className="py-3 px-6"></td>
+                                    <td className="py-3 px-6"></td>
                                     <td className="py-3 px-6"></td>
                                 </tr>
                             </tbody>

@@ -2,30 +2,32 @@ import { Button, Modal, Label, TextInput, Select, FileInput, Textarea, ToggleSwi
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess, toastWarn } from '../toasts';
 import AddCategoryModal from './AddCategoryModal';
-import { Category, Member, Project } from '../types';
+import { Category, Expense, InstituteExpense, Member, Project } from '../types';
 
 interface AddExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: Function;
+  edit?: 'Normal' | 'Institute';
+  editData?: Expense | InstituteExpense
 }
 
-const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSubmit }) => {
-  const [expenseReason, setExpenseReason] = useState('');
-  const [category, setCategory] = useState('');
+const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSubmit, edit, editData }) => {
+  const [expenseReason, setExpenseReason] = useState(editData?.expenseReason ?? '');
+  const [category, setCategory] = useState(editData?.category._id ?? '');
   const [categories, setCategories] = useState<Array<Category>>([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [amount, setAmount] = useState<number | string>('');
-  const [paidBy, setPaidBy] = useState('');
+  const [amount, setAmount] = useState<number | string>(editData?.amount ?? '');
+  const [paidBy, setPaidBy] = useState((editData as Expense)?.paidBy?._id ?? '');
   const [members, setMembers] = useState<Array<Member>>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [description, setDescription] = useState<string>('');
-  const [expenseType, setExpenseType] = useState<'Normal' | 'Institute'>('Normal');
-  const [paymentType, setPaymentType] = useState<'Direct' | 'Indirect'>('Indirect');
+  const [description, setDescription] = useState<string>((editData as Expense)?.description ?? '');
+  const [expenseType, setExpenseType] = useState<'Normal' | 'Institute'>(edit ?? 'Normal');
+  const [paymentType, setPaymentType] = useState<'Direct' | 'Indirect'>((editData as Expense)?.directExpense ? 'Direct' : 'Indirect');
   const [directPaymentAcc, setDirectPaymentAcc] = useState<'Current' | 'Savings'>();
-  const [selectedProject, setSelectedProject] = useState('');
-  const [selectedProjectHead, setSelectedProjectHead] = useState('');
-  const [overheadPercentage, setOverheadPercentage] = useState<number | string>('');
+  const [selectedProject, setSelectedProject] = useState((editData as InstituteExpense)?.project._id ?? '');
+  const [selectedProjectHead, setSelectedProjectHead] = useState((editData as InstituteExpense)?.projectHead ?? '');
+  const [overheadPercentage, setOverheadPercentage] = useState<number | string>((editData as InstituteExpense)?.overheadPercentage ?? '');
   const [referenceDocument, setReferenceDocument] = useState<File | null>(null);
 
   const fetchCategories = async () => {
@@ -102,13 +104,13 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
 
   const handleSubmit = () => {
     if (expenseReason && category && amount && ((expenseType === 'Normal' && paymentType == 'Indirect') ? paidBy : true)) {
-      const expenseData: any = { expenseReason, category, amount: Number(amount), ...((expenseType === 'Normal' && paymentType == 'Indirect') ? {paidBy} : {}), description, referenceDocument, type: expenseType };
+      const expenseData: any = { expenseReason, category, amount: Number(amount), ...((expenseType === 'Normal' && paymentType == 'Indirect') ? { paidBy } : {}), description, referenceDocument, type: expenseType };
       if (expenseType === 'Institute') {
         expenseData.projectId = selectedProject;
         expenseData.projectHead = selectedProjectHead;
         expenseData.overheadPercentage = Number(overheadPercentage);
       }
-      if (paymentType === 'Direct'){
+      if (paymentType === 'Direct') {
         expenseData.paidDirectWith = directPaymentAcc
       }
       onSubmit(expenseData);
@@ -119,7 +121,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
 
   return (
     <Modal size="4xl" show={isOpen} onClose={onClose}>
-      <Modal.Header>Add New Expense</Modal.Header>
+      <Modal.Header>{ !edit ? "Add New": "Edit" } Expense</Modal.Header>
       <Modal.Body>
         <AddCategoryModal
           isOpen={isCategoryModalOpen}
@@ -128,7 +130,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
         />
         <div className='flex justify-end items-center space-x-2'>
           <Label className='text-lg'>{expenseType}</Label>
-          <ToggleSwitch color='blue' checked={expenseType === 'Institute'} onChange={checked => setExpenseType(checked ? 'Institute' : 'Normal')} />
+          <ToggleSwitch disabled={!!edit} color='blue' checked={expenseType === 'Institute'} onChange={checked => setExpenseType(checked ? 'Institute' : 'Normal')} />
         </div>
         <div className="relative space-y-4">
           <div>
@@ -234,39 +236,13 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
                   className="mt-1"
                 />
               </div>}
-              <div>
-                <Label htmlFor="referenceDocument" value="Reference Document (PDF only)" />
-                <FileInput
-                  id="referenceDocument"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-
-                    if (file.type !== 'application/pdf') {
-                      toastWarn('Please upload a PDF file.');
-                      e.target.value = ''; // Reset the input
-                      return;
-                    }
-
-                    const maxSizeInMB = 10;
-                    if (file.size > maxSizeInMB * 1024 * 1024) {
-                      toastWarn(`File size exceeds ${maxSizeInMB} MB.`);
-                      e.target.value = ''; // Reset the input
-                      return;
-                    }
-
-                    setReferenceDocument(file);
-                  }}
-                  accept="application/pdf"
-                />
-              </div>
             </div>
           ) : <div>
             <div className='flex justify-between items-center mb-1'>
               <Label htmlFor="paidBy" value="Paid By" />
               <div className='flex justify-end items-center space-x-2'>
                 <Label>{paymentType}</Label>
-                <ToggleSwitch color='blue' checked={paymentType === 'Direct'} onChange={checked => setPaymentType(!checked ? 'Indirect' : 'Direct')} />
+                <ToggleSwitch disabled={!!edit} color='blue' checked={paymentType === 'Direct'} onChange={checked => setPaymentType(!checked ? 'Indirect' : 'Direct')} />
               </div>
             </div>
             {paymentType === 'Indirect' ? <div className="flex">
@@ -309,6 +285,33 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
               </div>}
           </div>}
 
+          {!edit && <div>
+            <Label htmlFor="referenceDocument" value="Reference Document (PDF only)" />
+            <FileInput
+              id="referenceDocument"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                if (file.type !== 'application/pdf') {
+                  toastWarn('Please upload a PDF file.');
+                  e.target.value = ''; // Reset the input
+                  return;
+                }
+
+                const maxSizeInMB = 10;
+                if (file.size > maxSizeInMB * 1024 * 1024) {
+                  toastWarn(`File size exceeds ${maxSizeInMB} MB.`);
+                  e.target.value = ''; // Reset the input
+                  return;
+                }
+
+                setReferenceDocument(file);
+              }}
+              accept="application/pdf"
+            />
+          </div>}
+
           <div>
             <Label htmlFor="description" value="Description" />
             <Textarea
@@ -323,7 +326,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
       </Modal.Body>
       <Modal.Footer>
         <Button color="gray" onClick={onClose}>Cancel</Button>
-        <Button color="blue" onClick={handleSubmit}>Add Expense</Button>
+        <Button color="blue" onClick={handleSubmit}>{edit ? "Edit" : "Add"} Expense</Button>
       </Modal.Footer>
     </Modal>
   );

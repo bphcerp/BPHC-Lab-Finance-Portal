@@ -19,6 +19,8 @@ export interface Expense {
     settled: Account | null;
     createdAt: Date;
     updatedAt: Date;
+    reference_id?: string | null;
+    directExpense: boolean;
 }
 
 export interface InstituteExpense {

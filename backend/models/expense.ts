@@ -7,6 +7,7 @@ const expenseSchema = new Schema({
   reimbursedID: { type: mongoose.Schema.Types.ObjectId, ref: 'reimbursements', default: null },
   paidBy: { type: mongoose.Schema.Types.ObjectId, ref: 'members'},
   settled: { type: mongoose.Schema.Types.ObjectId, ref: 'account' },
+  reference_id: { type: Schema.Types.ObjectId, ref: 'references.files' },
   directExpense : { type: Schema.Types.Boolean, default : false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
