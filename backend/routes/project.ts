@@ -5,7 +5,6 @@ import mongoose from "mongoose";
 import { Readable } from "stream";
 import { authenticateToken } from "../middleware/authenticateToken";
 import { ReimbursementModel } from "../models/reimburse";
-import wkhtmltopdf from "wkhtmltopdf";
 import { InstituteExpenseModel } from "../models/expense";
 
 
