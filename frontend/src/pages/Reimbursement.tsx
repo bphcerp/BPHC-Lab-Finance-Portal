@@ -40,13 +40,13 @@ const ReimbursementPage: React.FC = () => {
         columnHelper.accessor('title', {
             header: 'Title',
         }),
-        columnHelper.accessor(() => 'Project', {
+        columnHelper.accessor((row) => `${row.project.funding_agency}-${row.project.project_title}`, {
             header: 'Project',
-            cell: info => <Link className='hover:underline text-blue-600'
-                to={`/project/${info.row.original.project._id}`}
+            cell: ({ getValue, row }) => <Link className='hover:underline text-blue-600'
+                to={`/project/${row.original.project._id}`}
                 target="_blank"
                 rel="noopener noreferrer">
-                {info.row.original.project.funding_agency}-{info.row.original.project.project_title}
+                {getValue()}
             </Link>
         }),
         columnHelper.accessor('projectHead', {
