@@ -13,6 +13,7 @@ import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
 import { EditExpenseData, Expense } from '../types';
 import PDFLink from '../components/PDFLink';
+import { useNavigate } from 'react-router';
 
 const ExpensesPage: React.FC = () => {
     const [expenses, setExpenses] = useState<Array<Expense>>([]);
@@ -26,6 +27,7 @@ const ExpensesPage: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
     const [description, setDescription] = useState("")
+    const navigate = useNavigate()
 
     const columnHelper = createColumnHelper<Expense>();
 
@@ -284,9 +286,8 @@ const ExpensesPage: React.FC = () => {
                 throw new Error('Failed to add expense');
             }
 
-            const addedExpense = await response.json();
-            setExpenses([...expenses, addedExpense]);
-            fetchExpenses();
+            if (newExpense.type !== 'Institute') fetchExpenses();
+            else navigate('institute')
             toastSuccess('Expense added successfully');
         } catch (error) {
             toastError('Error adding expense');

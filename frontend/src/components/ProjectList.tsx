@@ -119,19 +119,6 @@ const ProjectList: FunctionComponent = () => {
             enableColumnFilter: false,
             enableSorting: false,
         }),
-        columnHelper.accessor(() => "util_cert", {
-            header: "UC",
-            cell: ({ row }) => {
-                const curr = getCurrentIndex(row.original)
-                return (curr >=0 ? <PDFLink
-                    url={`${import.meta.env.VITE_BACKEND_URL}/project/${row.original._id}/util_cert`}
-                >
-                    View
-                </PDFLink> : "NA")
-            },
-            enableColumnFilter: false,
-            enableSorting: false,
-        }),
         columnHelper.accessor("description", {
             header: "Description",
             cell: ({ row }) =>
