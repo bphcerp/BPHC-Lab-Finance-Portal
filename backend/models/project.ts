@@ -33,6 +33,14 @@ const projectSchema = new Schema({
 
 projectSchema.pre('save', async function (next) {
     this.updated_at = new Date();
+    this.total_amount = Array.from(this.project_heads.values()).reduce((sum, alloc) => {
+        const headSum = alloc.reduce((sum, val) => {
+            sum += val
+            return sum
+        },0)
+        sum += headSum
+        return sum
+    },0)
     let carryForward : { [key : string] : number[] } = {}
     if (this.carry_forward){
         this.project_heads.forEach((alloc, key) => {

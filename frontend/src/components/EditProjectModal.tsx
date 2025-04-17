@@ -195,7 +195,14 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                         <TextInput
                             id="totalAmount"
                             type="number"
-                            value={0}
+                            value={Object.values(watch('project_heads')).reduce((sum, alloc) => {
+                                const headSum = alloc.reduce((sum, val) => {
+                                    sum += val
+                                    return sum
+                                },0)
+                                sum += headSum
+                                return sum
+                            },0)}
                             readOnly
                             className="mt-1"
                         />
