@@ -5,7 +5,6 @@ import mongoose from "mongoose";
 import { Readable } from "stream";
 import { authenticateToken } from "../middleware/authenticateToken";
 import { ReimbursementModel } from "../models/reimburse";
-import wkhtmltopdf from "wkhtmltopdf";
 import { InstituteExpenseModel } from "../models/expense";
 
 
@@ -337,7 +336,7 @@ router.put('/:id', async (req: Request, res: Response) => {
         const data = req.body;
 
         const parsedInstallments = data.installments && Array.isArray(data.installments) && data.installments.length
-            ? JSON.parse(data.installments)
+            ? typeof data.installments === 'string' ? JSON.parse(data.installments) : data.installements
             : [];
 
         let updatedProject = await ProjectModel.findById(req.params.id)
