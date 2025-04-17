@@ -118,7 +118,7 @@ const getProjectExpenses = async (project: Project, index?: number) => {
 
 router.get('/:id/total-expenses', async (req: Request, res: Response) => {
     const { id } = req.params
-    const { index } = req.query
+    const { index, projectData } = req.query
 
     if (!id) {
         res.status(400).send({ message: 'Project ID is required and should be a single value' });
@@ -136,7 +136,7 @@ router.get('/:id/total-expenses', async (req: Request, res: Response) => {
 
         const project_head_expenses = await getProjectExpenses(project, index ? parseInt(index.toString()) : undefined)
 
-        res.json(project_head_expenses);
+        res.json(projectData ? { project_head_expenses, project } : project_head_expenses);
     } catch (err) {
         console.error(err);
         res.status(500).send({ message: `Error occurred: ${(err as Error).message}` });

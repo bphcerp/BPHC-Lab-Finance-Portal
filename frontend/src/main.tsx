@@ -23,6 +23,7 @@ import PDAccountPage from './pages/PDAccountPage'
 import NotFound from './components/NotFound'
 import DeveloperPage from './pages/DeveloperPage'
 import { InstituteExpensesPage } from './pages/InstituteExpenses.js'
+import { ProjectSAViewer } from './pages/ProjectSAViewer,.js'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={import.meta.env.VITE_OAUTH_CID}>
@@ -35,6 +36,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path='/dashboard' element={<DashBoard />} />
             <Route path='/projects' element={<ProjectOverview />} />
             <Route path="/project/:id" element={<ProjectDetails />} />
+            <Route path="/project/:id/accounts/pdfviewer" element={<ProjectSAViewer />} />
             <Route path='/expenses' element={<ExpensesLayout />}>
               <Route index element={<ExpensesPage />} />
               <Route path='member-wise' element={<MembersView />} />
