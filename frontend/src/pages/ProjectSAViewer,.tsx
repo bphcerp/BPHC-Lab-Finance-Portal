@@ -129,12 +129,12 @@ const MyDoc = ({
 
                 <Text style={{ fontSize: 12, marginBottom: 10 }}>
                     <Text style={{ fontWeight: 'bold' }}>PIs: </Text>
-                    { projectData.pis.length ? projectData.pis.join(' ,') : 'None Specified' }
+                    { projectData.pis.length ? projectData.pis.map(pi => pi.name).join(' ,') : 'None Specified' }
                 </Text>
 
                 <Text style={{ fontSize: 12, marginBottom: 20 }}>
                     <Text style={{ fontWeight: 'bold' }}>Co-PIs: </Text>
-                    { projectData.copis.length ? projectData.copis.join(' ,') : 'None Specified' }
+                    { projectData.copis.length ? projectData.copis.map(pi => pi.name).join(' ,') : 'None Specified' }
                 </Text>
 
                 {/* Table */}

@@ -36,7 +36,7 @@ export const CarryDetailsModal: FunctionComponent<CarryDetailsModalProps> = ({ p
     const totalYearAmount = Object.values(projectHeads).reduce((sum, arr) => sum + (arr[formerYear] || 0), 0)
 
     return (
-        <Modal size='6xl' show={isOpen} onClose={onClose}>
+        <Modal size='7xl' show={isOpen} onClose={onClose}>
             <Modal.Header>Carry Information from Year {formerYear} to Year {formerYear + 1}</Modal.Header>
             <Modal.Body>
                 {carryData ? (
