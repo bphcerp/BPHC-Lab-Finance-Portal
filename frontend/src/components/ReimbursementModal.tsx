@@ -2,6 +2,7 @@ import { FunctionComponent } from 'react';
 import { Modal, Button } from 'flowbite-react';
 import { InstituteExpense, Reimbursement } from '../types';
 import PDFLink from './PDFLink';
+import { Link } from 'react-router';
 
 interface ReimbursementModalProps {
     isOpen: boolean;
@@ -9,9 +10,9 @@ interface ReimbursementModalProps {
     label: string
     showHead?: boolean
     yearFlag: boolean | null
-    handleExport : () => void
+    handleExport: () => void
     reimbursements: Reimbursement[]
-    instituteExpenses : InstituteExpense[]
+    instituteExpenses: InstituteExpense[]
 }
 
 const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen, onClose, label, showHead, yearFlag, reimbursements, instituteExpenses, handleExport }) => {
@@ -38,7 +39,7 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">
                                         <div className='flex flex-col space-y-2'>
                                             <span className='text-center'>Expenses</span>
-                                            <span className='text-gray-500 text-center text-xs'>Click to view reference</span>
+                                            <span className='text-gray-500 text-center text-xs'>Click to go to expense</span>
                                         </div>
                                     </th>
                                     <th className="py-3 px-6 text-center text-gray-800 font-semibold">Reference</th>
@@ -51,7 +52,11 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             {new Date(reimbursement.createdAt).toLocaleDateString('en-IN')}
                                         </td>
-                                        <td className="py-3 px-6 text-center text-gray-600 font-bold">{reimbursement.title}</td>
+                                        <td className="py-3 px-6 text-center text-gray-600 font-bold"><Link className='hover:underline text-blue-600'
+                                            to={`/reimbursements?showRowId=${reimbursement._id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer">
+                                            {reimbursement.title}</Link></td>
                                         {showHead ? <td className="py-3 px-6 text-gray-600 text-center">{reimbursement.projectHead}</td> : <></>}
                                         {yearFlag != null ? <td className="py-3 px-6 text-gray-600 text-center">{reimbursement.year_or_installment + 1}</td> : <></>}
                                         <td className="py-3 px-6 text-center text-gray-600">
@@ -61,12 +66,16 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                         <td className="py-3 px-6 text-gray-600">
                                             <ul className="list-disc list-inside">
                                                 {reimbursement.expenses.map((expense, index) => (
-                                                    expense.reference_id ? <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/expense/${expense._id}/reference?type=Institute`}><li key={index}>{expense.expenseReason} - {expense.amount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}</li></PDFLink> : <li key={index}>{expense.expenseReason} - {expense.amount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}</li>
+                                                    <Link className='hover:underline text-blue-600'
+                                                    to={`/expenses?showRowId=${expense._id}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer">
+                                                    <li key={index}>{expense.expenseReason} - {expense.amount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}</li></Link>
                                                 ))}
                                             </ul>
                                         </td>
                                         <td className="py-3 px-6 text-gray-600 flex justify-center items-center">
-                                            { reimbursement.reference_id ?  <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/reimburse/${reimbursement._id}/reference`}>View</PDFLink> : "-" }
+                                            {reimbursement.reference_id ? <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/reimburse/${reimbursement._id}/reference`}>View</PDFLink> : "-"}
                                         </td>
                                     </tr>
                                 ))}
@@ -76,7 +85,11 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                         <td className="py-3 px-6 text-center text-gray-600">
                                             {new Date(expense.createdAt).toLocaleDateString('en-IN')}
                                         </td>
-                                        <td className="py-3 px-6 text-center text-gray-600 font-bold">{expense.expenseReason}</td>
+                                        <td className="py-3 px-6 text-center text-gray-600 font-bold"><Link className='hover:underline text-blue-600'
+                                            to={`/expenses/institute?showRowId=${expense._id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer">
+                                            {expense.expenseReason}</Link></td>
                                         {showHead ? <td className="py-3 px-6 text-gray-600 text-center">{expense.projectHead}</td> : <></>}
                                         {yearFlag != null ? <td className="py-3 px-6 text-gray-600 text-center">{expense.year_or_installment + 1}</td> : <></>}
                                         <td className="py-3 px-6 text-center text-gray-600">
@@ -84,7 +97,7 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                                         </td>
                                         <td className="py-3 px-6 text-gray-600">Institute Expense</td>
                                         <td className="py-3 px-6 text-gray-600">NA</td>
-                                        { expense.reference_id ?  <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/expense/${expense._id}/reference?type=Institute`}>View</PDFLink> : "-" }
+                                        {expense.reference_id ? <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/expense/${expense._id}/reference?type=Institute`}>View</PDFLink> : "-"}
                                     </tr>
                                 ))}
                                 <tr className="border-t bg-gray-100 font-semibold">
@@ -110,8 +123,8 @@ const ReimbursementModal: FunctionComponent<ReimbursementModalProps> = ({ isOpen
                 </div>
             </Modal.Body>
             <Modal.Footer>
-            <Button color="blue" onClick={onClose}>Close</Button>
-            <Button color="success" onClick={handleExport}>Export as Excel</Button>
+                <Button color="blue" onClick={onClose}>Close</Button>
+                <Button color="success" onClick={handleExport}>Export as Excel</Button>
             </Modal.Footer>
         </Modal>
     );

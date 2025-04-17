@@ -9,32 +9,34 @@ import {
     getFacetedRowModel,
     getFacetedUniqueValues,
     InitialTableState,
-    RowData
+    RowData,
 } from "@tanstack/react-table";
 import { Checkbox, TextInput, Select, Table } from "flowbite-react";
-import { FunctionComponent, ReactNode, useEffect, useMemo } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import ColumnVisibilityMenu from "./ColumnVisibilityMenu";
 import MultiSelectFilter from "./MultiSelectFilter";
+import { useSearchParams } from "react-router";
 
 declare module '@tanstack/react-table' {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     interface ColumnMeta<TData extends RowData, TValue> {
         getSum?: boolean;
         sumFormatter?: (sum: number) => ReactNode;
-        truncateLength? :number
+        truncateLength?: number
         filterType?: "dropdown" | "multiselect";
     }
 }
 
-interface TableCustomProps {
-    data: Array<any>;
-    columns: Array<any>;
-    setSelected?: (selected: Array<any>) => void;
+interface TableCustomProps<T> {
+    data: T[];
+    columns: any[];
+    setSelected?: (selected: T[]) => void;
     initialState?: InitialTableState;
 }
 
-const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSelected, initialState }) => {
+function TableCustom<T> ({ data, columns, setSelected, initialState } : TableCustomProps<T>) {
 
-    const getSortedUniqueValues = (column: Column<any, unknown>) => {
+    const getSortedUniqueValues = (column: Column<T, unknown>) => {
         return Array.from(column.getFacetedUniqueValues().keys())
             .sort()
             .slice(0, 5000)
@@ -62,6 +64,44 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
         getPaginationRowModel: getPaginationRowModel(),
     });
 
+    const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({})
+    const [highlightRowId, setHighlightRowId] = useState<string | null>(null)
+    const [ searchParams ] = useSearchParams()
+    const showRowId = searchParams.get('showRowId')
+
+    const focusRow = (targetId: string) => {
+        // Find the row index in the full data
+        const tableRows = table.getPrePaginationRowModel().rows
+        const rowIndex = tableRows.findIndex(row => (row.original as { _id: string })._id === targetId)
+        const rowId = tableRows[rowIndex].id
+
+        console.log(rowIndex, "hehe", targetId, table.getPrePaginationRowModel().rows[0].original)
+
+        if (rowIndex === -1) return // not found
+
+        // Calculate which page the row would be on
+        const pageSize = table.getState().pagination.pageSize
+        const pageIndex = Math.floor(rowIndex / pageSize)
+
+        // Set page
+        table.setPageIndex(pageIndex)
+
+        // Delay scroll because page change is async
+        setTimeout(async () => {
+            const targetRow = rowRefs.current[rowId]
+            if (targetRow) {
+                targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                setHighlightRowId(rowId)
+                await new Promise(resolve => setTimeout(resolve, 2000)); //sleep for 2s
+                setHighlightRowId(null)
+            }
+        }, 100)
+    }
+
+    useEffect(() => {
+        if (showRowId && table.getPrePaginationRowModel().rows.length) focusRow(showRowId)
+    },[showRowId, table.getPrePaginationRowModel().rows])
+
     useEffect(() => {
         if (setSelected) setSelected(Object.keys(table.getState().rowSelection).map(row => table.getRow(row).original))
     }, [table.getState().rowSelection])
@@ -72,7 +112,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
         table.getAllColumns().forEach(column => {
             if (column.columnDef.meta?.getSum) {
                 sums[column.id] = table.getRowModel().rows.reduce((sum, row) => {
-                    const value = column.columnDef.meta?.filterType ? row.original[column.id.toLowerCase()] : row.getValue(column.id);
+                    const value = column.columnDef.meta?.filterType ? row.original[column.id.toLowerCase() as keyof typeof row.original] : row.getValue(column.id);
                     return sum + (typeof value === "number" ? value : 0);
                 }, 0);
             }
@@ -106,9 +146,9 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                                 }}
                                             >
                                                 {header.column.columnDef.meta?.truncateLength && header.column.columnDef.meta?.truncateLength < header.column.columnDef.header!.length ? <div className="relative group">
-                                                    <span>{flexRender(header.column.columnDef.header?.toString().slice(0,header.column.columnDef.meta.truncateLength) + '...', header.getContext())}</span>
+                                                    <span>{flexRender(header.column.columnDef.header?.toString().slice(0, header.column.columnDef.meta.truncateLength) + '...', header.getContext())}</span>
                                                     <span className="absolute left-0 mt-5 opacity-0 transition-opacity duration-700 group-hover:opacity-100 bg-gray-300 text-gray-700 text-xs p-2 rounded shadow-lg">{header.column.columnDef.header?.toString()}</span>
-                                                </div> :flexRender(header.column.columnDef.header, header.getContext())}
+                                                </div> : flexRender(header.column.columnDef.header, header.getContext())}
                                                 {header.column.getIsSorted() === "asc" ? ' 🔼' : header.column.getIsSorted() === "desc" ? ' 🔽' : null}
                                             </div>
                                             {header.column.getCanFilter() ? (
@@ -123,7 +163,7 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                                                             {getSortedUniqueValues(header.column).map(value => (
                                                                 <option value={value} key={value}>{value}</option>
                                                             ))}
-                                                        </Select>) : <MultiSelectFilter column={header.column}/>
+                                                        </Select>) : <MultiSelectFilter column={header.column} />
                                                     ) : (
                                                         <TextInput
                                                             className="w-fit bg-white border border-gray-300 rounded-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500"
@@ -143,7 +183,10 @@ const TableCustom: FunctionComponent<TableCustomProps> = ({ data, columns, setSe
                     ))}
                     <Table.Body>
                         {table.getRowModel().rows.map((row, index) => (
-                            <Table.Row key={row.id} className={index % 2 ? "bg-gray-100" : "bg-white"}>
+                            <Table.Row ref={el => (rowRefs.current[row.id] = el)} key={row.id} className={`${index % 2 ? "bg-gray-100" : "bg-white"} border ${highlightRowId === row.id
+                                    ? 'animate-pulse bg-yellow-200/50'
+                                    : ''
+                                }`}>
                                 <Table.Cell className="px-4 py-2.5">
                                     <Checkbox
                                         {...{

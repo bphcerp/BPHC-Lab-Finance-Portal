@@ -22,8 +22,17 @@ const CarryConfirmationModal: FunctionComponent<CarryConfirmationModalProps> = (
     onSubmit,
     onClose,
 }) => {
-    const { register, handleSubmit, watch, setValue } = useForm();
-    const [usePercentage, setUsePercentage] = useState(true);
+    const { register, handleSubmit, watch, setValue, formState: { dirtyFields } } = useForm({
+        defaultValues:{
+            ...(Object.keys(projectHeads).reduce((acc, head) => {
+                acc[head] = carryData[head][currentIndex] ?? 0
+                acc[`${head}_percent`] = (acc[head] / projectHeads[head][currentIndex]) * 100
+                console.log(acc)
+                return acc
+            }, {} as  { [k: string] : number }))
+        }
+    });
+    const [usePercentage, setUsePercentage] = useState(false);
 
     return (
         <Modal size="5xl" show={isOpen} onClose={onClose}>
@@ -68,7 +77,7 @@ const CarryConfirmationModal: FunctionComponent<CarryConfirmationModalProps> = (
                                 const percentage = watch(`${projectHead}_percent`) || 0;
                                 if (percentage > 100) setValue(`${projectHead}_percent`, 100)
                                 else if (percentage < 0) setValue(`${projectHead}_percent`, 0)
-                                setValue(projectHead, balancePerHead * (percentage / 100));
+                                if (dirtyFields[projectHead] && usePercentage) setValue(projectHead, balancePerHead * (percentage / 100));
                                 return (
                                     <Table.Row key={`${projectHead}_${i}`}>
                                         <Table.Cell className="font-semibold text-gray-900">{projectHead}</Table.Cell>
@@ -100,7 +109,7 @@ const CarryConfirmationModal: FunctionComponent<CarryConfirmationModalProps> = (
                                                     type="number"
                                                     {...register(projectHead, { valueAsNumber: true })}
                                                     {...(usePercentage ? { readOnly: true } : {})}
-                                                    max={balancePerHead}
+                                                    {...(balancePerHead >= 0 ? { max: balancePerHead }: { min: balancePerHead })}
                                                     className="border-gray-200 w-full rounded-l-lg"
                                                 />
                                             </div>

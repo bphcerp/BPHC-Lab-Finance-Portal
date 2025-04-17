@@ -93,6 +93,7 @@ export interface Project {
     sanction_letter?: File | null;
     sanction_letter_file_id?: string;
     description: string
+    note: string | null
     negative_heads: string[]
     override: { type: string, index: number }
 }

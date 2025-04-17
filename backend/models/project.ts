@@ -23,6 +23,7 @@ const projectSchema = new Schema({
     copis: [{ type: Schema.Types.ObjectId, ref: 'members', required: true }],
     sanction_letter_file_id: { type: Schema.Types.ObjectId, ref: 'uploads.files' },
     description: { type: String, default: null },
+    note: { type: String, default: null },
     installments: { type: [installmentSchema], default: [] },
     updated_at: { type: Date },
     negative_heads: { type: [String], default: [] },
@@ -32,11 +33,15 @@ const projectSchema = new Schema({
 
 projectSchema.pre('save', async function (next) {
     this.updated_at = new Date();
-    if (this.carry_forward !== undefined){
+    let carryForward : { [key : string] : number[] } = {}
+    if (this.carry_forward){
+        this.project_heads.forEach((alloc, key) => {
+            carryForward[key] = this.carry_forward!.get(key) ?? new Array(alloc.length).fill(null);
+        })
+        this.carry_forward = carryForward as any
         next()
         return
     }
-    let carryForward : { [key : string] : number[] } = {}
     this.project_heads.forEach((alloc, key) => {
         carryForward[key] = new Array(alloc.length).fill(null);
     })

@@ -17,11 +17,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
             funding_agency: project?.funding_agency || '',
             total_amount: project?.total_amount || 0,
             project_heads: project?.project_heads || {},
-            pis: project?.pis || [],  // Keep this as array of Member objects
-            copis: project?.copis || [],  // Same for co-pis
+            pis: project?.pis || [],
+            copis: project?.copis || [],
             negative_heads: project?.negative_heads || [],
-            project_id: project?.project_id || '',  // Add project_id
-            project_title: project?.project_title || ''  // Add project_title
+            project_id: project?.project_id || '',
+            project_title: project?.project_title || ''
         }
     });
 
@@ -38,6 +38,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
     const [faculties, setFaculties] = useState<Array<Member>>([]);
     const [selectedPi, setSelectedPi] = useState<string | null>(null);  // Track selected PI for button click
     const [selectedCopi, setSelectedCopi] = useState<string | null>(null); // Track selected Co-PI for button click
+    const [newHeadName, setNewHeadName] = useState<string>(''); // State to track the new head name
 
     const fetchFaculties = async () => {
         try {
@@ -60,9 +61,9 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
     }, [project, reset]);
 
     const onSubmit = (submittedProject: Project) => {
-        const updatedProject = submittedProject; // `pis` and `copis` are already Member objects
-
-        onSave(updatedProject);
+        console.log(submittedProject)
+        onSave(submittedProject);
+        reset()
         onClose();
     };
 
@@ -84,8 +85,22 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
         }
     };
 
+    const handleAddHead = () => {
+        if (newHeadName.trim() === '') {
+            toastError('Head name cannot be empty');
+            return;
+        }
+
+        // Add the new head to the project_heads object
+        setValue(`project_heads.${newHeadName}`, [0,0]);
+        setNewHeadName(''); // Reset the input field
+    };
+
     return (
-        <Modal show={isOpen} onClose={onClose} size="4xl">
+        <Modal show={isOpen} onClose={() => {
+            reset()
+            onClose()
+        }} size="4xl">
             <Modal.Header>
                 <h2 className="text-lg font-semibold">Edit Project</h2>
             </Modal.Header>
@@ -124,23 +139,24 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                                 className="mt-1"
                             />
                         </div>
-
-                        {/* Total Amount Field */}
-                        <div>
-                            <Label htmlFor="totalAmount" value="Total Amount" />
-                            <TextInput
-                                id="totalAmount"
-                                type="number"
-                                {...register("total_amount", { required: true, valueAsNumber: true })}
-                                placeholder="Enter total amount"
-                                className="mt-1"
-                            />
-                        </div>
                     </div>
 
                     <div className="border-t pt-4 space-y-4">
-                        <h3 className="text-md font-medium text-gray-700">Project Heads</h3>
-                        {Object.entries(project?.project_heads || {}).map(([headName, amounts], index) => (
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-md font-medium text-gray-700">Project Heads</h3>
+                            <div className="flex items-center space-x-2">
+                                <TextInput
+                                    value={newHeadName}
+                                    onChange={(e) => setNewHeadName(e.target.value)}
+                                    placeholder="Enter new head name"
+                                    className="mt-1"
+                                />
+                                <Button disabled={!newHeadName.length} size="sm" color="blue" onClick={handleAddHead}>
+                                    Add Head
+                                </Button>
+                            </div>
+                        </div>
+                        {Object.entries(watch('project_heads') || {}).map(([headName, amounts], index) => (
                             <div key={index} className="space-y-2">
                                 <div className="flex items-center space-x-2">
                                     <Label value={headName} className="text-sm font-semibold text-gray-600" />
@@ -171,6 +187,18 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                                 </div>
                             </div>
                         ))}
+                    </div>
+
+                    {/* Total Amount Field */}
+                    <div>
+                        <Label htmlFor="totalAmount" value="Total Amount" />
+                        <TextInput
+                            id="totalAmount"
+                            type="number"
+                            value={0}
+                            readOnly
+                            className="mt-1"
+                        />
                     </div>
 
                     <div className="border-t pt-4 space-y-4">
@@ -204,7 +232,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                                                 <li key={pi.id} className="flex justify-between">
                                                     <span>{pi.name}</span>
                                                     <Button
-                                                        color="blue"
+                                                        color="failure"
                                                         onClick={() => removePi(idx)}
                                                         type="button"
                                                         size="xs"
@@ -245,7 +273,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                                                 <li key={copi.id} className="flex justify-between">
                                                     <span>{copi.name}</span>
                                                     <Button
-                                                        color="blue"
+                                                        color="failure"
                                                         onClick={() => removeCopi(idx)}
                                                         type="button"
                                                         size="xs"

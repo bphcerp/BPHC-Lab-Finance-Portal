@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { toastError, toastSuccess, toastWarn } from "../toasts";
 import ReimbursementModal from "../components/ReimbursementModal";
 import { InstituteExpense, Project, Reimbursement } from "../types";
-import { Button } from "flowbite-react";
+import { Button, Textarea } from "flowbite-react";
 import OverrideConfirmation from "../components/OverrideConfirmation";
 import { calculateNumberOfYears, formatCurrency, formatDate, getCurrentIndex } from "../helper";
 import { CarryDetailsModal } from "../components/CarryDetailsModal";
 import CarryConfirmationModal from "../components/CarryConfirmationModal";
+import EditProjectModal from "../components/EditProjectModal";
 
 const ProjectDetails = () => {
     const { id } = useParams();
@@ -27,6 +28,9 @@ const ProjectDetails = () => {
     const [isCarryModalOpen, setIsCarryModalOpen] = useState(false)
     const [isCarryDetailsModalOpen, setIsCarryDetailsModalOpen] = useState(false)
     const [carryYear, setCarryYear] = useState<number | null>(null)
+    const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [note, setNote] = useState('')
 
     const targetColumnRef = useRef<HTMLTableCellElement | null>(null);
 
@@ -51,6 +55,7 @@ const ProjectDetails = () => {
             .then((res) => res.json())
             .then((data) => {
                 setProjectData(data)
+                setNote(data.note)
                 const curr = getCurrentIndex(data)
                 if (curr >= 0) {
                     setCurrentYear(curr)
@@ -80,13 +85,21 @@ const ProjectDetails = () => {
 
     useEffect(() => {
         if (projectData && targetColumnRef.current) {
-            targetColumnRef.current.scrollIntoView()
+            targetColumnRef.current.scrollIntoView({
+                block: 'nearest',
+                inline: 'start'
+            })
         }
     }, [projectData, targetColumnRef])
 
     useEffect(() => {
         if (isProjectOver) toastWarn("Project's end date has been crossed!")
     }, [isProjectOver])
+
+    const openEditModal = (project: Project) => {
+        setProjectToEdit(project);
+        setIsEditModalOpen(true);
+    };
 
     const fetchReimbursements = async ({ head, index, all }: { head?: string, index?: number, all?: boolean }) => {
         try {
@@ -229,10 +242,40 @@ const ProjectDetails = () => {
         }
     };
 
+    const handleSaveProject = async (updatedProject: Project) => {
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/project/${updatedProject._id}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify(updatedProject),
+                }
+            );
+            if (!response.ok) {
+                throw new Error("Failed to update project");
+            }
+            toastSuccess("Project updated successfully");
+            fetchProjectData()
+        } catch (error) {
+            toastError("Error updating project");
+            console.error("Error updating project:", error);
+        }
+    };
+
     return (
         <>
             {projectData && (
                 <div className="relative flex flex-col space-y-6 w-full mx-4">
+                    <EditProjectModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        project={projectToEdit}
+                        onSave={handleSaveProject}
+                    />
                     <OverrideConfirmation
                         isOpen={isOverrideModalOpen}
                         label={projectData.project_type === "yearly" ? "year" : "invoice"}
@@ -258,7 +301,8 @@ const ProjectDetails = () => {
                         {projectData.funding_agency}
                     </span>
 
-                    <div className="flex justify-center">
+                    <div className="relative flex justify-center">
+                        <div className="absolute top-7 left-0"><Button onClick={() => openEditModal(projectData)} color='blue' size="md">Edit Project</Button></div>
                         <div className="flex justify-between w-1/3">
                             <span className="text-lg text-center mt-5 text-gray-800">
                                 Project ID : {projectData.project_id}
@@ -309,13 +353,16 @@ const ProjectDetails = () => {
                                                             {projectData.project_type === "invoice" ? "Installment" : "Year"} {i + 1}
                                                         </button>
                                                         {projectData.project_type === "invoice" ? <span>{formatDate(projectData.installments![i].start_date)} - {formatDate(projectData.installments![i].end_date)}</span> : <></>}
-                                                        {(i < Math.max(
-                                                            ...Object.values(projectData.project_heads).map(
-                                                                (arr) => arr.length
-                                                            )) - 1) ? <button onClick={() => {
-                                                                setIsCarryDetailsModalOpen(true)
-                                                                setCarryYear(i + 1)
-                                                            }} className="underline text-sm text-green-500 hover:text-green-600">Show Carry</button> : <></>}
+                                                        <div className="flex justify-center items-center space-x-4">
+                                                            <Link target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:underline text-sm" to={`accounts/pdfviewer?index=${i}`}>Show SA</Link>
+                                                            {(i < Math.max(
+                                                                ...Object.values(projectData.project_heads).map(
+                                                                    (arr) => arr.length
+                                                                )) - 1) ? <button onClick={() => {
+                                                                    setIsCarryDetailsModalOpen(true)
+                                                                    setCarryYear(i + 1)
+                                                                }} className="underline text-sm text-green-500 hover:text-green-600">Show Carry</button> : <></>}
+                                                        </div>
                                                     </div>
                                                 </th>
                                             ))}
@@ -430,16 +477,26 @@ const ProjectDetails = () => {
                                         {projectData.copis.map(coPi => coPi.name).join(", ")}
                                     </span>
                                 </div>
-
                             </div>
-
+                            <div className="noteContainer h-44 flex flex-col space-y-2">
+                                <Textarea className="h-full resize-none text-lg" value={note} onChange={(e) => setNote(e.target.value)} />
+                                { note !== projectData.note && <div className="flex justify-end">
+                                    <Button color="success" onClick={() => handleSaveProject({
+                                        ...projectData,
+                                        note
+                                    })}>Save</Button>
+                                </div> }
+                            </div>
                         </div>
                     </div>
 
 
-                    <div className="flex items-center space-x-2">
-                        <span className="text-2xl font-semibold text-gray-700">Current ( {projectData.project_type === "yearly" ? "Year" : "Installment"} {currentYear + 1} ) Expense Sheet</span>
-                        {!isProjectOver && ((projectData.project_type === 'invoice' ? (currentYear + 1 === projectData.installments!.length) : (currentYear + 1 === calculateNumberOfYears(new Date(projectData.start_date!), new Date(projectData.end_date!)))) ? <></> : <Button onClick={() => setIsCarryModalOpen(true)} size="sm" color="failure" >Carry Forward</Button>)}
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center space-x-2">
+                            <span className="text-2xl font-semibold text-gray-700">Current ( {projectData.project_type === "yearly" ? "Year" : "Installment"} {currentYear + 1} ) Expense Sheet</span>
+                            {!isProjectOver && ((projectData.project_type === 'invoice' ? (currentYear + 1 === projectData.installments!.length) : (currentYear + 1 === calculateNumberOfYears(new Date(projectData.start_date!), new Date(projectData.end_date!)))) ? <></> : <Button onClick={() => setIsCarryModalOpen(true)} size="sm" color="failure" >Carry Forward</Button>)}
+                        </div>
+                        <Link target="_blank" rel="noopener noreferrer" to={`accounts/pdfviewer?index=${currentYear}`}><Button color='success'>View SA</Button></Link>
                     </div>
                     <div className="flex pb-8">
                         {!isProjectOver ? <table className="min-w-full bg-white shadow-md rounded-lg mt-2">

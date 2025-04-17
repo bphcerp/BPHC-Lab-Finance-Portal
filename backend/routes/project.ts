@@ -118,7 +118,7 @@ const getProjectExpenses = async (project: Project, index?: number) => {
 
 router.get('/:id/total-expenses', async (req: Request, res: Response) => {
     const { id } = req.params
-    const { index } = req.query
+    const { index, projectData } = req.query
 
     if (!id) {
         res.status(400).send({ message: 'Project ID is required and should be a single value' });
@@ -127,7 +127,7 @@ router.get('/:id/total-expenses', async (req: Request, res: Response) => {
 
     try {
 
-        const project = await ProjectModel.findById(id)
+        const project = await ProjectModel.findById(id).populate('pis copis')
 
         if (!project) {
             res.status(400).send({ message: 'Invalid project ID' });
@@ -136,7 +136,7 @@ router.get('/:id/total-expenses', async (req: Request, res: Response) => {
 
         const project_head_expenses = await getProjectExpenses(project, index ? parseInt(index.toString()) : undefined)
 
-        res.json(project_head_expenses);
+        res.json(projectData ? { project_head_expenses, project } : project_head_expenses);
     } catch (err) {
         console.error(err);
         res.status(500).send({ message: `Error occurred: ${(err as Error).message}` });
@@ -336,23 +336,24 @@ router.put('/:id', async (req: Request, res: Response) => {
     try {
         const data = req.body;
 
-
         const parsedInstallments = data.installments && Array.isArray(data.installments) && data.installments.length
             ? JSON.parse(data.installments)
             : [];
 
-        const updatedProject = await ProjectModel.findByIdAndUpdate(
-            req.params.id,
-            {
-                ...data,
-                installments: parsedInstallments,
-            },
-            { new: true }
-        );
+        let updatedProject = await ProjectModel.findById(req.params.id)
 
         if (!updatedProject) {
             res.status(404).json({ message: 'Project not found' });
         } else {
+
+            updatedProject.installments = parsedInstallments
+            Object.entries(data).map(([key,value]) => {
+                //@ts-ignore
+                updatedProject[key] = value 
+            })
+    
+            await updatedProject.save()
+
             res.json(updatedProject);
         }
     } catch (error) {
