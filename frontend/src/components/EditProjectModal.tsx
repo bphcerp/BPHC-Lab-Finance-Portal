@@ -86,6 +86,20 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
         }
     };
 
+    const calculateNumberOfYears = (startDate: Date | string, endDate: Date | string) => {
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+
+      const startYear = start.getMonth() < 3 ? start.getFullYear() - 1 : start.getFullYear();
+      const endYear = end.getMonth() < 3 ? end.getFullYear() - 1 : end.getFullYear();
+
+      const yearsDiff = endYear - startYear + 1;
+      return (yearsDiff >= 1 ? yearsDiff : 0);
+    }
+  };
+
     const handleAddHead = () => {
         if (newHeadName.trim() === '') {
             toastError('Head name cannot be empty');
@@ -93,7 +107,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
         }
 
         // Add the new head to the project_heads object
-        setValue(`project_heads.${newHeadName}`, [0, 0]);
+        setValue(`project_heads.${newHeadName}`, new Array(project?.project_type === 'yearly' ? calculateNumberOfYears(project!.start_date,project!.end_date) : project!.installments!.length).fill(0)); // Initialize with 5 installments of 0
         setNewHeadName(''); // Reset the input field
     };
 
