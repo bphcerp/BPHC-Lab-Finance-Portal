@@ -2,7 +2,8 @@ import { Button, Modal, Label, TextInput, Checkbox } from 'flowbite-react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Project, Member } from "../types";  // Ensure Member type is correctly imported
 import { useEffect, useState } from 'react';
-import { toastError } from '../toasts';
+import { toastError, toastSuccess } from '../toasts';
+import { RiDeleteBin6Line } from 'react-icons/ri';
 
 interface EditProjectModalProps {
     isOpen: boolean;
@@ -92,9 +93,48 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
         }
 
         // Add the new head to the project_heads object
-        setValue(`project_heads.${newHeadName}`, [0,0]);
+        setValue(`project_heads.${newHeadName}`, [0, 0]);
         setNewHeadName(''); // Reset the input field
     };
+
+    const handleHeadDelete = async (headName: string) => {
+
+        // Delete head added before saving
+        if (!project?.project_heads[headName]) {
+            const updatedHeads = { ...watch('project_heads') };
+            delete updatedHeads[headName];
+
+            setValue(`project_heads`, updatedHeads);
+            setValue(`negative_heads`, watch('negative_heads')?.filter(negativeHead => negativeHead !== headName));
+            return
+        }
+
+        // Deletes the head from the project by sending a DELETE request to /:id/:head
+
+        await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${project!._id}/${headName}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error((await response.json()).message || 'Something went wrong');
+                }
+                // Remove the head from the form state
+
+                const updatedHeads = { ...watch('project_heads') };
+                delete updatedHeads[headName];
+
+                setValue(`project_heads`, updatedHeads);
+                setValue(`negative_heads`, watch('negative_heads')?.filter(negativeHead => negativeHead !== headName));
+
+                toastSuccess('Head deleted successfully');
+            })
+            .catch((error) => {
+                toastError((error as Error).message);
+                console.error('Error deleting head:', error);
+            });
+    }
+
 
     return (
         <Modal show={isOpen} onClose={() => {
@@ -158,20 +198,31 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                         </div>
                         {Object.entries(watch('project_heads') || {}).map(([headName, amounts], index) => (
                             <div key={index} className="space-y-2">
-                                <div className="flex items-center space-x-2">
-                                    <Label value={headName} className="text-sm font-semibold text-gray-600" />
-                                    <Checkbox
-                                        id={`${headName}_neg_checkbox`}
-                                        checked={watch('negative_heads')?.includes(headName)}
-                                        onChange={() => {
-                                            if (watch('negative_heads')?.includes(headName)) {
-                                                setValue('negative_heads', watch('negative_heads')?.filter(negativeHead => negativeHead !== headName));
-                                            } else {
-                                                setValue('negative_heads', [...watch('negative_heads'), headName]);
-                                            }
-                                        }}
-                                    />
-                                    <Label value="Allow Negative Values" htmlFor={`${headName}_neg_checkbox`} />
+                                <div className='flex justify-between items-center'>
+                                    <div className="flex items-center space-x-2">
+                                        <Label value={headName} className="text-sm font-semibold text-gray-600" />
+                                        <Checkbox
+                                            id={`${headName}_neg_checkbox`}
+                                            checked={watch('negative_heads')?.includes(headName)}
+                                            onChange={() => {
+                                                if (watch('negative_heads')?.includes(headName)) {
+                                                    setValue('negative_heads', watch('negative_heads')?.filter(negativeHead => negativeHead !== headName));
+                                                } else {
+                                                    setValue('negative_heads', [...watch('negative_heads'), headName]);
+                                                }
+                                            }}
+                                        />
+                                        <Label value="Allow Negative Values" htmlFor={`${headName}_neg_checkbox`} />
+                                    </div>
+                                    <div>
+                                        <button
+                                            color="failure"
+                                            onClick={() => handleHeadDelete(headName)}
+                                            type="button"
+                                        >
+                                            <RiDeleteBin6Line color='red' />
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                     {amounts.map((amount, i) => (
@@ -199,10 +250,10 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                                 const headSum = alloc.reduce((sum, val) => {
                                     sum += val
                                     return sum
-                                },0)
+                                }, 0)
                                 sum += headSum
                                 return sum
-                            },0)}
+                            }, 0)}
                             readOnly
                             className="mt-1"
                         />
