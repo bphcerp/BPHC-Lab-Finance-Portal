@@ -98,6 +98,17 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
     };
 
     const handleHeadDelete = async (headName: string) => {
+
+        // Delete head added before saving
+        if (!project?.project_heads[headName]) {
+            const updatedHeads = { ...watch('project_heads') };
+            delete updatedHeads[headName];
+
+            setValue(`project_heads`, updatedHeads);
+            setValue(`negative_heads`, watch('negative_heads')?.filter(negativeHead => negativeHead !== headName));
+            return
+        }
+
         // Deletes the head from the project by sending a DELETE request to /:id/:head
 
         await fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${project!._id}/${headName}`, {
@@ -209,7 +220,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                                             onClick={() => handleHeadDelete(headName)}
                                             type="button"
                                         >
-                                            <RiDeleteBin6Line  color='red'/>
+                                            <RiDeleteBin6Line color='red' />
                                         </button>
                                     </div>
                                 </div>
