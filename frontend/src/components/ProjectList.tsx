@@ -53,15 +53,15 @@ const ProjectList: FunctionComponent = () => {
         }),
         columnHelper.accessor("funding_agency", {
             header: "Funding Agency",
-            cell: (info) => (
-                <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
-                    {info.getValue()}
-                </Link>
-            ),
             enableColumnFilter: true,
         }),
         columnHelper.accessor("project_title", {
             header: "Project Title",
+                        cell: (info) => (
+                <Link className="hover:underline text-blue-600" to={`/project/${info.row.original._id}`}>
+                    {info.getValue()}
+                </Link>
+            ),
             enableColumnFilter: true,
         }),
         columnHelper.accessor("start_date", {
@@ -76,15 +76,13 @@ const ProjectList: FunctionComponent = () => {
                 info.getValue() ? new Date(info.getValue()!).toLocaleDateString("en-IN") : "-",
             enableColumnFilter: false,
         }),
-        columnHelper.accessor(
-            (row) => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1),
-            {
-                header: "Project Type",
-                meta: {
-                    filterType: "dropdown",
-                },
+        columnHelper.accessor(row => row.project_type.charAt(0).toUpperCase() + row.project_type.slice(1), {
+            header: "Project Type",
+            cell: ({ getValue }) => <span className={getValue() === 'Yearly' ? 'text-violet-500' : 'text-yellow-400'}>{getValue()}</span>,
+            meta: {
+                filterType: "dropdown"
             }
-        ),
+        }),
         columnHelper.accessor(row => getCurrentIndex(row) >= 0 ? "Ongoing" : "Ended", {
             header: 'Status',
             cell: info => {

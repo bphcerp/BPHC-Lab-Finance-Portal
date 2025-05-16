@@ -404,7 +404,7 @@ router.get('/', async (req: Request, res: Response) => {
                     projectHeads.forEach((allocations, head) => {
                         const allocation = allocations[curr];
                         const headExpense = project_head_expenses[head] || 0;
-                        const carryForward = curr ? project.carry_forward!.get(head)![curr - 1] : 0
+                        const carryForward = (curr ? project.carry_forward!.get(head)![curr - 1] : 0) ?? 0
 
                         allocations[curr] = allocation + carryForward - headExpense;
                         projectHeads.set(head, [allocations[curr]])
@@ -419,6 +419,7 @@ router.get('/', async (req: Request, res: Response) => {
 
         res.send(filteredProjects);
     } catch (error) {
+        console.error('Error fetching projects:', error);
         res.status(500).json({ message: 'Error fetching projects', error });
     }
 });
