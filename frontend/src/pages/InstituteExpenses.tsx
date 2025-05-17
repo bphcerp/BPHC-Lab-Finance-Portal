@@ -6,7 +6,6 @@ import { InstituteExpense } from '../types';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import { createColumnHelper } from '@tanstack/react-table';
 import { Link } from 'react-router';
-import PDFLink from '../components/PDFLink';
 import AddExpenseModal from '../components/AddExpenseModal';
 
 export const InstituteExpensesPage: FunctionComponent = () => {
