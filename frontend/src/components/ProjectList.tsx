@@ -9,7 +9,6 @@ import TableCustom from "./TableCustom";
 import { Project } from "../types";
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import EditProjectModal from "./EditProjectModal";
-import PDFLink from "./PDFLink";
 import { getCurrentIndex } from "../helper";
 
 const ProjectList: FunctionComponent = () => {
@@ -106,14 +105,9 @@ const ProjectList: FunctionComponent = () => {
                 }),
             enableColumnFilter: false,
         }),
-        columnHelper.accessor("sanction_letter_file_id", {
+        columnHelper.accessor("sanction_letter_url", {
             header: "Sanction Letter",
-            cell: ({ row }) =>
-                row.original.sanction_letter_file_id ? (
-                    <PDFLink url={`${import.meta.env.VITE_BACKEND_URL}/project/${row.original._id}/sanction_letter`}>View</PDFLink>
-                ) : (
-                    "-"
-                ),
+            cell: ({ getValue }) => <div className="flex justify-center">{getValue() ? <Link target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" to={getValue()!}>View</Link> : "-"}</div>,
             enableColumnFilter: false,
             enableSorting: false,
         }),
