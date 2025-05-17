@@ -19,7 +19,7 @@ export interface Expense {
     settled: Account | null;
     createdAt: Date;
     updatedAt: Date;
-    reference_id?: string | null;
+    referenceURL?: string | null;
     directExpense: boolean;
 }
 
@@ -33,7 +33,7 @@ export interface InstituteExpense {
     year_or_installment : number
     pd_ref : Account
     overheadPercentage: number;
-    reference_id?: string | null;
+    referenceURL?: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
