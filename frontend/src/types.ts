@@ -90,8 +90,7 @@ export interface Project {
     total_amount: number;
     pis: Member[];
     copis: Member[];
-    sanction_letter?: File | null;
-    sanction_letter_file_id?: string;
+    sanction_letter_url: string | null;
     description: string
     note: string | null
     negative_heads: string[]
