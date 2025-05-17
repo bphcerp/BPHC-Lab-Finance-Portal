@@ -63,7 +63,7 @@ export interface Reimbursement {
     projectHead: string;
     paidStatus: boolean;
     description: string
-    reference_id: string
+    referenceURL?: string | null
     year_or_installment : number
 }
 

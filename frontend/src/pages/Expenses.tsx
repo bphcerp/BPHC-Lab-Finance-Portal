@@ -6,13 +6,11 @@ import { MdOutlineDescription } from "react-icons/md";
 import SettleExpenseModal from '../components/SettleExpenseModal';
 import FileReimbursementModal from '../components/FileReimbursementModal';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
-import EditExpenseModal from '../components/EditExpenseModal';
 import DescriptionModal from '../components/DescriptionModal';
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
 import { EditExpenseData, Expense } from '../types';
-import PDFLink from '../components/PDFLink';
 import { Link, useNavigate } from 'react-router';
 
 const ExpensesPage: React.FC = () => {
@@ -195,24 +193,25 @@ const ExpensesPage: React.FC = () => {
 
     const handleFileReimbursement = async (formData: any) => {
         try {
-            const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceDocument } = formData;
+            const { expenseIds, selectedProject, selectedProjectHead, totalAmount, reimbursementTitle, description, referenceURL } = formData;
 
-            const data = new FormData();
-            data.append('expenseIds', JSON.stringify(expenseIds));
-            data.append('projectId', selectedProject);
-            data.append('projectHead', selectedProjectHead);
-            data.append('totalAmount', totalAmount.toString());
-            data.append('title', reimbursementTitle);
-            data.append('description', description);
-
-            if (referenceDocument) {
-                data.append('referenceDocument', referenceDocument);
-            }
+            const data = {
+                expenseIds,
+                projectId: selectedProject,
+                projectHead: selectedProjectHead,
+                totalAmount,
+                title: reimbursementTitle,
+                description,
+                referenceURL,
+            };
 
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/reimburse`, {
                 method: 'POST',
                 credentials: 'include',
-                body: data,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
             });
 
             if (!response.ok) {

@@ -1,4 +1,4 @@
-import { Button, Modal, Label, TextInput, Select, FileInput, Textarea, ToggleSwitch, Radio } from 'flowbite-react';
+import { Button, Modal, Label, TextInput, Select, Textarea, ToggleSwitch, Radio } from 'flowbite-react';
 import React, { useEffect, useState } from 'react';
 import { toastError, toastSuccess, toastWarn } from '../toasts';
 import AddCategoryModal from './AddCategoryModal';
