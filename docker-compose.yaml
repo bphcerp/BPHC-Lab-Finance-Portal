@@ -1,39 +1,80 @@
+
 services:
   frontend:
-    build: frontend
+    build:
+      context: ./frontend
+      dockerfile: ./docker/Dockerfile.dev
     ports:
-     - 3000:3000
+      - 3000:3000
     networks:
-      - mern
+      - lambda-mongo-db
     env_file:
       - "frontend/.env"
-  
-  backend:
-    build: backend
+    volumes:
+      - ./frontend:/usr/local/app/frontend
+      - /usr/local/app/frontend/node_modules
+    profiles:
+      - dev
+
+  frontend-prod:
+    build:
+      context: ./frontend
+      dockerfile: ./docker/Dockerfile.prod
     ports:
-     - 4000:4000
+      - 3000:3000
     networks:
-     - mern
+      - lambda-mongo-db
+    env_file:
+      - "frontend/.env"
+    profiles:
+      - prod
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ./docker/Dockerfile.dev
+    ports:
+      - 4000:4000
+    networks:
+      - lambda-mongo-db
     depends_on:
       - mongo
     env_file:
       - "backend/.env"
     environment:
       - DB_URI=mongodb://mongo:27017/lambda
-  
+    volumes:
+      - ./backend:/usr/local/app/backend
+      - /usr/local/app/backend/node_modules
+    profiles:
+      - dev
+
+  backend-prod:
+    build:
+      context: ./backend
+      dockerfile: ./docker/Dockerfile.prod
+    ports:
+      - 4000:4000
+    networks:
+      - lambda-mongo-db
+    depends_on:
+      - mongo
+    env_file:
+      - "backend/.env"
+    environment:
+      - DB_URI=mongodb://mongo:27017/lambda
+    profiles:
+      - prod
+
   mongo:
     image: mongo
     ports:
       - 27017:27017
     networks:
-      - mern
+      - lambda-mongo-db
     volumes:
-      - /home/ubuntu/mongo-data:/data/db
+      - /home/ubuntu/mongo-data:/data/db # Ensure this volume is created externally and at the correct path
   
 networks:
-  mern:
-      driver: bridge
-
-volumes:
-  mongo-data:
-    external: true
+  default:
+    name: lambda-mongo-db
