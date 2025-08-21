@@ -212,7 +212,7 @@ const ProjectList: FunctionComponent = () => {
     };
 
     return projectData ? (
-        <div className="container mx-auto p-4">
+        <div className="px-4">
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
