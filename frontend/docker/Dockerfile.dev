@@ -1,16 +1,21 @@
-FROM node:23-slim AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
-WORKDIR /app
+FROM node:20-alpine
+WORKDIR /usr/local/app
 
-FROM base AS dev-deps
+RUN npm install -g pnpm
+
+WORKDIR /usr/local/app/frontend
+
+COPY ./frontend/package.json ./
+COPY ./backend/tsconfig*.json ./
+
+WORKDIR /usr/local/app
+COPY ./pnpm-lock.yaml ./
+COPY ./pnpm-workspace.yaml ./
+RUN pnpm install -r
+
+WORKDIR /usr/local/app/frontend
 COPY . .
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
-FROM base
-WORKDIR /app
-COPY --from=dev-deps /app /app
-RUN pnpm install -g vite
-EXPOSE 3000
-CMD ["pnpm", "run", "dev", "--host"]
+EXPOSE 5173
+
+CMD ["pnpm", "dev", "--host"]

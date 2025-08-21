@@ -15,4 +15,4 @@ jobs:
         run: |
           cd /home/ubuntu/lambda-finance
           git pull
-          docker compose up --build -d
+          docker compose --profile dev up --build -d
