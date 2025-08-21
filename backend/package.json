@@ -1,9 +1,9 @@
 {
-  "name": "lambda-backend",
+  "name": "lab-bookkeeping-backend",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "dev": "nodemon",
+    "db:seed": "tsx ./config/seed.ts",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -30,8 +30,7 @@
     "@types/mongodb": "^4.0.6",
     "@types/mongoose": "^5.11.96",
     "@types/morgan": "^1.9.9",
-    "nodemon": "^3.1.7",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.20.4",
     "typescript": "^5.6.3"
   }
 }

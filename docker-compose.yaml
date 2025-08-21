@@ -74,4 +74,4 @@ volumes:
   
 networks:
   default:
-    name: ${SERVICE_NAME}-finance-net
+    name: finance-net
