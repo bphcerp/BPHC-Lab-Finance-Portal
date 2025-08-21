@@ -1,3 +1,5 @@
 dump
 scripts
 .vscode
+node_modules
+.env

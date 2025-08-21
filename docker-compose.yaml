@@ -1,39 +1,77 @@
+
 services:
   frontend:
-    build: frontend
+    build:
+      context: .
+      dockerfile: ./frontend/docker/Dockerfile.dev
     ports:
-     - 3000:3000
-    networks:
-      - mern
+      - ${CLIENT_PORT}:${CLIENT_PORT}
     env_file:
-      - "frontend/.env"
-  
-  backend:
-    build: backend
+      - .env
+    volumes:
+      - ./frontend:/usr/local/app/frontend
+    profiles:
+      - dev
+
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: ./frontend/docker/Dockerfile.prod
     ports:
-     - 4000:4000
-    networks:
-     - mern
+      - ${CLIENT_PORT}:${CLIENT_PORT}
+    env_file:
+      - .env
+    profiles:
+      - prod
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend/docker/Dockerfile.dev
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
+    depends_on:
+      - mongo
+    environment:
+      MONGO_HOST: mongo
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/usr/local/app/backend
+    profiles:
+      - dev
+
+  backend-prod:
+    build:
+      context: .
+      dockerfile: ./backend/docker/Dockerfile.prod
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
     depends_on:
       - mongo
     env_file:
-      - "backend/.env"
+      - .env
     environment:
-      - DB_URI=mongodb://mongo:27017/lambda
-  
+      MONGO_HOST: mongo
+    profiles:
+      - prod
+
   mongo:
     image: mongo
     ports:
-      - 27017:27017
-    networks:
-      - mern
+      - ${MONGO_PORT}:${MONGO_PORT}
     volumes:
-      - /home/ubuntu/mongo-data:/data/db
-  
-networks:
-  mern:
-      driver: bridge
+      - mongo-data:/data/db # Ensure this volume is created externally and at the correct path
+    env_file:
+      - .env
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DB}
 
 volumes:
   mongo-data:
-    external: true
+  
+networks:
+  default:
+    name: finance-net

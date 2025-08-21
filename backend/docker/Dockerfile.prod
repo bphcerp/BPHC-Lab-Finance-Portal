@@ -1,0 +1,31 @@
+FROM node:23-slim AS base
+WORKDIR /usr/local/app
+
+RUN chown -R node /usr/local/app
+RUN chgrp -R node /usr/local/app
+RUN npm install -g pnpm
+
+RUN mkdir -p /usr/local/app/backend/node_modules /usr/local/app/node_modules \
+    && chown -R node:node /usr/local/app/backend /usr/local/app/node_modules
+
+USER node
+
+WORKDIR /usr/local/app/backend
+
+COPY --chown=node:node ./backend/package.json ./
+COPY --chown=node:node ./backend/tsconfig.json ./
+
+WORKDIR /usr/local/app
+
+# COPY --chown=node:node ./package.json ./
+COPY --chown=node:node ./pnpm-lock.yaml ./
+COPY --chown=node:node ./pnpm-workspace.yaml ./
+RUN pnpm install -r
+
+COPY --chown=node:node ./backend/ ./backend/
+
+WORKDIR /usr/local/app/backend
+
+RUN pnpm tsc --build
+
+CMD ["pnpm", "tsx", "src/bin.ts"]

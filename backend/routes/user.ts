@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import { authenticateToken, encrypt } from "../middleware/authenticateToken";
 
-dotenv.config();
+const isProd = process.env.NODE_ENV === "production"
 
 const router: Router = Router()
 
@@ -40,9 +40,9 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 
 router.post('/logout', authenticateToken, async (req: Request, res: Response) => {
 	res.clearCookie('token', {
-		secure : process.env.DEPLOYED_STATUS === "true",
+		secure : isProd,
 		httpOnly: true,
-		sameSite: process.env.DEPLOYED_STATUS === "true" ? "strict" : "lax",
+		sameSite: isProd ? "strict" : "lax",
 	});
 
 	res.status(200).json({ message: 'Logged out successfully' });
@@ -55,7 +55,7 @@ router.post('/login', async (req: Request, res: Response) => {
 	try {
 		const ticket = await client.verifyIdToken({
 			idToken: credentialResponse.credential,
-			audience: process.env.OAUTH_CID
+			audience: process.env.VITE_OAUTH_CID
 		});
 
 		const { name, email } = ticket.getPayload() as any;
@@ -63,7 +63,7 @@ router.post('/login', async (req: Request, res: Response) => {
 		let user = await UserModel.findOne({ email });
 
 		if (!user) {
-			res.status(401).send({message : "You are not allowed to login to this portal. Please contact LAMBDA Lab."})
+			res.status(401).send({message : `You are not allowed to login to this portal. Please contact ${process.env.VITE_LAB_NAME ?? 'the lab'}.`})
 			return
 		}
 
@@ -77,9 +77,9 @@ router.post('/login', async (req: Request, res: Response) => {
 		res.cookie("token", encryptedToken, {
 			expires: new Date(Date.now() + 3600 * 1000),
 			path: "/",
-			secure: process.env.DEPLOYED_STATUS === "true",
+			secure: isProd,
 			httpOnly: true,
-			sameSite: process.env.DEPLOYED_STATUS === "true" ? "strict" : "lax"
+			sameSite: isProd ? "strict" : "lax"
 		});
 		res.send({message : "Login Successful"});
 	} catch (error) {
@@ -106,8 +106,8 @@ router.post('/passlogin', async (req: Request, res: Response) => {
 			expires: new Date(Date.now() + 3600 * 1000),
 			path: "/",
 			httpOnly: true,
-			secure: process.env.DEPLOYED_STATUS === "true",
-			sameSite: process.env.DEPLOYED_STATUS === "true" ? "strict" : "lax"
+			secure: isProd,
+			sameSite: isProd ? "strict" : "lax"
 		})
 		res.send({message : "Login Successful"})
 	}

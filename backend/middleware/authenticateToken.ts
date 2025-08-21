@@ -4,27 +4,27 @@ import { OAuth2Client } from 'google-auth-library';
 import crypto from 'crypto'
 import dotenv from 'dotenv';
 
-dotenv.config();
-
 const algorithm = 'aes-256-cbc';
-const secretKey = process.env.JWT_SECRET_KEY!
+const rawSecretKey = process.env.JWT_SECRET_KEY!;
+// Derive a 32-byte key using SHA-256
+const secretKey = crypto.createHash('sha256').update(rawSecretKey).digest();
 const iv = crypto.randomBytes(16);
 
 export function encrypt(text: string): { iv: string; encryptedData: string } {
-    const cipher = crypto.createCipheriv(algorithm, Buffer.from(secretKey, 'utf-8'), iv);
-    let encrypted = cipher.update(text, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    return { iv: iv.toString('hex'), encryptedData: encrypted };
+  const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return { iv: iv.toString('hex'), encryptedData: encrypted };
 }
 
 export function decrypt(encryptedData: string, iv: string): string {
-    const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey, 'utf-8'), Buffer.from(iv, 'hex'));
-    let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
+  const decipher = crypto.createDecipheriv(algorithm, secretKey, Buffer.from(iv, 'hex'));
+  let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
 }
 
-const client = new OAuth2Client(process.env.OAUTH_CID);
+const client = new OAuth2Client(process.env.VITE_OAUTH_CID);
 
 export const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
   const encryptedToken: { encryptedData : string, iv : string }= req.cookies.token;
@@ -40,7 +40,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     if (err || !decoded) {
       client.verifyIdToken({
         idToken: token,
-        audience: process.env.OAUTH_CID,
+        audience: process.env.VITE_OAUTH_CID,
       })
       .then(() => {
         next();  // Proceed to the next middleware or route handler

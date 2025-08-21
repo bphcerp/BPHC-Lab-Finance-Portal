@@ -1,6 +1,5 @@
 {
-  "name": "lambda-bookkeeping",
-  "private": true,
+  "name": "frontend",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -41,11 +40,5 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@swc/core",
-      "esbuild"
-    ]
   }
 }

@@ -1,4 +1,4 @@
-import express, {Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -12,24 +12,28 @@ import reimburseRoutes from './routes/reimburse';
 import memberRoutes from './routes/member';
 import accountRoutes from './routes/account';
 import { authenticateToken } from './middleware/authenticateToken';
-import {ExpenseModel} from "./models/expense";
-import {ProjectModel} from "./models/project";
+import { ExpenseModel } from "./models/expense";
+import { ProjectModel } from "./models/project";
 import morgan from 'morgan'
 
-dotenv.config();
+const app = express()
+const PORT = process.env.SERVER_PORT!
 
-const interval = 30000;
+const {
+  MONGO_HOST,
+  MONGO_PORT,
+  MONGO_DB,
+  MONGO_USER,
+  MONGO_PASSWORD
+} = process.env;
 
-function keepAlive() {
-  fetch(process.env.BASE_URL!)
+if (!MONGO_HOST || !MONGO_PORT || !MONGO_DB || !MONGO_USER || !MONGO_PASSWORD) {
+  throw new Error('Missing one or more required MongoDB environment variables: MONGO_HOST, MONGO_PORT, MONGO_DB, MONGO_USER, MONGO_PASSWORD');
 }
 
-setInterval(keepAlive, interval)
+const MONGO_URI = `mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DB}?authSource=admin`;
 
-const app = express()
-const PORT = process.env.PORT!
-
-mongoose.connect(process.env.DB_URI!)
+mongoose.connect(MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
@@ -54,11 +58,11 @@ app.use('/api/account', accountRoutes);
 app.use(express.static("public"))
 
 app.get('/api', (req: Request, res: Response) => {
-  res.send('Welcome to LAMBDA LAB ERP API')
+  res.json({ message: `Welcome to ${process.env.VITE_LAB_NAME?.toUpperCase() ?? 'LAB'} Finance Portal API` });
 });
 
-app.get('/api/check-auth',authenticateToken, (req: Request, res: Response) => {
-  res.send('Welcome to LAMBDA LAB ERP API (Authenticated)')
+app.get('/api/check-auth', authenticateToken, (req: Request, res: Response) => {
+  res.json({ message: `Welcome to ${process.env.VITE_LAB_NAME?.toUpperCase() ?? 'LAB'} Finance Portal API (Authenticated)` });
 });
 
 app.get('/api/stats', async (req: Request, res: Response) => {

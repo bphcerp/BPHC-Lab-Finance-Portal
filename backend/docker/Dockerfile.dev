@@ -1,0 +1,20 @@
+FROM node:23-slim AS base
+WORKDIR /usr/local/app
+
+RUN npm install -g pnpm
+
+WORKDIR /usr/local/app/backend
+
+COPY ./backend/package.json ./
+COPY ./backend/tsconfig.json ./
+
+WORKDIR /usr/local/app
+
+# COPY ./package.json ./
+COPY ./pnpm-lock.yaml ./
+COPY ./pnpm-workspace.yaml ./
+RUN pnpm install -r
+
+WORKDIR /usr/local/app/backend
+
+CMD ["pnpm", "tsx", "watch", "--clear-screen=false", "index.ts"]
