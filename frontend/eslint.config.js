@@ -19,8 +19,8 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "typescript-eslint/no-explicit-any": false,
-      "react-hooks/exhaustive-deps": false,
+      "@typescript-eslint/no-explicit-any": "off",
+      "react-hooks/exhaustive-deps": "off",
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
