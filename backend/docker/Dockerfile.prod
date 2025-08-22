@@ -1,6 +1,8 @@
-FROM node:23-slim AS base
-WORKDIR /usr/local/app
+FROM node:23-slim
 
+ENV NODE_ENV=production
+
+WORKDIR /usr/local/app
 RUN chown -R node /usr/local/app
 RUN chgrp -R node /usr/local/app
 RUN npm install -g pnpm
@@ -28,4 +30,4 @@ WORKDIR /usr/local/app/backend
 
 RUN pnpm tsc --build
 
-CMD ["pnpm", "tsx", "src/bin.ts"]
+CMD ["pnpm", "tsx", "index.ts"]
