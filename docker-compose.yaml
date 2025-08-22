@@ -61,7 +61,7 @@ services:
     ports:
       - ${MONGO_PORT}:${MONGO_PORT}
     volumes:
-      - /home/ubuntu/mongo-data:/data/db # Ensure this volume is created externally and at the correct path
+      - mongo-data:/data/db # Ensure this volume is created externally and at the correct path
     env_file:
       - .env
     environment:
@@ -69,8 +69,8 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
       - MONGO_INITDB_DATABASE=${MONGO_DB}
 
-# volumes:
-#   mongo-data:
+volumes:
+  mongo-data:
   
 networks:
   default:
