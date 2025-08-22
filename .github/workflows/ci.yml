@@ -7,7 +7,7 @@ on:
 jobs:
   lint-and-compile:
     name: Type Check
-    runs-on: [self-hosted, eee-ims]
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code

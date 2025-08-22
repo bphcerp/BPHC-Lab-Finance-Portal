@@ -9,7 +9,7 @@ on:
 jobs:
   release:
     name: Pull main and deploy the latest code
-    runs-on: [self-hosted, eee-ims]
+    runs-on: self-hosted
     steps:
       - name: clone repo and update
         run: |
