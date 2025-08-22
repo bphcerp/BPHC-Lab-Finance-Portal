@@ -3,7 +3,7 @@ import { toastError, toastSuccess } from '../toasts';
 import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
 import { Account } from '../types';
-import { Button } from 'flowbite-react';
+import { Button, TextInput } from 'flowbite-react';
 import AddEntryModal from '../components/AddEntryModal';
 
 interface AccountPageProps {
@@ -13,6 +13,7 @@ interface AccountPageProps {
 const PDAccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
     const [accountData, setAccountData] = useState<Array<Account>>([]);
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false)
+    const [openingBalance, setOpeningBalance] = useState<string | null>(null);
 
     const columnHelper = createColumnHelper<Account>();
 
@@ -62,7 +63,7 @@ const PDAccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
                 meta: {
                     getSum: true,
                     sumFormatter: (sum: number) =>
-                        sum.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+                        (sum + (!openingBalance || isNaN(parseFloat(openingBalance)) ? 0 : parseFloat(openingBalance))).toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
                 },
             }
         )
@@ -124,7 +125,10 @@ const PDAccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
             />
             <div className="flex justify-between mb-4">
                 <h1 className="text-2xl font-bold">{type} Account</h1>
-                <Button color="blue" className='flex justify-center items-center' onClick={() => setIsAddEntryModalOpen(true)}>Add Entry</Button>
+                <div className='flex space-x-2'>
+                    <TextInput placeholder='Enter opening balance...' value={openingBalance ?? ''} onChange={(e) => setOpeningBalance(e.target.value)}/>
+                    <Button color="blue" className='flex justify-center items-center' onClick={() => setIsAddEntryModalOpen(true)}>Add Entry</Button>
+                </div>
             </div>
             {accountData.length ? <TableCustom data={accountData} columns={columns} initialState={{
                 sorting: [
