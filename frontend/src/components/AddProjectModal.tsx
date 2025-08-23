@@ -2,6 +2,7 @@ import { Button, Label, Modal, TextInput, Radio, Textarea, Checkbox } from "flow
 import { Dispatch, FormEventHandler, FunctionComponent, SetStateAction, useEffect, useState } from "react";
 import { toastError, toastSuccess } from "../toasts";
 import { Member } from "../types";
+import { set } from "react-hook-form";
 
 interface AddProjectProps {
   openModal: boolean;
@@ -64,6 +65,39 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
     }
   };
   useEffect(calculateNumberOfYears, [startDate, endDate]);
+
+  const handleInstallmentsChange = (num: number) => {
+    setNumberOfInstallments(num);
+    Object.keys(projectHeads).forEach((head) => {
+      projectHeads[head] = Array(num).fill(0);
+      saveProjectHead(head);
+    });
+
+    // Split the date range into 'num' installments
+    if (num > 0 && startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const totalMs = end.getTime() - start.getTime();
+      const stepMs = Math.floor(totalMs / num);
+      const newInstallments = [];
+      for (let i = 0; i < num; i++) {
+        const instStart = new Date(start.getTime() + i * stepMs);
+        let instEnd;
+        if (i === num - 1) {
+          instEnd = end;
+        } else {
+          instEnd = new Date(start.getTime() + (i + 1) * stepMs - 86400000);
+        }
+        newInstallments.push({
+          start_date: instStart.toISOString().split('T')[0],
+          end_date: instEnd.toISOString().split('T')[0],
+        });
+      }
+      setInstallmentDates(newInstallments);
+    } else {
+      setInstallmentDates([]);
+    }
+  }
 
   const addProjectHead = () => {
 
@@ -366,7 +400,11 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                   id="start_date"
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => {
+                    setStartDate(e.target.value)
+                    setNumberOfInstallments(0)
+                    setInstallmentDates([])
+                  }}
                   required
                 />
               </div>
@@ -377,7 +415,11 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                   id="end_date"
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => {
+                    setEndDate(e.target.value)
+                    setNumberOfInstallments(0)
+                    setInstallmentDates([])
+                  }}
                   required
                 />
               </div>
@@ -390,7 +432,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                   id="installments"
                   type="number"
                   value={numberOfInstallments}
-                  onChange={(e) => setNumberOfInstallments(Number(e.target.value))}
+                  onChange={(e) => handleInstallmentsChange(Number(e.target.value))}
                   required
                 />
 
@@ -422,6 +464,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({ openModal,
                             id={`installment_end_${index}`}
                             type="date"
                             value={installmentDates[index]?.end_date || ""}
+                            min={installmentDates[index]?.start_date ?? startDate ?? ""}
                             max={index === (numberOfInstallments - 1) ? endDate ?? "" : ""}
                             onChange={(e) => {
                               const updatedDates = [...installmentDates];

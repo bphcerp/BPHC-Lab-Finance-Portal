@@ -329,7 +329,7 @@ router.get('/', async (req: Request, res: Response) => {
             .populate({ path: "copis", select: "name" })
 
 
-        const filteredProjects = past
+        const filteredProjects = past === 'true'
             ? projects
             : projects.filter(project => getCurrentIndex(project) !== -1);
 
