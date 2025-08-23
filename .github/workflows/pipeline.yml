@@ -7,12 +7,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  release:
-    name: Pull main and deploy the latest code
+  lambda:
+    name: Deploy LAMBDA
     runs-on: eee-ims
     steps:
       - name: clone repo and update
         run: |
           cd /home/ubuntu/lambda-finance
+          git pull
+          docker compose --profile prod up --build -d
+  nsdl:
+    name: Deploy NSDL
+    runs-on: eee-ims
+    steps:
+      - name: clone repo and update
+        run: |
+          cd /home/ubuntu/nsdl-finance
           git pull
           docker compose --profile prod up --build -d
