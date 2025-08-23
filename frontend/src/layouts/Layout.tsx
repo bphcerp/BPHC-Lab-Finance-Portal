@@ -15,17 +15,17 @@ const Layout: FunctionComponent = () => {
       method: "POST",
       credentials: "include",
     })
-    .finally(() => navigate("/login"))
-    .catch((e) => console.error(e))
+      .finally(() => navigate("/login"))
+      .catch((e) => console.error(e))
   }
 
   useEffect(() => {
     setIsReset(new Date().getMonth() === 3 && new Date().getDate() === 1)
-  },[])
+  }, [])
 
   return (
     <div className="flex flex-col w-screen h-screen">
-      <NewFinancialYearModal isOpen={isReset} onClose={() => setIsReset(false)}/>
+      <NewFinancialYearModal isOpen={isReset} onClose={() => setIsReset(false)} />
       <OutsideClickHandler onOutsideClick={() => setISSideBarOpen(false)}><SidebarComponent isOpen={isSideBarOpen} setIsOpen={setISSideBarOpen} /></OutsideClickHandler>
       <div className="header relative shrink-0 shadow-lg z-10 flex w-full h-14 px-4 bg-gray-100 items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -42,9 +42,13 @@ const Layout: FunctionComponent = () => {
               size="30px"
             />
           )}
-          <Link to="/" className="flex items-center">
-            <img className="w-32 h-auto" src="/logo.jpg" alt="Company Logo" />
-          </Link>
+          {
+            import.meta.env.VITE_LOGO_AVAILABLE === "true" ? <Link to="/" className="flex items-center">
+              <img className="w-32 h-auto" src="/logo.jpg" alt={`${import.meta.env.VITE_LAB_NAME} Logo`} />
+            </Link> : <Link to="/" className="flex items-center">
+              <span className="text-xl tracking-widest text-gray-600">{import.meta.env.VITE_LAB_NAME}</span>
+            </Link>
+          }
         </div>
         <div className="flex items-center">
           <button
