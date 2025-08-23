@@ -2,7 +2,6 @@ import { Button, Label, Modal, TextInput, Radio, Textarea, Checkbox } from "flow
 import { Dispatch, FormEventHandler, FunctionComponent, SetStateAction, useEffect, useState } from "react";
 import { toastError, toastSuccess } from "../toasts";
 import { Member } from "../types";
-import { set } from "react-hook-form";
 
 interface AddProjectProps {
   openModal: boolean;
