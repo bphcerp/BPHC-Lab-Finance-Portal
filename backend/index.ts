@@ -31,7 +31,6 @@ if (!MONGO_HOST || !MONGO_DB || !MONGO_USER || !MONGO_PASSWORD) {
 }
 // The MONGO_PORT environment variable is for the host machine to map to the container's 27017 port 
 const MONGO_URI = `mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:27017/${MONGO_DB}?authSource=admin`;
-console.log("Connecting to MongoDB at:", MONGO_URI)
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log('MongoDB connected'))
