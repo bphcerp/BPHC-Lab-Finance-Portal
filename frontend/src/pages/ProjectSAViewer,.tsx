@@ -93,12 +93,12 @@ const MyDoc = ({
             <Page size="A4" style={{ padding: 20, fontFamily: 'Noto Sans' }}>
 
                 <Text style={{ fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginBottom: 5 }}>
-                    LAMBDA
+                    {import.meta.env.VITE_LAB_NAME}
                 </Text>
 
-                <Text style={{ fontSize: 10, textAlign: 'center', marginBottom: 5 }}>
-                    Laboratory for Antenna, Microwave and e-Beam Devices, and Applications
-                </Text>
+                {import.meta.env.VITE_LAB_NAME_EXPANDED ? <Text style={{ fontSize: 10, textAlign: 'center', marginBottom: 5 }}>
+                    {import.meta.env.VITE_LAB_NAME_EXPANDED}
+                </Text> : <></>}
 
                 <Text style={{ fontSize: 8, textAlign: 'center', marginBottom: 20 }}>
                 Birla Institute of Technology And Science - Pilani, Hyderabad Campus
