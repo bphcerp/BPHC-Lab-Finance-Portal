@@ -103,7 +103,8 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
   }, [isOpen, expenseType]);
 
   const handleSubmit = () => {
-    if (expenseReason && category && amount && ((expenseType === 'Normal' && paymentType == 'Indirect') ? paidBy : true && (expenseType === 'Institute' && !!selectedProject && !!selectedProjectHead))) {
+    console.log(expenseReason,category,amount)
+    if (expenseReason && category && amount && ((expenseType === 'Normal' && paymentType == 'Indirect' && paidBy) || (expenseType === 'Institute' && !!selectedProject && !!selectedProjectHead) || (expenseType === 'Normal' && paymentType === 'Direct' && directPaymentAcc))) {
       const expenseData: any = { expenseReason,paymentType,referenceURL, category, amount: Number(amount), ...((expenseType === 'Normal' && paymentType == 'Indirect') ? { paidBy } : {}), description, type: expenseType };
       if (expenseType === 'Institute') {
         expenseData.projectId = selectedProject;

@@ -271,14 +271,32 @@ router.delete('/:id/override', async (req: Request, res: Response) => {
 });
 
 
+router.get('/:id/check-edit-restrict', async (req: Request, res: Response) => {
+    try {
+        const reimbursements = await ReimbursementModel.exists({ project: req.params.id })
+        const instituteExpenses = await InstituteExpenseModel.exists({ project: req.params.id })
+        res.status(201).json({ editRestrict: reimbursements || instituteExpenses });
+    } catch (error) {   
+        console.log(error);
+        res.status(500).json({ message: 'Error creating project', error: (error as Error).message });
+    }
+});
+
+
 
 router.put('/:id', async (req: Request, res: Response) => {
     try {
-        const data = req.body;
+        const data: Project = req.body;
 
         const parsedInstallments = data.installments && Array.isArray(data.installments) && data.installments.length
-            ? typeof data.installments === 'string' ? JSON.parse(data.installments) : data.installements
+            ? typeof data.installments === 'string' ? JSON.parse(data.installments) : data.installments
             : [];
+        
+        const numberOfIndices = data.project_type === 'invoice' ? data.installments?.length ?? 0 : calculateNumberOfYears(new Date(data.start_date!), new Date(data.end_date!))
+        if (!Object.values(data.project_heads).every(arr => arr.length === numberOfIndices)){
+            res.status(400).json({ message: `Invalid data provided. The project heads data doesnt match with number of ${data.project_type === 'invoice' ? "installments" : "years"}` })
+            return
+        }
 
         let updatedProject = await ProjectModel.findById(req.params.id)
 

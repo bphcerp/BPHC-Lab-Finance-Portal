@@ -2,7 +2,7 @@ import { Bounce, toast, ToastOptions } from "react-toastify";
 
 const config : ToastOptions = {
     position: "top-center",
-    autoClose: 2000,
+    autoClose: 4000,
     hideProgressBar: false,
     closeOnClick: true,
     pauseOnHover: false,

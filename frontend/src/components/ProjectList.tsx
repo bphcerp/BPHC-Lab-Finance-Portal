@@ -8,10 +8,14 @@ import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from "./TableCustom";
 import { Project } from "../types";
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
-import EditProjectModal from "./EditProjectModal";
 import { getCurrentIndex } from "../helper";
+import { AddProjectModal } from "./AddProjectModal";
 
-const ProjectList: FunctionComponent = () => {
+interface ProjectListProps{
+    fetchProjectData: () => void
+}
+
+const ProjectList: FunctionComponent<ProjectListProps> = ({ fetchProjectData }) => {
     const [projectData, setProjectData] = useState<Array<Project>>([]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDescModalOpen, setIsDescModalOpen] = useState(false);
@@ -20,7 +24,7 @@ const ProjectList: FunctionComponent = () => {
     const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
     const [description, setDescription] = useState("");
 
-    const fetchProjectData = () => {
+    const fetchProjects = () => {
         fetch(`${import.meta.env.VITE_BACKEND_URL}/project/?past=true`, {
             credentials: "include",
         })
@@ -41,8 +45,13 @@ const ProjectList: FunctionComponent = () => {
     };
 
     useEffect(() => {
-        fetchProjectData();
+        fetchProjects();
     }, []);
+
+    useEffect(() => {
+        fetchProjects();
+        fetchProjectData()
+    }, [isEditModalOpen, isDeleteModalOpen]);
 
     const columnHelper = createColumnHelper<Project>();
     const columns = [
@@ -187,30 +196,6 @@ const ProjectList: FunctionComponent = () => {
         }
     };
 
-    const handleSaveProject = async (updatedProject: Project) => {
-        try {
-            const response = await fetch(
-                `${import.meta.env.VITE_BACKEND_URL}/project/${updatedProject._id}`,
-                {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify(updatedProject),
-                }
-            );
-            if (!response.ok) {
-                throw new Error("Failed to update project");
-            }
-            toastSuccess("Project updated successfully");
-            fetchProjectData()
-        } catch (error) {
-            toastError("Error updating project");
-            console.error("Error updating project:", error);
-        }
-    };
-
     return projectData ? (
         <div className="px-4">
             <DeleteConfirmationModal
@@ -225,11 +210,11 @@ const ProjectList: FunctionComponent = () => {
                 type="project"
                 description={description}
             />
-            <EditProjectModal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                project={projectToEdit}
-                onSave={handleSaveProject}
+            <AddProjectModal
+                openModal={isEditModalOpen}
+                setOpenModal={setIsEditModalOpen}
+                editMode={true}
+                editProject={projectToEdit}
             />
             <TableCustom data={projectData} columns={columns} />
         </div>

@@ -8,7 +8,7 @@ import OverrideConfirmation from "../components/OverrideConfirmation";
 import { calculateNumberOfYears, formatCurrency, formatDate, getCurrentIndex } from "../helper";
 import { CarryDetailsModal } from "../components/CarryDetailsModal";
 import CarryConfirmationModal from "../components/CarryConfirmationModal";
-import EditProjectModal from "../components/EditProjectModal";
+import { AddProjectModal } from "../components/AddProjectModal";
 
 const ProjectDetails = () => {
     const { id } = useParams();
@@ -81,7 +81,7 @@ const ProjectDetails = () => {
 
     useEffect(() => {
         fetchProjectData()
-    }, [id]);
+    }, [id, isEditModalOpen]);
 
     useEffect(() => {
         if (projectData && targetColumnRef.current) {
@@ -270,11 +270,11 @@ const ProjectDetails = () => {
         <>
             {projectData && (
                 <div className="relative flex flex-col space-y-6 w-full mx-4">
-                    <EditProjectModal
-                        isOpen={isEditModalOpen}
-                        onClose={() => setIsEditModalOpen(false)}
-                        project={projectToEdit}
-                        onSave={handleSaveProject}
+                    <AddProjectModal
+                        openModal={isEditModalOpen}
+                        setOpenModal={setIsEditModalOpen}
+                        editProject={projectToEdit}
+                        editMode={true}
                     />
                     <OverrideConfirmation
                         isOpen={isOverrideModalOpen}
@@ -298,7 +298,7 @@ const ProjectDetails = () => {
                     </div>
 
                     <span className="text-4xl font-bold text-center mt-5 text-gray-800">
-                        {projectData.funding_agency}
+                        {projectData.project_title}
                     </span>
 
                     <div className="relative flex justify-center">
@@ -308,7 +308,7 @@ const ProjectDetails = () => {
                                 Project ID : {projectData.project_id}
                             </span>
                             <span className="text-lg text-center mt-5 text-gray-800">
-                                Project Title : {projectData.project_title}
+                                Funding Agency : {projectData.funding_agency}
                             </span>
                         </div>
                     </div>
@@ -429,7 +429,7 @@ const ProjectDetails = () => {
                         </div>
 
                         <div className="flex flex-col space-y-4">
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-rows-2 gap-3">
                                 <div className="bg-blue-100 p-6 rounded-lg shadow-md text-center">
                                     <p className="text-md font-semibold">Total Amount</p>
                                     <p className="text-2xl font-bold mt-2 text-blue-800">
