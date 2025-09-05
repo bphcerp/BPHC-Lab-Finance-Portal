@@ -1,12 +1,13 @@
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import { FormEvent, FormEventHandler, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { toastError } from "../toasts";
 import PasswordLoginPane from "./PasswordLoginPane";
 
 const SignInUpPane = () => {
     const [usePass,setUsePass] = useState(false)
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
 
     const handleSignIn = async (credentials : CredentialResponse) => {
         
@@ -22,7 +23,7 @@ const SignInUpPane = () => {
                 if (!res.ok) {
                     toastError((await res.json()).message);
                 } else {
-                    navigate("/dashboard");
+                    navigate(searchParams.get("next") ?? "/dashboard");
                 }
             })
             .catch((e) => {
@@ -60,7 +61,7 @@ const SignInUpPane = () => {
                 if (!res.ok) {
                     toastError((await res.json()).message);
                 } else {
-                    navigate("/dashboard");
+                    navigate(searchParams.get("next") ?? "/dashboard");
                 }
             })
             .catch((e) => {
@@ -70,7 +71,7 @@ const SignInUpPane = () => {
     }
 
     useEffect(() => {
-        setUsePass(!navigator.onLine)
+        if(!navigator.onLine) toastError("You are not connected to the internet")
     },[])
 
     return (

@@ -14,7 +14,7 @@ window.fetch = async (url, options = {}) => {
   // This is to prevent infinite redirect loop
   if (!isLoginPageRequest && response.status === 440 ) {
     toastWarn("Session Expired. Redirecting...")
-    window.location.href = '/login';
+    window.location.href = location.pathname != '/' && !location.search.includes("next") ? `/login?next=${location.pathname}` : location.search.includes(next) ? `/login${location.search}` : '/login'
     return;
   }
 
