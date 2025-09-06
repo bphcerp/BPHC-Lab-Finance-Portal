@@ -70,14 +70,7 @@ router.get('/:type', async (req: Request, res: Response) => {
 
 router.post('/entry', async (req: Request, res: Response) => {
     try {
-        const { type, amount, credited, remarks } = req.body
-
-        const entry = new AccountModel({
-            type,
-            amount,
-            credited,
-            remarks
-        })
+        const entry = new AccountModel(req.body)
 
         const newEntry = await entry.save()
         res.status(200).json(newEntry);
@@ -142,21 +135,21 @@ router.delete('/:id', async (req, res) => {
         const account = await AccountModel.findById(id);
 
         if (!account) {
-            res.status(404).json({ message: 'Account not found' });
+            res.status(404).json({ message: 'Account entry not found' });
             return
         }
 
-        if (account.transferable < 0) {
+        if (account.transferable < 0 || account.manualEntry) {
             const deletedAccount = await AccountModel.findByIdAndDelete(id);
             await AccountModel.findByIdAndDelete(deletedAccount!.transfer);
-            res.status(200).json({ message: 'Account deleted successfully' });
+            res.status(200).json({ message: 'Account entry deleted successfully' });
             return
         }
 
         res.status(400).json({ message: 'Cannot delete non transfer account entry' });
     } catch (error) {
         console.error('Error deleting account:', error);
-        res.status(500).json({ message: 'Error deleting account' });
+        res.status(500).json({ message: 'Error deleting account entry' });
     }
 });
 

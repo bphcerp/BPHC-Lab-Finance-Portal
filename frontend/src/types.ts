@@ -106,6 +106,8 @@ export interface Account {
     credited: boolean;
     transferable: number;
     transfer: Account | null
+    manualEntry: boolean;
+    transactedOn: Date
 }
 
 
