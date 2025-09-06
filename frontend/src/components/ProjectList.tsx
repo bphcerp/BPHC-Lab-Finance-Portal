@@ -9,7 +9,7 @@ import TableCustom from "./TableCustom";
 import { Project } from "../types";
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import { getCurrentIndex } from "../helper";
-import { AddProjectModal } from "./AddProjectModal";
+import { AddEditProjectModal } from "./AddEditProjectModal";
 
 interface ProjectListProps{
     fetchProjectData: () => void
@@ -210,7 +210,7 @@ const ProjectList: FunctionComponent<ProjectListProps> = ({ fetchProjectData }) 
                 type="project"
                 description={description}
             />
-            <AddProjectModal
+            <AddEditProjectModal
                 openModal={isEditModalOpen}
                 setOpenModal={setIsEditModalOpen}
                 editMode={true}

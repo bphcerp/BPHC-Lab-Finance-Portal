@@ -8,7 +8,7 @@ import OverrideConfirmation from "../components/OverrideConfirmation";
 import { calculateNumberOfYears, formatCurrency, formatDate, getCurrentIndex } from "../helper";
 import { CarryDetailsModal } from "../components/CarryDetailsModal";
 import CarryConfirmationModal from "../components/CarryConfirmationModal";
-import { AddProjectModal } from "../components/AddProjectModal";
+import { AddEditProjectModal } from "../components/AddEditProjectModal";
 
 const ProjectDetails = () => {
     const { id } = useParams();
@@ -270,7 +270,7 @@ const ProjectDetails = () => {
         <>
             {projectData && (
                 <div className="relative flex flex-col space-y-6 w-full mx-4">
-                    <AddProjectModal
+                    <AddEditProjectModal
                         openModal={isEditModalOpen}
                         setOpenModal={setIsEditModalOpen}
                         editProject={projectToEdit}

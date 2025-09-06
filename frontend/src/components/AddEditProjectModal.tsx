@@ -26,7 +26,7 @@ interface AddProjectProps {
   editProject?: Project | null;
 }
 
-export const AddProjectModal: FunctionComponent<AddProjectProps> = ({
+export const AddEditProjectModal: FunctionComponent<AddProjectProps> = ({
   openModal,
   setOpenModal,
   editMode,
@@ -100,6 +100,25 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({
     }
   };
 
+  const calculateNumberOfYears = () => {
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const startYear =
+        start.getMonth() < 3 ? start.getFullYear() - 1 : start.getFullYear();
+      const endYear =
+        end.getMonth() < 3 ? end.getFullYear() - 1 : end.getFullYear();
+      const yearsDiff = endYear - startYear + 1;
+      const yearsNum = yearsDiff >= 1 ? yearsDiff : 0;
+      setNumberOfYears(yearsNum);
+      resizeProjectHeads(yearsNum);
+    }
+  };
+
+  useEffect(() => {
+    if (projectType === "yearly") calculateNumberOfYears()
+  }, [startDate, endDate]);
+
   // Populate form when in edit mode
   useEffect(() => {
     if (openModal && editMode && editProject) {
@@ -161,22 +180,6 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({
 
     setHeadTotals(newHeadTotals);
   };
-
-  const calculateNumberOfYears = () => {
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const startYear =
-        start.getMonth() < 3 ? start.getFullYear() - 1 : start.getFullYear();
-      const endYear =
-        end.getMonth() < 3 ? end.getFullYear() - 1 : end.getFullYear();
-      const yearsDiff = endYear - startYear + 1;
-      const yearsNum = yearsDiff >= 1 ? yearsDiff : 0;
-      setNumberOfYears(yearsNum);
-      resizeProjectHeads(yearsNum);
-    }
-  };
-  useEffect(calculateNumberOfYears, [startDate, endDate]);
 
   const handleInstallmentsChange = (num: number) => {
     if (editMode && editRestrict && num < editProject!.installments!.length)
@@ -773,9 +776,7 @@ export const AddProjectModal: FunctionComponent<AddProjectProps> = ({
               {editMode && editRestrict && (
                 <div className="flex items-center my-2 space-x-2 text-yellow-500">
                   <FiAlertCircle />
-                  <span>
-                    Project heads cannot be deleted
-                  </span>
+                  <span>Project heads cannot be deleted</span>
                 </div>
               )}
               {Object.keys(projectHeads).map((head) => (

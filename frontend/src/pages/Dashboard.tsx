@@ -1,7 +1,7 @@
 import { FunctionComponent, useEffect, useState } from "react";
 import ProjectList from "../components/ProjectList";
 import { Button } from "flowbite-react";
-import { AddProjectModal } from "../components/AddProjectModal";
+import { AddEditProjectModal } from "../components/AddEditProjectModal";
 import { toastError } from "../toasts";
 import { Link } from "react-router";
 
@@ -34,7 +34,7 @@ const DashBoard: FunctionComponent = () => {
 
     return (
         <div className="flex flex-col p-4 space-y-4 w-full mx-auto h-full">
-            <AddProjectModal openModal={openModal} setOpenModal={setOpenModal} />
+            <AddEditProjectModal openModal={openModal} setOpenModal={setOpenModal} />
 
             <div className="grid grid-cols-2 gap-4">
                 <div className="bg-blue-100 p-4 rounded-lg shadow-md text-center">
