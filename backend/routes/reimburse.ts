@@ -7,10 +7,12 @@ import { ProjectModel } from '../models/project';
 import { AccountModel } from '../models/account';
 import { getCurrentIndex } from './project';
 import { Workbook } from 'exceljs';
+import { restrictViewer } from '../middleware/restrictViewer';
 
 const router = express.Router();
 
 router.use(authenticateToken);
+router.use(restrictViewer);
 
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 

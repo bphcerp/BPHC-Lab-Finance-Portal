@@ -1,11 +1,13 @@
 import express, { Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authenticateToken';
 import { MemberModel } from '../models/member';
+import { restrictViewer } from '../middleware/restrictViewer';
 
 const router = express.Router();
 
 // Apply authenticateToken middleware to all routes in this router
 router.use(authenticateToken);
+router.use(restrictViewer);
 
 // GET /api/members/ - Fetch categories by type
 router.get('/', async (req: Request, res: Response) => {

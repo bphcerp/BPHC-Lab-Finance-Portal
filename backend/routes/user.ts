@@ -4,12 +4,13 @@ import { OAuth2Client } from "google-auth-library";
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import { authenticateToken, encrypt } from "../middleware/authenticateToken";
+import { requireAdmin } from '../middleware/restrictViewer';
 
 const isProd = process.env.NODE_ENV === "production"
 
 const router: Router = Router()
 
-router.get('/', authenticateToken, async (req: Request, res: Response) => {
+router.get('/', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
 	try {
 		const users = await UserModel.find().select('name email');
 		res.json(users);
@@ -18,7 +19,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/', authenticateToken, async (req: Request, res: Response) => {
+router.post('/', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
     try {
         const { name, email } = req.body;
 
@@ -100,7 +101,12 @@ router.post('/passlogin', async (req: Request, res: Response) => {
 
 	if (result!.pwd === pwd) {
 		const jwtSecretKey = process.env.JWT_SECRET_KEY!;
-		const token = jwt.sign(resultPasswordHidden, jwtSecretKey)
+		const payload = {
+            _id: result._id,
+            email: result.email,
+            role: result.role
+        };
+		const token = jwt.sign(payload, jwtSecretKey);
 		const encryptedToken = encrypt(token)
 		res.cookie("token", encryptedToken, {
 			expires: new Date(Date.now() + 3600 * 1000),
@@ -114,7 +120,7 @@ router.post('/passlogin', async (req: Request, res: Response) => {
 	else res.status(401).send({message : `Wrong Credentials`})
 })
 
-router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
+router.put('/:id', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
 	try {
 		const { name, email } = req.body;
 		const updatedUser = await UserModel.findByIdAndUpdate(
@@ -131,7 +137,7 @@ router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
 	}
 });
 
-router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
+router.delete('/:id', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
 	try {
 		const deletedUser = await UserModel.findByIdAndDelete(req.params.id);
 		if (!deletedUser) {

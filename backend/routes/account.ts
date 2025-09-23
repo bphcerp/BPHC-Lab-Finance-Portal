@@ -2,10 +2,12 @@ import express, { Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authenticateToken';
 import { AccountModel } from '../models/account';
 import { ObjectId } from 'mongoose';
+import { restrictViewer } from '../middleware/restrictViewer';
 
 const router = express.Router();
 
 router.use(authenticateToken);
+router.use(restrictViewer);
 
 router.get('/totals', async (req, res) => {
     try {

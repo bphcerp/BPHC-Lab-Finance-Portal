@@ -108,6 +108,12 @@ export interface Account {
     transfer: Account | null
 }
 
+export interface User {
+    _id: string;
+    name: string;
+    email: string;
+    role: "Admin" | "Viewer";
+}
 
 export type Inputs = {
     selectedConfig: string

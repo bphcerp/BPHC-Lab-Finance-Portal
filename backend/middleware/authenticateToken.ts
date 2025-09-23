@@ -3,6 +3,15 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import crypto from 'crypto'
 import dotenv from 'dotenv';
+import { UserModel } from '../models/user';
+
+declare module "express" {
+  interface Request {
+    user?: {
+      role?: string;
+    };
+  }
+}
 
 const algorithm = 'aes-256-cbc';
 const rawSecretKey = process.env.JWT_SECRET_KEY!;
@@ -42,7 +51,18 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
         idToken: token,
         audience: process.env.VITE_OAUTH_CID,
       })
-      .then(() => {
+      .then(async (ticket) => {
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+          return res.status(401).json({ authenticated: false, message: 'Invalid Google token payload' });
+        }
+
+        const user = await UserModel.findOne({ email: payload.email });
+        if (!user) {
+          return res.status(401).json({ authenticated: false, message: 'User not found' });
+        }
+
+        req.user = { role: user.role }; 
         next();  // Proceed to the next middleware or route handler
       })
       .catch((error) => {
@@ -50,6 +70,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
         res.status(400).json({ authenticated: false, message: 'Invalid or expired token' });
       });
     } else {
+      req.user = decoded;
       next();  // Token is valid, move to next middleware or route handler
     }
   });

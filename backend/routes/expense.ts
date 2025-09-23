@@ -8,8 +8,12 @@ import { ProjectModel } from '../models/project';
 import { getCurrentIndex } from './project';
 import { ReimbursementModel } from '../models/reimburse';
 import { MemberModel } from '../models/member';
+import { restrictViewer } from '../middleware/restrictViewer';
 
 const router = express.Router();
+
+router.use(authenticateToken);
+router.use(restrictViewer);
 
 interface ExpenseRequest {
   category: ObjectId;
@@ -29,8 +33,6 @@ interface MemberExpenseSummary {
   totalSettled: number;
   totalDue: number;
 }
-
-router.use(authenticateToken);
 
 const VALID_SETTLED_STATUS = ['Current', 'Savings'] as const;
 

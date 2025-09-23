@@ -2,10 +2,13 @@ import express, { Request, Response } from 'express';
 import { CategoryModel } from '../models/category';
 import { authenticateToken } from '../middleware/authenticateToken';
 import { ExpenseModel } from '../models/expense';
+import { restrictViewer } from '../middleware/restrictViewer';
+
 
 const router = express.Router();
 
 router.use(authenticateToken);
+router.use(restrictViewer);
 
 // GET /api/categories - Fetch categories
 router.get('/', async (req: Request, res: Response) => {

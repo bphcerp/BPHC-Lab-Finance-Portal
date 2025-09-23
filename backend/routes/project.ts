@@ -4,10 +4,12 @@ import mongoose from "mongoose";
 import { authenticateToken } from "../middleware/authenticateToken";
 import { ReimbursementModel } from "../models/reimburse";
 import { InstituteExpenseModel } from "../models/expense";
+import { restrictViewer } from '../middleware/restrictViewer';
 
 const router: Router = Router();
 
 router.use(authenticateToken);
+router.use(restrictViewer);
 
 type Project = mongoose.Document & typeof ProjectModel extends mongoose.Model<infer T> ? T : never;
 
