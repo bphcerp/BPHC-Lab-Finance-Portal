@@ -9,6 +9,7 @@ declare module "express" {
   interface Request {
     user?: {
       role?: string;
+      email?: string;
     };
   }
 }
@@ -62,7 +63,10 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
           return res.status(401).json({ authenticated: false, message: 'User not found' });
         }
 
-        req.user = { role: user.role }; 
+        req.user = { 
+          role: user.role,
+          email: user.email
+        }; 
         next();  // Proceed to the next middleware or route handler
       })
       .catch((error) => {
