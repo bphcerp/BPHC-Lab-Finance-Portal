@@ -48,8 +48,6 @@ app.use(cors({
   credentials: true // Allow cookies to be sent
 }))
 
-app.use('/api', authenticateToken);
-app.use('/api', restrictViewer);
 app.use('/api/user', userRoutes);
 app.use('/api/project', projectRoutes);
 app.use('/api/expense', expenseRoutes);
