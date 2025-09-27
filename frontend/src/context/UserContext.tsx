@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useState,
   useContext,
@@ -22,31 +22,45 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch user data when the app loads
-    const fetchUser = async () => {
+    let cancelled = false;
+    const initialAuthCheck = async () => {
       try {
-        const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/user/me`,
+        // Light status probe (does not require token)
+        const statusResp = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/auth/status`,
           {
-            credentials: "include", // Include cookies
+            credentials: "include",
           }
         );
-
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-        } else {
+        const statusJson = await statusResp
+          .json()
+          .catch(() => ({ authenticated: false }));
+        if (!statusJson.authenticated) {
+          if (!cancelled) setUser(null);
+          return;
+        }
+        // Only fetch protected user data if cookie present
+        const meResp = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/user/me`,
+          { credentials: "include" }
+        );
+        if (meResp.ok) {
+          const data = await meResp.json();
+          if (!cancelled) setUser(data);
+        } else if (!cancelled) {
           setUser(null);
         }
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
-        setUser(null);
+      } catch (err) {
+        console.error("Initial auth check failed:", err);
+        if (!cancelled) setUser(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-
-    fetchUser();
+    initialAuthCheck();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const logout = async () => {
@@ -59,6 +73,37 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       console.error("Logout error:", error);
     } finally {
       setUser(null);
+    }
+  };
+
+  const refreshUser = async () => {
+    setLoading(true);
+    try {
+      // Re-run auth status first to avoid unnecessary protected call
+      const statusResp = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/auth/status`,
+        { credentials: "include" }
+      );
+      const statusJson = await statusResp
+        .json()
+        .catch(() => ({ authenticated: false }));
+      if (!statusJson.authenticated) {
+        setUser(null);
+        return;
+      }
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/user/me`,
+        { credentials: "include" }
+      );
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      } else setUser(null);
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 

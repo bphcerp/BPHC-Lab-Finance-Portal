@@ -1,81 +1,95 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
-import crypto from 'crypto'
+import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { UserModel } from '../models/user';
 
-declare module "express" {
+// Ensure env vars loaded (harmless if already loaded elsewhere)
+dotenv.config();
+
+declare module 'express' {
   interface Request {
-    user?: {
-      role?: string;
-      email?: string;
-    };
+    user?: { role?: string; email?: string };
   }
 }
 
+// ---- Encryption helpers (per-token IV) ----
 const algorithm = 'aes-256-cbc';
-const rawSecretKey = process.env.JWT_SECRET_KEY!;
-// Derive a 32-byte key using SHA-256
-const secretKey = crypto.createHash('sha256').update(rawSecretKey).digest();
-const iv = crypto.randomBytes(16);
-
+function getKey(): Buffer {
+  const raw = process.env.JWT_SECRET_KEY;
+  if (!raw) throw new Error('JWT_SECRET_KEY not set');
+  return crypto.createHash('sha256').update(raw).digest();
+}
 export function encrypt(text: string): { iv: string; encryptedData: string } {
-  const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(algorithm, getKey(), iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return { iv: iv.toString('hex'), encryptedData: encrypted };
 }
-
 export function decrypt(encryptedData: string, iv: string): string {
-  const decipher = crypto.createDecipheriv(algorithm, secretKey, Buffer.from(iv, 'hex'));
+  const decipher = crypto.createDecipheriv(algorithm, getKey(), Buffer.from(iv, 'hex'));
   let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   return decrypted;
 }
 
-const client = new OAuth2Client(process.env.VITE_OAUTH_CID);
+// Optional: fallback Google verification for legacy cookies that stored Google ID token
+const googleClient = new OAuth2Client(process.env.VITE_OAUTH_CID);
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
-  const encryptedToken: { encryptedData : string, iv : string }= req.cookies.token;
+interface EncryptedCookie { encryptedData: string; iv: string }
 
-  if (!encryptedToken) {
-    res.status(440).json({ authenticated: false, message: 'No token found' });
-    return;
+function extractJwtFromCookie(req: Request): string | null {
+  const enc: EncryptedCookie | undefined = req.cookies?.token;
+  if (!enc) return null;
+  try {
+    return decrypt(enc.encryptedData, enc.iv);
+  } catch {
+    return null;
   }
+}
 
-  const token = decrypt(encryptedToken.encryptedData,encryptedToken.iv)
+// Attach user if token valid; otherwise stay anonymous
+export function authenticateOptional(req: Request, _res: Response, next: NextFunction) {
+  const token = extractJwtFromCookie(req);
+  if (!token) return next();
+  try {
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET_KEY!);
+    req.user = { email: decoded.email, role: decoded.role };
+    return next();
+  } catch {
+    return next();
+  }
+}
 
-  jwt.verify(token, process.env.JWT_SECRET_KEY!, (err: any,decoded: any) => {
-    if (err || !decoded) {
-      client.verifyIdToken({
-        idToken: token,
-        audience: process.env.VITE_OAUTH_CID,
-      })
-      .then(async (ticket) => {
+// Require valid token (with legacy Google fallback)
+export async function authenticateRequired(req: Request, res: Response, next: NextFunction) {
+  const token = extractJwtFromCookie(req);
+  if (!token) return res.status(401).json({ message: 'Missing token' });
+
+  try {
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET_KEY!);
+    req.user = { email: decoded.email, role: decoded.role };
+    return next();
+  } catch (err) {
+    // Legacy fallback: treat token as Google credential (only if verification enabled)
+    if (process.env.VITE_OAUTH_CID) {
+      try {
+        const ticket = await googleClient.verifyIdToken({ idToken: token, audience: process.env.VITE_OAUTH_CID });
         const payload = ticket.getPayload();
-        if (!payload || !payload.email) {
-          return res.status(401).json({ authenticated: false, message: 'Invalid Google token payload' });
+        if (payload?.email) {
+          const user = await UserModel.findOne({ email: payload.email });
+          if (user) {
+            req.user = { email: user.email, role: user.role };
+            return next();
+          }
         }
-
-        const user = await UserModel.findOne({ email: payload.email });
-        if (!user) {
-          return res.status(401).json({ authenticated: false, message: 'User not found' });
-        }
-
-        req.user = { 
-          role: user.role,
-          email: user.email
-        }; 
-        next();  // Proceed to the next middleware or route handler
-      })
-      .catch((error) => {
-        console.error(error)
-        res.status(400).json({ authenticated: false, message: 'Invalid or expired token' });
-      });
-    } else {
-      req.user = decoded;
-      next();  // Token is valid, move to next middleware or route handler
+      } catch {}
     }
-  });
-};
+    return res.status(401).json({ message: 'Invalid or expired token' });
+  }
+}
+
+// Backwards compatibility export (old name)
+export const authenticateToken = authenticateRequired;
