@@ -19,6 +19,23 @@ router.get('/', authenticateToken, requireAdmin, async (req: Request, res: Respo
 	}
 });
 
+router.get('/me', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.email) {
+      return res.status(401).json({ message: 'User not found in token' });
+    }
+
+    const user = await UserModel.findOne({ email: req.user.email }).select('-pwd');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching user info', error });
+  }
+});
+
 router.post('/', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
     try {
         const { name, email } = req.body;
@@ -73,6 +90,13 @@ router.post('/login', async (req: Request, res: Response) => {
 			await user.save();
 		}
 
+		const jwtSecretKey = process.env.JWT_SECRET_KEY!;
+        const payload = {
+            _id: user._id,
+            email: user.email,
+            role: user.role
+        };
+        const token = jwt.sign(payload, jwtSecretKey);
 		const encryptedToken = encrypt(credentialResponse.credential)
 
 		res.cookie("token", encryptedToken, {
@@ -135,6 +159,32 @@ router.put('/:id', authenticateToken, requireAdmin, async (req: Request, res: Re
 	} catch (error) {
 		res.status(500).json({ message: 'Error updating user', error });
 	}
+});
+
+router.put('/:id/role', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { role } = req.body;
+    const userId = req.params.id;
+
+    if (!role || !['Admin', 'Viewer'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid role. Must be Admin or Viewer.' });
+    }
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      { role },
+      { new: true }
+    ).select('-pwd');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'User role updated successfully', user: updatedUser });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    res.status(500).json({ message: 'Error updating user role', error });
+  }
 });
 
 router.delete('/:id', authenticateToken, requireAdmin, async (req: Request, res: Response) => {

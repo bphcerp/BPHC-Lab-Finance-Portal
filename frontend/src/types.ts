@@ -110,7 +110,7 @@ export interface Account {
 
 export interface User {
     _id: string;
-    name: string;
+    name?: string;
     email: string;
     role: "Admin" | "Viewer";
 }

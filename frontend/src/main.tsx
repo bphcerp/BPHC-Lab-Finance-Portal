@@ -24,11 +24,14 @@ import NotFound from './components/NotFound'
 import DeveloperPage from './pages/DeveloperPage'
 import { InstituteExpensesPage } from './pages/InstituteExpenses.js'
 import { ProjectSAViewer } from './pages/ProjectSAViewer,.js'
+import { UserProvider } from './context/UserContext.tsx'
+import { AdminRoute } from './components/ProtectedRoute'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={import.meta.env.VITE_OAUTH_CID}>
     <ToastContainer />
     <React.StrictMode>
+      <UserProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<ProtectedRoute homePage={true} />} />
@@ -43,17 +46,24 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path='institute' element={<InstituteExpensesPage />} />
             </Route>
             <Route path='/reimbursements' element={<ReimbursementPage />} />
-            <Route path='/admin' element={<AdminPage />} />
+            <Route path='/admin' element={
+              <AdminRoute>
+                <AdminPage />
+              </AdminRoute>} />
             <Route path="/account/savings" element={<AccountPage type='Savings'/>} />
             <Route path="/account/current" element={<AccountPage type='Current'/>} />
             <Route path="/pda" element={<PDAccountPage type='PDA'/>} />
             <Route path="/pdf" element={<PDAccountPage type='PDF'/>} />
-            <Route path='/developers' element={<DeveloperPage />} />
+            <Route path='/developers' element={
+              <AdminRoute>
+                <DeveloperPage />
+              </AdminRoute>} />
           </Route>
           <Route path='/login' element={<LoginPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      </UserProvider>
     </React.StrictMode>
   </GoogleOAuthProvider>
 )

@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "flowbite-react";
+import { Button, Select } from "flowbite-react";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import TableCustom from "../components/TableCustom";
@@ -8,6 +8,7 @@ import AddAdminEntryModal from "../components/AddAdminEntryModal";
 import DeleteAdminEntryModal from "../components/DeleteAdminEntryModal";
 import { toastError, toastSuccess } from "../toasts";
 import EditMemberModal from "../components/EditMemberModal";
+import RoleChangeConfirmationModal from "../components/RoleChangeConfirmationModal";
 
 const AdminPage: React.FC = () => {
     const [columns, setColumns] = useState<ColumnDef<any, any>[] | null>(null);
@@ -17,6 +18,10 @@ const AdminPage: React.FC = () => {
     const [data, setData] = useState<any[]>([]);
     const [itemToDelete, setItemToDelete] = useState<any | null>(null);
     const [itemtoEdit, setItemToEdit] = useState<any | null>(null);
+    const [roleChangeData, setRoleChangeData] = useState<{
+        user: any;
+        newRole: string;
+    } | null>(null);
 
     const { register, handleSubmit, watch } = useForm<Inputs>();
 
@@ -78,7 +83,41 @@ const AdminPage: React.FC = () => {
         setIsModalOpen(false);
     };
 
+    const handleRoleChange = (user: any, newRole: "Admin" | "Viewer") => {
+    if (user.role === newRole) return;
+    
+    setRoleChangeData({ user, newRole });
+    setIsRoleChangeModalOpen(true);
+};
+
+    const confirmRoleChange = async () => {
+        if (!roleChangeData) return;
+
+        try {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/user/${roleChangeData.user._id}/role`, {
+                method: "PUT",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ role: roleChangeData.newRole }),
+            });
+
+            if (res.ok) {
+                toastSuccess(`User role updated to ${roleChangeData.newRole}!`);
+                handleSubmit(onSubmit)(); // Refresh the data
+            } else {
+                toastError((await res.json()).message ?? "Something went wrong");
+            }
+        } catch (error) {
+            toastError("Error updating user role");
+            console.error("Error updating user role:", error);
+        } finally {
+            setIsRoleChangeModalOpen(false);
+            setRoleChangeData(null);
+        }
+    };
+
     const generateColumns = <T extends object>(data: T): ColumnDef<T, any>[] => {
+        const selectedConfig = watch("selectedConfig");
         return [
             ...Object.keys(data)
                 .filter((key) => key !== "_id" && key !== "type" && key != "__v")
@@ -88,6 +127,22 @@ const AdminPage: React.FC = () => {
                     header: key.replace(/_/g, " "),
                     enableColumnFilter: key.includes("name"),
                 })),
+            ...(selectedConfig === "User" ? [{
+                id: "roleChange",
+                header: "Role",
+                cell: ({ row }: { row: any }) => (
+                    <Select
+                        value={row.original.role}
+                        onChange={(e) => handleRoleChange(row.original, e.target.value as "Admin" | "Viewer")}
+                        className="min-w-[120px]"
+                    >
+                        <option value="Admin">Admin</option>
+                        <option value="Viewer">Viewer</option>
+                    </Select>
+                ),
+                enableColumnFilter: false,
+                enableSorting: false,
+            }] : []),
             {
                 id: "actions",
                 header: "Actions",
@@ -188,6 +243,18 @@ const AdminPage: React.FC = () => {
                 onSubmit={handleEditConfirm}
                 selectedConfig={watch("selectedConfig")}
                 member={itemtoEdit}
+            />
+            <RoleChangeConfirmationModal
+                isOpen={isRoleChangeModalOpen}
+                onClose={() => {
+                    setIsRoleChangeModalOpen(false);
+                    setRoleChangeData(null);
+                }}
+                onConfirm={confirmRoleChange}
+                userName={roleChangeData?.user?.name || ""}
+                userEmail={roleChangeData?.user?.email || ""}
+                currentRole={roleChangeData?.user?.role || ""}
+                newRole={roleChangeData?.newRole || ""}
             />
             <span className="text-2xl font-bold">Admin Configuration</span>
             <div className="flex justify-between">

@@ -7,6 +7,7 @@ import { BsSafe } from "react-icons/bs";
 import { FaDonate } from "react-icons/fa";
 import { Link, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
+import { useUser } from "../context/UserContext";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -15,13 +16,15 @@ interface SidebarProps {
 
 const SidebarComponent: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const navigate = useNavigate();
+  const { user, logout } = useUser();
   const [menuState, setMenuState] = useState({ account: false, pdAccount: false });
 
   const handleLogout = () => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/user/logout`, {
+    /*fetch(`${import.meta.env.VITE_BACKEND_URL}/user/logout`, {
       method: "POST",
       credentials: "include",
-    });
+    });*/
+    logout();
     navigate("/login");
     setIsOpen(false);
   };
@@ -106,6 +109,8 @@ const SidebarComponent: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             </div>
           </div>
         </div>
+        {user?.role === "Admin" && (
+          <>
         <Link to="/admin" className="flex items-center px-4 py-3 hover:bg-gray-200 rounded-lg mx-3 mb-2 transition">
           <IoSettingsOutline size="24" className="mr-3" />
           <span className="text-lg font-semibold">Admin</span>
@@ -114,6 +119,8 @@ const SidebarComponent: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           <FaCode size="24" className="mr-3" />
           <span className="text-lg font-semibold">Developer Info</span>
         </Link>
+        </>
+        )}
       </nav>
       <div className="px-4 py-3 border-t border-gray-300">
         <button

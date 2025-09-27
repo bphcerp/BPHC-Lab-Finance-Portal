@@ -10,6 +10,7 @@ import { Project } from "../types";
 import { RiDeleteBin6Line, RiEdit2Line } from "react-icons/ri";
 import EditProjectModal from "./EditProjectModal";
 import { getCurrentIndex } from "../helper";
+import { useUser } from '../context/UserContext'
 
 const ProjectList: FunctionComponent = () => {
     const [projectData, setProjectData] = useState<Array<Project>>([]);
@@ -19,7 +20,7 @@ const ProjectList: FunctionComponent = () => {
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
     const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
     const [description, setDescription] = useState("");
-
+    const { user } = useUser();
     const fetchProjectData = () => {
         fetch(`${import.meta.env.VITE_BACKEND_URL}/project/?past=true`, {
             credentials: "include",
@@ -129,6 +130,7 @@ const ProjectList: FunctionComponent = () => {
             enableColumnFilter: false,
             enableSorting: false,
         }),
+        (user?.role === "Admin" ? [
         columnHelper.accessor(() => "Actions", {
             header: "Actions",
             cell: ({ row }) => (
@@ -150,6 +152,7 @@ const ProjectList: FunctionComponent = () => {
             enableColumnFilter: false,
             enableSorting: false,
         })
+    ] : [])
     ];
 
     const openDeleteModal = (project: Project) => {

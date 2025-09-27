@@ -10,6 +10,7 @@ import { Reimbursement } from '../types';
 import { RiDeleteBin6Line, RiEdit2Line } from 'react-icons/ri';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import EditReimbursementModal from '../components/EditReimbursementModal';
+import { useUser } from '../context/UserContext';
 
 const ReimbursementPage: React.FC = () => {
     const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
@@ -22,6 +23,7 @@ const ReimbursementPage: React.FC = () => {
     const [reimbursementToDelete, setReimbursementToDelete] = useState<Reimbursement>();
     const [reimbursementToEdit, setReimbursementToEdit] = useState<Reimbursement>()
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const { user } = useUser();
 
 
     const columnHelper = createColumnHelper<Reimbursement>();
@@ -98,7 +100,8 @@ const ReimbursementPage: React.FC = () => {
             header: "Actions",
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    {row.original.paidStatus ? "NA" : <div className='flex divide-x-2'>
+                    {user?.role === "Admin" ? (
+                    row.original.paidStatus ? "NA" : <div className='flex divide-x-2'>
                         <button
                             className="w-10 flex justify-center hover:cursor-pointer"
                             onClick={() => openEditModal(row.original)}
@@ -110,7 +113,8 @@ const ReimbursementPage: React.FC = () => {
                             onClick={() => openDeleteModal(row.original)}
                         >
                             <RiDeleteBin6Line color="red" />
-                        </button></div>}
+                        </button></div>
+                    ) : "NA"}
                 </div>
             ),
             enableColumnFilter: false,
@@ -268,6 +272,7 @@ const ReimbursementPage: React.FC = () => {
             />
             <h1 className="text-2xl font-bold mb-4">List of Reimbursements</h1>
 
+            {user?.role == "Admin" && (
             <div className="flex space-x-2 mb-4">
                 <button
                     className="bg-green-500 text-white px-4 py-2 rounded disabled:opacity-50"
@@ -285,6 +290,7 @@ const ReimbursementPage: React.FC = () => {
                     Mark as Unpaid
                 </button>
             </div>
+            )}
 
             <div className='py-2'>
                 <TableCustom data={reimbursements} columns={columns} setSelected={(selectedReimbursements: Array<Reimbursement>) => {

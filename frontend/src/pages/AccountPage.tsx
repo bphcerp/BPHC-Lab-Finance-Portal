@@ -8,6 +8,7 @@ import TransferModal from '../components/TransferModal';
 import { RiDeleteBin6Line } from 'react-icons/ri';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import { formatCurrency } from '../helper';
+import { useUser } from '../context/UserContext';
 
 interface AccountPageProps {
     type: 'Current' | 'Savings';
@@ -20,7 +21,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
     const [entryToDelete, setEntryToDelete] = useState<Account>();
     const [columns, setColumns] = useState<any[]>([]);
     const [selectedAccountEntries, setSelectedAccountEntries] = useState<Account[]>()
-
+    const { user } = useUser();
     const columnHelper = createColumnHelper<Account>();
 
     // Define base columns
@@ -221,7 +222,8 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
             {/* Header and Button */}
             <div className="flex justify-between mb-4">
                 <h1 className="text-2xl font-bold">{type} Account</h1>
-                {type === 'Current' && selectedAccountEntries && (selectedAccountEntries.length > 0) && (
+                {user?.role === "Admin" && ( <>
+                    {type === 'Current' && selectedAccountEntries && (selectedAccountEntries.length > 0) && (
                     <Button
                         color="blue"
                         className="flex justify-center items-center"
@@ -229,6 +231,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
                     >
                         Transfer
                     </Button>
+                    )} </>
                 )}
             </div>
 

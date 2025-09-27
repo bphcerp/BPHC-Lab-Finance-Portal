@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router';
+import { useUser } from '../context/UserContext';
 
 interface ProtectedRouteProps {
   homePage? : boolean
@@ -43,6 +44,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ homePage, children }) =
   }
 
   return <>{children}</>;
+};
+
+export const AdminRoute = ({ children }: { children: JSX.Element }) => {
+  const { user, loading } = useUser();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (user?.role !== "Admin") {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
 };
 
 export default ProtectedRoute;

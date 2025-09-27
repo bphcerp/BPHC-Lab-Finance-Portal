@@ -5,6 +5,7 @@ import TableCustom from '../components/TableCustom';
 import { Account } from '../types';
 import { Button, TextInput } from 'flowbite-react';
 import AddEntryModal from '../components/AddEntryModal';
+import { useUser } from '../context/UserContext';
 
 interface AccountPageProps {
     type: "PDA" | "PDF";
@@ -14,7 +15,7 @@ const PDAccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
     const [accountData, setAccountData] = useState<Array<Account>>([]);
     const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false)
     const [openingBalance, setOpeningBalance] = useState<string | null>(null);
-
+    const { user } = useUser();
     const columnHelper = createColumnHelper<Account>();
 
     const columns = [
@@ -125,10 +126,12 @@ const PDAccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
             />
             <div className="flex justify-between mb-4">
                 <h1 className="text-2xl font-bold">{type} Account</h1>
+                {user?.role === "Admin" && (
                 <div className='flex space-x-2'>
                     <TextInput placeholder='Enter opening balance...' value={openingBalance ?? ''} onChange={(e) => setOpeningBalance(e.target.value)}/>
                     <Button color="blue" className='flex justify-center items-center' onClick={() => setIsAddEntryModalOpen(true)}>Add Entry</Button>
                 </div>
+                )}
             </div>
             {accountData.length ? <TableCustom data={accountData} columns={columns} initialState={{
                 sorting: [

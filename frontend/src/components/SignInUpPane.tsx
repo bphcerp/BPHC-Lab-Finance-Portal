@@ -3,10 +3,12 @@ import { FormEvent, FormEventHandler, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toastError } from "../toasts";
 import PasswordLoginPane from "./PasswordLoginPane";
+import { useUser } from "../context/UserContext";
 
 const SignInUpPane = () => {
     const [usePass,setUsePass] = useState(false)
     const navigate = useNavigate()
+    const { setUser } =  useUser();
 
     const handleSignIn = async (credentials : CredentialResponse) => {
         
@@ -22,6 +24,13 @@ const SignInUpPane = () => {
                 if (!res.ok) {
                     toastError((await res.json()).message);
                 } else {
+                    const userRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/user/me`, {
+                        credentials: 'include',
+                    });
+                    if (userRes.ok) {
+                        const userData = await userRes.json();
+                        setUser(userData);
+                    }
                     navigate("/dashboard");
                 }
             })
@@ -60,6 +69,13 @@ const SignInUpPane = () => {
                 if (!res.ok) {
                     toastError((await res.json()).message);
                 } else {
+                    const userRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/user/me`, {
+                        credentials: 'include',
+                    });
+                    if (userRes.ok) {
+                        const userData = await userRes.json();
+                        setUser(userData);
+                    }
                     navigate("/dashboard");
                 }
             })

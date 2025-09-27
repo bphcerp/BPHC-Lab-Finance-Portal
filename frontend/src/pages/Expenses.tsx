@@ -12,6 +12,7 @@ import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
 import { EditExpenseData, Expense } from '../types';
 import { Link, useNavigate } from 'react-router';
+import { useUser } from '../context/UserContext';
 
 const ExpensesPage: React.FC = () => {
     const [expenses, setExpenses] = useState<Array<Expense>>([]);
@@ -26,6 +27,7 @@ const ExpensesPage: React.FC = () => {
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
     const [description, setDescription] = useState("")
     const navigate = useNavigate()
+    const { user } = useUser();
 
     const columnHelper = createColumnHelper<Expense>();
 
@@ -135,6 +137,7 @@ const ExpensesPage: React.FC = () => {
             enableColumnFilter: false,
             enableSorting: false,
         }),
+        (user?.role === "Admin" ? [
         columnHelper.accessor(() => "Actions", {
             header: "Actions",
             cell: ({ row }) =>
@@ -156,6 +159,7 @@ const ExpensesPage: React.FC = () => {
             enableColumnFilter: false,
             enableSorting: false
         })
+    ] : [])
     ];
 
     const handleEditExpense = async (expenseData: EditExpenseData) => {
@@ -396,6 +400,7 @@ const ExpensesPage: React.FC = () => {
                             <span className="text-sm text-gray-700">Not Filed</span>
                         </div>
                     </div>
+                    {user?.role === "Admin" && (
                     <div className='flex space-x-2'>
                         <Button color="blue" className='rounded-md' onClick={() => { setIsModalOpen(true) }}>Add Expense</Button>
                         {selectedExpenses.size > 0 ?
@@ -419,18 +424,25 @@ const ExpensesPage: React.FC = () => {
                             </div> : <></>
                         }
                     </div>
+                    )}
                 </div>
             </div>
-            <TableCustom data={expenses} columns={columns} setSelected={(selectedExpenses: Array<Expense>) => {
-                setSelectedExpenses(new Set(selectedExpenses.map(expense => expense._id)))
-            }} initialState={{
-                sorting: [
-                    {
-                        id: 'updatedAt',
-                        desc: true
-                    }
-                ]
-            }} />
+            <TableCustom 
+                data={expenses} 
+                columns={columns}
+                {...(user?.role === "Admin" ? {
+                    setSelected: (selectedExpenses: Array<Expense>) => 
+                        setSelectedExpenses(new Set(selectedExpenses.map(expense => expense._id)))
+                } : {})}
+                initialState={{
+                    sorting: [
+                        {
+                            id: 'updatedAt',
+                            desc: true
+                        }
+                    ]
+                }}  
+            />
         </div>
     ) : <div>
         No Expenses to show
