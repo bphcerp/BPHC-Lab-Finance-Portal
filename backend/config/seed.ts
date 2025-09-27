@@ -37,9 +37,9 @@ async function main() {
 		process.exit(0);
 	}
 
-	const user = new UserModel({ email });
+	const user = new UserModel({ email, role: "Admin" });
 	await user.save();
-	console.log(`Added user with email: ${email}`);
+	console.log(`Added user with admin access with email: ${email}`);
 	await mongoose.disconnect();
 }
 
