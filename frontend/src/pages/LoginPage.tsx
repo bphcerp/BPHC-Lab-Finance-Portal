@@ -3,35 +3,37 @@ import SignInUpPane from "../components/SignInUpPane";
 import { Navigate } from "react-router";
 
 const LoginPage: FunctionComponent = () => {
-
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  
-    useEffect(() => {
-      const checkAuth = async () => {
-        try {
-          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/check-auth`, {
-            credentials: 'include',
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/check-auth`,
+          {
+            credentials: "include",
             headers: {
-              'From-Page': 'login',
-          },
-          });
-  
-          if (res.status === 200) {
-            setIsAuthenticated(true);
-          } else {
-            setIsAuthenticated(false);
+              "From-Page": "login",
+            },
           }
-        } catch (error) {
-          console.error('Error checking authentication:', error);
+        );
+
+        if (res.status === 200) {
+          setIsAuthenticated(true);
+        } else {
           setIsAuthenticated(false);
         }
-      };
-  
-      checkAuth();
-    }, []);
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+        setIsAuthenticated(false);
+      }
+    };
 
-  if (isAuthenticated){
-    return <Navigate to="/dashboard" />
+    checkAuth();
+  }, []);
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" />;
   }
 
   return (
@@ -44,6 +46,6 @@ const LoginPage: FunctionComponent = () => {
       </div>
     </div>
   );
-}
+};
 
 export default LoginPage;

@@ -69,11 +69,14 @@ const ProjectDetails = () => {
   };
 
   const fetchProjectData = () => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${id}`, {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/project/${id}`, {
       credentials: "include",
     })
-      .then((res) => res.json())
-      .then((data) => {
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch project data");
+        }
+        const data = await res.json();
         setProjectData(data);
         setNote(data.note);
         const curr = getCurrentIndex(data);
@@ -87,11 +90,19 @@ const ProjectDetails = () => {
         console.error(e);
       });
 
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/project/${id}/total-expenses`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => setExpenseData(data))
+    fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/project/${id}/total-expenses`,
+      {
+        credentials: "include",
+      }
+    )
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch expense data");
+        }
+        const data = await res.json();
+        setExpenseData(data);
+      })
       .catch((e) => {
         toastError("Something went wrong");
         console.error(e);
@@ -131,11 +142,14 @@ const ProjectDetails = () => {
   }) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/reimburse/${
+        `${import.meta.env.VITE_BACKEND_URL}/api/reimburse/${
           projectData!._id
         }/?head=${head}&index=${index}&all=${all}`,
         { credentials: "include" }
       );
+      if (!response.ok) {
+        throw new Error("Failed to fetch reimbursements");
+      }
       const data = await response.json();
       setInfo({ head, index, all });
       setLabel(
@@ -163,7 +177,7 @@ const ProjectDetails = () => {
       const { head, index, all } = info!;
 
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/reimburse/${
+        `${import.meta.env.VITE_BACKEND_URL}/api/reimburse/${
           projectData!._id
         }/?exportData=true&head=${head}&index=${index}&all=${all}`,
         { credentials: "include" }
@@ -210,9 +224,15 @@ const ProjectDetails = () => {
         fetchProjectData();
         toastSuccess("Amount carried forward sucessfully!");
       } else {
-        const message = (await response.json()).message;
-        toastError(message ?? "Something went wrong!");
-        console.error(message);
+        try {
+          const errorData = await response.json();
+          const message = errorData.message;
+          toastError(message ?? "Something went wrong!");
+          console.error(message);
+        } catch (parseError) {
+          toastError("Something went wrong!");
+          console.error("Failed to parse error response");
+        }
         return;
       }
 

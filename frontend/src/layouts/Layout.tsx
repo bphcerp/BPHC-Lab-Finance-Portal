@@ -7,26 +7,31 @@ import OutsideClickHandler from "react-outside-click-handler";
 
 const Layout: FunctionComponent = () => {
   const [isSideBarOpen, setISSideBarOpen] = useState(false);
-  const [isReset, setIsReset] = useState(false)
+  const [isReset, setIsReset] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/user/logout`, {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/logout`, {
       method: "POST",
       credentials: "include",
     })
-    .finally(() => navigate("/login"))
-    .catch((e) => console.error(e))
-  }
+      .finally(() => navigate("/login"))
+      .catch((e) => console.error(e));
+  };
 
   useEffect(() => {
-    setIsReset(new Date().getMonth() === 3 && new Date().getDate() === 1)
-  },[])
+    setIsReset(new Date().getMonth() === 3 && new Date().getDate() === 1);
+  }, []);
 
   return (
     <div className="flex flex-col w-screen h-screen">
-      <NewFinancialYearModal isOpen={isReset} onClose={() => setIsReset(false)}/>
-      <OutsideClickHandler onOutsideClick={() => setISSideBarOpen(false)}><SidebarComponent isOpen={isSideBarOpen} setIsOpen={setISSideBarOpen} /></OutsideClickHandler>
+      <NewFinancialYearModal
+        isOpen={isReset}
+        onClose={() => setIsReset(false)}
+      />
+      <OutsideClickHandler onOutsideClick={() => setISSideBarOpen(false)}>
+        <SidebarComponent isOpen={isSideBarOpen} setIsOpen={setISSideBarOpen} />
+      </OutsideClickHandler>
       <div className="header relative shrink-0 shadow-lg z-10 flex w-full h-14 px-4 bg-gray-100 items-center justify-between">
         <div className="flex items-center space-x-3">
           {isSideBarOpen ? (

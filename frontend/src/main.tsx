@@ -75,14 +75,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               />
               <Route path="/pda" element={<PDAccountPage type="PDA" />} />
               <Route path="/pdf" element={<PDAccountPage type="PDF" />} />
-              <Route
-                path="/developers"
-                element={
-                  <AdminRoute>
-                    <DeveloperPage />
-                  </AdminRoute>
-                }
-              />
+              <Route path="/developers" element={<DeveloperPage />} />
             </Route>
             <Route path="/login" element={<LoginPage />} />
             <Route path="*" element={<NotFound />} />

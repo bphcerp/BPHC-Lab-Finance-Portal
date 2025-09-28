@@ -27,7 +27,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       try {
         // Light status probe (does not require token)
         const statusResp = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/auth/status`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/check-auth`,
           {
             credentials: "include",
           }
@@ -41,7 +41,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }
         // Only fetch protected user data if cookie present
         const meResp = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/user/me`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/user/me`,
           { credentials: "include" }
         );
         if (meResp.ok) {
@@ -65,7 +65,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/user/logout`, {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/logout`, {
         method: "POST",
         credentials: "include",
       });
@@ -81,7 +81,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Re-run auth status first to avoid unnecessary protected call
       const statusResp = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/auth/status`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/check-auth`,
         { credentials: "include" }
       );
       const statusJson = await statusResp
@@ -92,7 +92,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/user/me`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/user/me`,
         { credentials: "include" }
       );
       if (response.ok) {
