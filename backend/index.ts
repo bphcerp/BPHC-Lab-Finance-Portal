@@ -12,6 +12,7 @@ import reimburseRoutes from './routes/reimburse';
 import memberRoutes from './routes/member';
 import accountRoutes from './routes/account';
 import { authenticateToken } from './middleware/authenticateToken';
+import { restrictRoutes } from './middleware/restrictRoutes';
 import { ExpenseModel } from "./models/expense";
 import { ProjectModel } from "./models/project";
 import morgan from 'morgan'
@@ -45,6 +46,8 @@ app.use(cors({
   exposedHeaders: ['Content-Disposition'],
   credentials: true // Allow cookies to be sent
 }))
+
+app.use(restrictRoutes)
 
 app.use('/api/user', userRoutes);
 app.use('/api/project', projectRoutes);
