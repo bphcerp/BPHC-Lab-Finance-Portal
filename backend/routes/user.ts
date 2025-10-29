@@ -3,7 +3,8 @@ import { UserModel } from "../models/user";
 import { OAuth2Client } from "google-auth-library";
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
-import { authenticateToken, encrypt } from "../middleware/authenticateToken";
+import { authenticateToken, encrypt, decrypt } from "../middleware/authenticateToken";
+import crypto from 'crypto'
 
 const isProd = process.env.NODE_ENV === "production"
 
@@ -17,6 +18,53 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 		res.status(500).json({ message: 'Error fetching users', error });
 	}
 });
+
+// Return the current authenticated user's minimal profile
+// Works for both JWT (passlogin) and Google ID token flows
+router.get('/me', authenticateToken, async (req: Request, res: Response) => {
+	try {
+		// Encrypted cookie holds either a JWT (from passlogin) or a Google ID token (from login)
+		const encryptedToken: { encryptedData: string; iv: string } = (req as any).cookies?.token
+		if (!encryptedToken) {
+			res.status(440).json({ message: 'No session' })
+			return
+		}
+		const token = decrypt(encryptedToken.encryptedData, encryptedToken.iv)
+
+		// Try JWT first
+		try {
+			const decoded: any = jwt.verify(token, process.env.JWT_SECRET_KEY!)
+			// The passlogin flow signs the entire user (minus pwd). We only expose minimal fields.
+			const user = await UserModel.findOne({ email: decoded.email }).select('name email role').lean()
+			if (!user) {
+				res.status(404).json({ message: 'User not found' })
+				return
+			}
+			res.json(user)
+			return
+		} catch (_e) {
+			// Not a JWT; fall back to Google token
+		}
+
+		const client = new OAuth2Client()
+		const ticket = await client.verifyIdToken({ idToken: token, audience: process.env.VITE_OAUTH_CID })
+		const payload: any = ticket.getPayload()
+		const email = payload?.email
+		if (!email) {
+			res.status(400).json({ message: 'Invalid token payload' })
+			return
+		}
+		const user = await UserModel.findOne({ email }).select('name email role').lean()
+		if (!user) {
+			res.status(404).json({ message: 'User not found' })
+			return
+		}
+		res.json(user)
+	} catch (error) {
+		console.error(error)
+		res.status(500).json({ message: 'Failed to resolve current user', error })
+	}
+})
 
 router.post('/', authenticateToken, async (req: Request, res: Response) => {
     try {

@@ -12,8 +12,10 @@ import { createColumnHelper } from '@tanstack/react-table';
 import TableCustom from '../components/TableCustom';
 import { EditExpenseData, Expense } from '../types';
 import { Link, useNavigate } from 'react-router';
+import { useUser } from '../context/UserContext';
 
 const ExpensesPage: React.FC = () => {
+    const { isAdmin } = useUser();
     const [expenses, setExpenses] = useState<Array<Expense>>([]);
     const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set());
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -135,27 +137,29 @@ const ExpensesPage: React.FC = () => {
             enableColumnFilter: false,
             enableSorting: false,
         }),
-        columnHelper.accessor(() => "Actions", {
-            header: "Actions",
-            cell: ({ row }) =>
-                <div className="flex justify-center divide-x-2">
-                    {!row.original.reimbursedID && <button
-                        className="w-10 flex justify-center hover:cursor-pointer"
-                        onClick={() => openEditModal(row.original)}
-                    >
-                        <RiEdit2Line color="blue" />
-                    </button>}
-                    <button
-                        className="w-10 flex justify-center hover:cursor-pointer"
-                        onClick={() => openDeleteModal(row.original)}
-                    >
-                        <RiDeleteBin6Line color="red" />
-                    </button>
-                </div>
-            ,
-            enableColumnFilter: false,
-            enableSorting: false
-        })
+        ...(isAdmin ? [
+            columnHelper.accessor(() => "Actions", {
+                header: "Actions",
+                cell: ({ row }) =>
+                    <div className="flex justify-center divide-x-2">
+                        {!row.original.reimbursedID && <button
+                            className="w-10 flex justify-center hover:cursor-pointer"
+                            onClick={() => openEditModal(row.original)}
+                        >
+                            <RiEdit2Line color="blue" />
+                        </button>}
+                        <button
+                            className="w-10 flex justify-center hover:cursor-pointer"
+                            onClick={() => openDeleteModal(row.original)}
+                        >
+                            <RiDeleteBin6Line color="red" />
+                        </button>
+                    </div>
+                ,
+                enableColumnFilter: false,
+                enableSorting: false
+            })
+        ] : [])
     ];
 
     const handleEditExpense = async (expenseData: EditExpenseData) => {
@@ -396,29 +400,31 @@ const ExpensesPage: React.FC = () => {
                             <span className="text-sm text-gray-700">Not Filed</span>
                         </div>
                     </div>
-                    <div className='flex space-x-2'>
-                        <Button color="blue" className='rounded-md' onClick={() => { setIsModalOpen(true) }}>Add Expense</Button>
-                        {selectedExpenses.size > 0 ?
-                            <div className='flex space-x-2'>
-                                <Button color="gray" size="md" className='rounded-md' onClick={() => {
-                                    const eligibleExpenses = expenses.filter(expense => selectedExpenses.has(expense._id)).filter((expense) => (expense.paidBy && !expense.settled && !expense.reimbursedID?.paidStatus));
-                                    if (eligibleExpenses.length === 0) {
-                                        toastWarn('No eligible expenses for settling');
-                                        return
-                                    }
-                                    setIsSettleModalOpen(true)
-                                }}>{"Settle Expense" + (selectedExpenses.size > 1 ? "s" : "")}</Button>
-                                <Button color="gray" size="md" className='rounded-md' onClick={() => {
-                                    const eligibleExpenses = expenses.filter(expense => selectedExpenses.has(expense._id)).filter((expense) => (!expense.reimbursedID));
-                                    if (eligibleExpenses.length === 0) {
-                                        toastWarn('No eligible expenses for filing');
-                                        return
-                                    }
-                                    setIsFileReimbursementModalOpen(true)
-                                }}>File for Reimbursement</Button>
-                            </div> : <></>
-                        }
-                    </div>
+                    {isAdmin && (
+                      <div className='flex space-x-2'>
+                          <Button color="blue" className='rounded-md' onClick={() => { setIsModalOpen(true) }}>Add Expense</Button>
+                          {selectedExpenses.size > 0 ?
+                              <div className='flex space-x-2'>
+                                  <Button color="gray" size="md" className='rounded-md' onClick={() => {
+                                      const eligibleExpenses = expenses.filter(expense => selectedExpenses.has(expense._id)).filter((expense) => (expense.paidBy && !expense.settled && !expense.reimbursedID?.paidStatus));
+                                      if (eligibleExpenses.length === 0) {
+                                          toastWarn('No eligible expenses for settling');
+                                          return
+                                      }
+                                      setIsSettleModalOpen(true)
+                                  }}>{"Settle Expense" + (selectedExpenses.size > 1 ? "s" : "")}</Button>
+                                  <Button color="gray" size="md" className='rounded-md' onClick={() => {
+                                      const eligibleExpenses = expenses.filter(expense => selectedExpenses.has(expense._id)).filter((expense) => (!expense.reimbursedID));
+                                      if (eligibleExpenses.length === 0) {
+                                          toastWarn('No eligible expenses for filing');
+                                          return
+                                      }
+                                      setIsFileReimbursementModalOpen(true)
+                                  }}>File for Reimbursement</Button>
+                              </div> : <></>
+                          }
+                      </div>
+                    )}
                 </div>
             </div>
             <TableCustom data={expenses} columns={columns} setSelected={(selectedExpenses: Array<Expense>) => {
