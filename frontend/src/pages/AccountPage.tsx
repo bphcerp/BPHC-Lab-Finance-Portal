@@ -9,12 +9,14 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { formatCurrency } from "../helper";
 import AddEntryModal from "../components/AddEntryModal";
+import { useUser } from "../context/UserContext";
 
 interface AccountPageProps {
   type: "Current" | "Savings";
 }
 
 const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
+  const { isAdmin } = useUser();
   const [accountData, setAccountData] = useState<Account[]>([]);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -308,31 +310,33 @@ const AccountPage: FunctionComponent<AccountPageProps> = ({ type }) => {
       {/* Header and Button */}
       <div className="flex justify-between mb-4">
         <h1 className="text-2xl font-bold">{type} Account</h1>
-        <div className="flex space-x-2">
-          <TextInput
-            placeholder="Enter opening balance..."
-            value={openingBalance ?? ""}
-            onChange={(e) => setOpeningBalance(e.target.value)}
-          />
-          <Button
-            color="blue"
-            className="flex justify-center items-center"
-            onClick={() => setIsAddEntryModalOpen(true)}
-          >
-            Add Entry
-          </Button>
-          {type === "Current" &&
-            selectedAccountEntries &&
-            selectedAccountEntries.length > 0 && (
-              <Button
-                color="blue"
-                className="flex justify-center items-center"
-                onClick={() => setIsTransferModalOpen(true)}
-              >
-                Transfer
-              </Button>
-            )}
-        </div>
+        {isAdmin ? (
+          <div className="flex space-x-2">
+            <TextInput
+              placeholder="Enter opening balance..."
+              value={openingBalance ?? ""}
+              onChange={(e) => setOpeningBalance(e.target.value)}
+            />
+            <Button
+              color="blue"
+              className="flex justify-center items-center"
+              onClick={() => setIsAddEntryModalOpen(true)}
+            >
+              Add Entry
+            </Button>
+            {type === "Current" &&
+              selectedAccountEntries &&
+              selectedAccountEntries.length > 0 && (
+                <Button
+                  color="blue"
+                  className="flex justify-center items-center"
+                  onClick={() => setIsTransferModalOpen(true)}
+                >
+                  Transfer
+                </Button>
+              )}
+          </div>
+        ) : null}
       </div>
 
       {/* Loading or Table */}
