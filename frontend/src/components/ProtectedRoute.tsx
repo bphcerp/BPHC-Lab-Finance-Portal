@@ -1,36 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router';
+import React from "react";
+import { Navigate, useSearchParams } from "react-router";
+import { useUser } from "../context/UserContext";
 
 interface ProtectedRouteProps {
-  homePage? : boolean
+  homePage?: boolean;
   children?: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ homePage, children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  homePage,
+  children,
+}) => {
+  const { isAuthenticated, loading } = useUser();
+  const [searchParams] = useSearchParams();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/check-auth`, {
-          credentials: 'include',
-        });
-
-        if (res.status === 200) {
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        console.error('Error checking authentication:', error);
-        setIsAuthenticated(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  if (isAuthenticated === null) {
+  if (loading) {
     return <div>Loading...</div>;
   }
 
@@ -38,8 +22,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ homePage, children }) =
     return <Navigate to="/login" />;
   }
 
-  if (homePage && isAuthenticated){
-    return <Navigate to="/dashboard" />
+  if (homePage && isAuthenticated) {
+    return <Navigate to={searchParams.get("next") ?? "/dashboard"} />;
   }
 
   return <>{children}</>;

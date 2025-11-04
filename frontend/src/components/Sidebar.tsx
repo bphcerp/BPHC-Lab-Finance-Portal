@@ -5,7 +5,7 @@ import { RiGovernmentLine } from "react-icons/ri";
 import { FaBuildingColumns, FaCode } from "react-icons/fa6";
 import { BsSafe } from "react-icons/bs";
 import { FaDonate } from "react-icons/fa";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { useUser } from '../context/UserContext'
 import { useEffect, useState } from "react";
 
@@ -15,18 +15,10 @@ interface SidebarProps {
 }
 
 const SidebarComponent: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
-  const navigate = useNavigate();
   const { isAdmin } = useUser()
   const [menuState, setMenuState] = useState({ account: false, pdAccount: false });
 
-  const handleLogout = () => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/user/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-    navigate("/login");
-    setIsOpen(false);
-  };
+  const { logout } = useUser()
 
   const handleLinkClick = (e: React.MouseEvent) => {
     if (!(e.target as HTMLElement).closest("button")) setIsOpen(false);
@@ -122,7 +114,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       <div className="px-4 py-3 border-t border-gray-300">
         <button
           className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition"
-          onClick={handleLogout}
+          onClick={logout}
         >
           Logout
         </button>
