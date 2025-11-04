@@ -427,7 +427,8 @@ const ExpensesPage: React.FC = () => {
                     )}
                 </div>
             </div>
-            <TableCustom data={expenses} columns={columns} setSelected={(selectedExpenses: Array<Expense>) => {
+            <TableCustom key={`expenses-${isAdmin ? 'admin' : 'viewer'}`}
+                         data={expenses} columns={columns} setSelected={(selectedExpenses: Array<Expense>) => {
                 setSelectedExpenses(new Set(selectedExpenses.map(expense => expense._id)))
             }} initialState={{
                 sorting: [

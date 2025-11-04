@@ -52,7 +52,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     loading,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'Admin',
+    isAdmin: user ? user.role === 'Admin' : false,
     hasRole: (...roles: Role[]) => (user ? roles.includes(user.role) : false),
     refresh: load,
   }), [user, loading])

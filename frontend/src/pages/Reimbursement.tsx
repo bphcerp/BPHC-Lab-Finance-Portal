@@ -293,7 +293,8 @@ const ReimbursementPage: React.FC = () => {
             )}
 
             <div className='py-2'>
-                <TableCustom data={reimbursements} columns={columns} setSelected={(selectedReimbursements: Array<Reimbursement>) => {
+                <TableCustom key={`reimburse-${isAdmin ? 'admin' : 'viewer'}`}
+                             data={reimbursements} columns={columns} setSelected={(selectedReimbursements: Array<Reimbursement>) => {
                     setSelectedReimbursements(new Set(selectedReimbursements.map(reimbursement => reimbursement._id)))
                 }} initialState={{
                     sorting: [

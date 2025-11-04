@@ -4,8 +4,10 @@ import { Button } from "flowbite-react";
 import { AddEditProjectModal } from "../components/AddEditProjectModal";
 import { toastError } from "../toasts";
 import { Link } from "react-router";
+import { useUser } from "../context/UserContext";
 
 const DashBoard: FunctionComponent = () => {
+    const { isAdmin } = useUser();
     const [grandTotal, setGrandTotal] = useState(0);
     const [totalDue, setTotalDue] = useState(0);
     const [totalUnsettled, setTotalUnsettled] = useState(0);
@@ -68,15 +70,17 @@ const DashBoard: FunctionComponent = () => {
                 </div>
             </div>
 
-            <div className="flex justify-end w-full">
-                <Button
-                    onClick={() => setOpenModal((prev) => !prev)}
-                    color="blue"
-                    className="rounded-lg px-3 py-2 shadow-lg"
-                >
-                    Add Project
-                </Button>
-            </div>
+            {isAdmin && (
+                <div className="flex justify-end w-full">
+                    <Button
+                        onClick={() => setOpenModal((prev) => !prev)}
+                        color="blue"
+                        className="rounded-lg px-3 py-2 shadow-lg"
+                    >
+                        Add Project
+                    </Button>
+                </div>
+            )}
 
             <ProjectList key={openModal ? "true" : "false"} fetchProjectData={fetchProjectData} />
         </div>
