@@ -46,7 +46,12 @@
 4. **Seed the database** (in a new terminal):
     ```bash
     cd backend
-    pnpm db:seed <your_email>
+    sudo docker exec -it <server-container-name> pnpm db:seed <your_email> Admin|Viewer
+    ```
+    or
+    ```bash
+    cd backend
+    pnpm db:seed: <your_email> Admin|Viewer host
     ```
 
 ---

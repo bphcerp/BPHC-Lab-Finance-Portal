@@ -11,8 +11,9 @@ dotenv.config({
 async function main() {
 	const email = process.argv[2];
 	const roleArg = process.argv[3]; // optional: Admin | Viewer
+	const hostArg = process.argv[4] === 'host';
 	if (!email) {
-		console.error('Usage: pnpm db:seed <email> [Admin|Viewer]');
+		console.error('Usage: pnpm db:seed <email> [Admin|Viewer] [host|<none>]');
 		process.exit(1);
 	}
 
@@ -32,7 +33,7 @@ async function main() {
 		throw new Error('Missing one or more required MongoDB environment variables: MONGO_HOST, MONGO_PORT, MONGO_DB, MONGO_USER, MONGO_PASSWORD');
 	}
 
-	const MONGO_URI = `mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DB}?authSource=admin`;
+	const MONGO_URI = `mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${hostArg ? MONGO_HOST : 'localhost'}:${hostArg ? MONGO_PORT : '27017'}/${MONGO_DB}?authSource=admin`;
 	await mongoose.connect(MONGO_URI);
 
 	// Check if user already exists
