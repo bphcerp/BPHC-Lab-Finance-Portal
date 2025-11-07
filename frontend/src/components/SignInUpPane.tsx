@@ -1,14 +1,11 @@
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import { FormEvent, FormEventHandler, useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
 import { toastError } from "../toasts";
 import PasswordLoginPane from "./PasswordLoginPane";
 import { useUser } from "../context/UserContext";
 
 const SignInUpPane = () => {
   const [usePass, setUsePass] = useState(false);
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { refreshUser } = useUser();
 
   const handleSignIn = async (credentials: CredentialResponse) => {
