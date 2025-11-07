@@ -33,7 +33,7 @@ async function main() {
 		throw new Error('Missing one or more required MongoDB environment variables: MONGO_HOST, MONGO_PORT, MONGO_DB, MONGO_USER, MONGO_PASSWORD');
 	}
 
-	const MONGO_URI = `mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${hostArg ? MONGO_HOST : 'localhost'}:${hostArg ? MONGO_PORT : '27017'}/${MONGO_DB}?authSource=admin`;
+	const MONGO_URI = `mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${hostArg ? MONGO_HOST : 'mongo'}:${hostArg ? MONGO_PORT : '27017'}/${MONGO_DB}?authSource=admin`;
 	await mongoose.connect(MONGO_URI);
 
 	// Check if user already exists
