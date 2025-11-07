@@ -3,7 +3,8 @@ import { UserModel } from "../models/user";
 import { OAuth2Client } from "google-auth-library";
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
-import { authenticateToken, encrypt } from "../middleware/authenticateToken";
+import { authenticateToken, encrypt, decrypt } from "../middleware/authenticateToken";
+import crypto from 'crypto'
 
 const isProd = process.env.NODE_ENV === "production"
 
@@ -11,7 +12,7 @@ const router: Router = Router()
 
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
 	try {
-		const users = await UserModel.find().select('name email');
+		const users = await UserModel.find().select('name email role');
 		res.json(users);
 	} catch (error) {
 		res.status(500).json({ message: 'Error fetching users', error });
@@ -116,16 +117,34 @@ router.post('/passlogin', async (req: Request, res: Response) => {
 
 router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
 	try {
-		const { name, email } = req.body;
+		const { name, email, role } = req.body;
+
+		if (role) {
+			if (!req.user || req.user.role !== 'Admin') {
+				return res.status(403).json({ message: 'Not authorized to change roles' });
+			}
+
+			const targetUser = await UserModel.findById(req.params.id).lean();
+			if (!targetUser) return res.status(404).json({ message: 'User not found' });
+			if (req.user.email === targetUser.email) {
+				return res.status(400).json({ message: 'Cannot change own role' });
+			}
+		}
+
+		const update: any = {};
+		if (typeof name !== 'undefined') update.name = name;
+		if (typeof email !== 'undefined') update.email = email;
+		if (typeof role !== 'undefined') update.role = role;
+
 		const updatedUser = await UserModel.findByIdAndUpdate(
 			req.params.id,
-			{ name, email },
+			update,
 			{ new: true }
-		);
+		).select('name email role');
+
 		if (!updatedUser) {
-			res.status(404).json({ message: 'User not found' })
-		}
-		else res.json(updatedUser);
+			res.status(404).json({ message: 'User not found' });
+		} else res.json(updatedUser);
 	} catch (error) {
 		res.status(500).json({ message: 'Error updating user', error });
 	}

@@ -10,8 +10,10 @@ import { Reimbursement } from '../types';
 import { RiDeleteBin6Line, RiEdit2Line } from 'react-icons/ri';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import EditReimbursementModal from '../components/EditReimbursementModal';
+import { useUser } from '../context/UserContext';
 
 const ReimbursementPage: React.FC = () => {
+    const { isAdmin } = useUser();
     const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
     const [loading, setLoading] = useState(true);
     const [isPaidLoading, setIsPaidLoading] = useState(false);
@@ -94,28 +96,30 @@ const ReimbursementPage: React.FC = () => {
             enableColumnFilter: false,
             enableSorting: false,
         }),
-        columnHelper.accessor(() => "Actions", {
-            header: "Actions",
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    {row.original.paidStatus ? "NA" : <div className='flex divide-x-2'>
-                        <button
-                            className="w-10 flex justify-center hover:cursor-pointer"
-                            onClick={() => openEditModal(row.original)}
-                        >
-                            <RiEdit2Line color="blue" />
-                        </button>
-                        <button
-                            className="w-10 flex justify-center hover:cursor-pointer"
-                            onClick={() => openDeleteModal(row.original)}
-                        >
-                            <RiDeleteBin6Line color="red" />
-                        </button></div>}
-                </div>
-            ),
-            enableColumnFilter: false,
-            enableSorting: false
-        })
+        ...(isAdmin ? [
+            columnHelper.accessor(() => "Actions", {
+                header: "Actions",
+                cell: ({ row }) => (
+                    <div className="flex justify-center">
+                        {row.original.paidStatus ? "NA" : <div className='flex divide-x-2'>
+                            <button
+                                className="w-10 flex justify-center hover:cursor-pointer"
+                                onClick={() => openEditModal(row.original)}
+                            >
+                                <RiEdit2Line color="blue" />
+                            </button>
+                            <button
+                                className="w-10 flex justify-center hover:cursor-pointer"
+                                onClick={() => openDeleteModal(row.original)}
+                            >
+                                <RiDeleteBin6Line color="red" />
+                            </button></div>}
+                    </div>
+                ),
+                enableColumnFilter: false,
+                enableSorting: false
+            })
+        ] : [])
     ];
 
     const handleDeleteReimbursement = async () => {
@@ -268,26 +272,29 @@ const ReimbursementPage: React.FC = () => {
             />
             <h1 className="text-2xl font-bold mb-4">List of Reimbursements</h1>
 
-            <div className="flex space-x-2 mb-4">
-                <button
-                    className="bg-green-500 text-white px-4 py-2 rounded disabled:opacity-50"
-                    onClick={() => handleMarkAsPaid()}
-                    disabled={isPaidLoading || selectedReimbursements.size === 0}
-                >
-                    Mark as Paid
-                </button>
+            {isAdmin && (
+                <div className="flex space-x-2 mb-4">
+                    <button
+                        className="bg-green-500 text-white px-4 py-2 rounded disabled:opacity-50"
+                        onClick={() => handleMarkAsPaid()}
+                        disabled={isPaidLoading || selectedReimbursements.size === 0}
+                    >
+                        Mark as Paid
+                    </button>
 
-                <button
-                    className="bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50"
-                    onClick={() => handleMarkAsPaid(true)}
-                    disabled={isPaidLoading || selectedReimbursements.size === 0}
-                >
-                    Mark as Unpaid
-                </button>
-            </div>
+                    <button
+                        className="bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50"
+                        onClick={() => handleMarkAsPaid(true)}
+                        disabled={isPaidLoading || selectedReimbursements.size === 0}
+                    >
+                        Mark as Unpaid
+                    </button>
+                </div>
+            )}
 
             <div className='py-2'>
-                <TableCustom data={reimbursements} columns={columns} setSelected={(selectedReimbursements: Array<Reimbursement>) => {
+                <TableCustom key={`reimburse-${isAdmin ? 'admin' : 'viewer'}`}
+                             data={reimbursements} columns={columns} setSelected={(selectedReimbursements: Array<Reimbursement>) => {
                     setSelectedReimbursements(new Set(selectedReimbursements.map(reimbursement => reimbursement._id)))
                 }} initialState={{
                     sorting: [

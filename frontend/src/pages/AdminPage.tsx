@@ -1,6 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "flowbite-react";
 import { useEffect, useState } from "react";
+import { useUser } from "../context/UserContext";
 import { SubmitHandler, useForm } from "react-hook-form";
 import TableCustom from "../components/TableCustom";
 import { Inputs } from "../types";
@@ -19,6 +20,8 @@ const AdminPage: React.FC = () => {
     const [itemtoEdit, setItemToEdit] = useState<any | null>(null);
 
     const { register, handleSubmit, watch } = useForm<Inputs>();
+
+    const { user, isAdmin } = useUser();
 
     const onSubmit: SubmitHandler<Inputs> = async ({ selectedConfig }) => {
         const fetchPath =
@@ -80,14 +83,76 @@ const AdminPage: React.FC = () => {
 
     const generateColumns = <T extends object>(data: T): ColumnDef<T, any>[] => {
         return [
-            ...Object.keys(data)
-                .filter((key) => key !== "_id" && key !== "type" && key != "__v")
-                .map((key) => ({
+            ...(() => {
+                const keys = Object.keys(data).filter((key) => key !== "_id" && key !== "type" && key != "__v");
+                keys.sort((a, b) => {
+                    if (a === 'name' && b === 'role') return -1;
+                    if (a === 'role' && b === 'name') return 1;
+                    return a.localeCompare(b);
+                });
+
+                return keys.map((key) => ({
                     id: key,
                     accessorKey: key as keyof T,
                     header: key.replace(/_/g, " "),
                     enableColumnFilter: key.includes("name"),
-                })),
+                    ...(key === 'role'
+                        ? {
+                              cell: ({ row }: any) => {
+                                  const currentRole = row.original.role as string;
+                                  const userId = row.original._id;
+                                  const disabled = !isAdmin || (user?.email === row.original.email);
+
+                                  const onChange = async (e: any) => {
+                                      const newRole = e.target.value;
+                                      if (newRole === currentRole) return;
+                                      try {
+                                          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/user/${userId}`, {
+                                              method: 'PUT',
+                                              credentials: 'include',
+                                              headers: { 'Content-Type': 'application/json' },
+                                              body: JSON.stringify({ role: newRole }),
+                                          });
+
+                                          if (res.ok) {
+                                              toastSuccess('Role updated');
+                                              setData((prev) => prev.map((it) => (it._id === userId ? { ...it, role: newRole } : it)));
+                                          } else {
+                                              const body = await res.json().catch(() => ({}));
+                                              toastError(body.message ?? 'Could not update role');
+                                          }
+                                      } catch (err) {
+                                          toastError('Network error');
+                                      }
+                                  };
+
+                                  return (
+                                      <div className="relative inline-block">
+                                          <select value={currentRole} onChange={onChange} disabled={disabled}>
+                                              <option value="Admin">Admin</option>
+                                              <option value="Viewer">Viewer</option>
+                                          </select>
+                                          {disabled && (
+                                              <button
+                                                  type="button"
+                                                  className="absolute inset-0 w-full h-full bg-transparent"
+                                                  onClick={(e) => {
+                                                      e.preventDefault();
+                                                      if (user?.email === row.original.email) {
+                                                          toastError("You cannot change your own role");
+                                                      } else {
+                                                          toastError("Only admins can change roles");
+                                                      }
+                                                  }}
+                                              />
+                                          )}
+                                      </div>
+                                  );
+                              },
+                          }
+                        : {}),
+                }));
+            })(),
             {
                 id: "actions",
                 header: "Actions",

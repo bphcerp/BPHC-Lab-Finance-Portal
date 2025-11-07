@@ -10,10 +10,15 @@ dotenv.config({
 
 async function main() {
 	const email = process.argv[2];
+	const roleArg = process.argv[3]; // optional: Admin | Viewer
 	if (!email) {
-		console.error('Usage: pnpm db:seed <email>');
+		console.error('Usage: pnpm db:seed <email> [Admin|Viewer]');
 		process.exit(1);
 	}
+
+	const normalizedRole = roleArg && ["Admin", "Viewer"].includes(roleArg)
+		? (roleArg as "Admin" | "Viewer")
+		: undefined;
 
 	const {
 		MONGO_HOST,
@@ -33,13 +38,20 @@ async function main() {
 	// Check if user already exists
 	const existing = await UserModel.findOne({ email });
 	if (existing) {
+		if (normalizedRole && existing.role !== normalizedRole) {
+			existing.role = normalizedRole;
+			await existing.save();
+			console.log(`Updated role for ${email} -> ${normalizedRole}`);
+		} else {
+			console.log(`User ${email} already exists with role: ${existing.role || 'Viewer'}`);
+		}
 		await mongoose.disconnect();
 		process.exit(0);
 	}
 
-	const user = new UserModel({ email });
+	const user = new UserModel({ email, ...(normalizedRole ? { role: normalizedRole } : {}) });
 	await user.save();
-	console.log(`Added user with email: ${email}`);
+	console.log(`Added user with email: ${email} as ${user.role}`);
 	await mongoose.disconnect();
 }
 

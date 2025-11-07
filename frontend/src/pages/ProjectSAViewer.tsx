@@ -172,8 +172,6 @@ const MyDoc = ({
     );
 };
 
-export default MyDoc;
-
 export const ProjectSAViewer = () => {
     const { id } = useParams()
     const [ searchParams ] = useSearchParams()

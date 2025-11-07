@@ -1,37 +1,14 @@
-import { FunctionComponent, useEffect, useState } from "react";
+import { FunctionComponent } from "react";
 import SignInUpPane from "../components/SignInUpPane";
-import { Navigate } from "react-router";
+import { Navigate, useSearchParams } from "react-router";
+import { useUser } from "../context/UserContext";
 
 const LoginPage: FunctionComponent = () => {
+  const { isAuthenticated, loading } = useUser();
+  const [searchParams] = useSearchParams();
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  
-    useEffect(() => {
-      const checkAuth = async () => {
-        try {
-          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/check-auth`, {
-            credentials: 'include',
-            headers: {
-              'From-Page': 'login',
-          },
-          });
-  
-          if (res.status === 200) {
-            setIsAuthenticated(true);
-          } else {
-            setIsAuthenticated(false);
-          }
-        } catch (error) {
-          console.error('Error checking authentication:', error);
-          setIsAuthenticated(false);
-        }
-      };
-  
-      checkAuth();
-    }, []);
-
-  if (isAuthenticated){
-    return <Navigate to="/dashboard" />
+  if (!loading && isAuthenticated) {
+    return <Navigate to={searchParams.get("next") ?? "/dashboard"} />;
   }
 
   return (
@@ -44,6 +21,6 @@ const LoginPage: FunctionComponent = () => {
       </div>
     </div>
   );
-}
+};
 
 export default LoginPage;

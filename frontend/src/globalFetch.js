@@ -24,5 +24,7 @@ window.fetch = async (url, options = {}) => {
     return
   }
 
+  else if (response.status === 403) location.reload()
+
   else return response
 };
